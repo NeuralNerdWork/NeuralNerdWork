@@ -2,7 +2,7 @@ package neuralnerdwork;
 
 import java.util.function.Function;
 
-public class Neuron {
+public class Neuron implements Function<Double[], Double> {
     public final Double bias;
     public final Double[] weights;
     public final Function<Double, Double> activation;
