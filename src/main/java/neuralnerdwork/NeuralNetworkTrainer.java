@@ -7,6 +7,6 @@ public class NeuralNetworkTrainer {
         // TODO - Find the derivatives of a weight of a neuron
         // TODO - Update neuron weights based on gradient and learning parameter
         // TODO - Stop when we have converged
-        return new NeuralNetwork();
+        return new NeuralNetwork(List.of());
     }
 }
