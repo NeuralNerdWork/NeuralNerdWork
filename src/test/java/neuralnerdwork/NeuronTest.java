@@ -5,9 +5,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.*;
 
 class NeuronTest {
-    private static double sigmoid(double x) {
-        return (1/( 1 + Math.pow(Math.E,(-1*x))));
-    }
 
     @Test
     void processPairOfInputs() {
@@ -15,7 +12,7 @@ class NeuronTest {
                 new Neuron(
                         4.0,
                         new Double[]{0.0, 1.0},
-                        NeuronTest::sigmoid);
+                        Calculator::sigmoid);
 
         assertEquals(0.999, neuron.apply(new Double[]{2.0, 3.0}), 0.00009);
     }
@@ -26,7 +23,7 @@ class NeuronTest {
                 new Neuron(
                         4.0,
                         new Double[]{0.0, 1.0},
-                        NeuronTest::sigmoid);
+                        Calculator::sigmoid);
         assertThrows(AssertionError.class,
                      () -> neuron.apply(new Double[]{2.0, 3.0, 4.0}));
     }
