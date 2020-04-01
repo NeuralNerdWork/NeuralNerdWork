@@ -1,6 +1,10 @@
 .idea
 *.iml
 
+.settings
+.classpath
+.project
+
 target/
 pom.xml.tag
 pom.xml.releaseBackup
