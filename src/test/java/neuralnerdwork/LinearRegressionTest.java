@@ -1,6 +1,5 @@
 package neuralnerdwork;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -16,7 +15,7 @@ public class LinearRegressionTest {
                         new TrainingSample(new Double[]{0.0, 1.3}, new Double[]{1.0})
                 ));
 
-        assertArrayEquals(new Double[]{0.0}, network.predict(new Double[]{0.0, 0.1}));
-        assertArrayEquals(new Double[]{1.0}, network.predict(new Double[]{0.0, 1.3}));
+        assertArrayEquals(new Double[]{0.0}, network.apply(new Double[]{0.0, 0.1}));
+        assertArrayEquals(new Double[]{1.0}, network.apply(new Double[]{0.0, 1.3}));
     }
 }
