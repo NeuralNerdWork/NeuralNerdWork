@@ -1,6 +1,17 @@
 package neuralnerdwork.math;
 
-public record MatrixVectorMultFunction(MatrixFunction left, VectorFunction right) implements VectorFunction {
+public record MatrixVectorProductFunction(MatrixFunction left, VectorFunction right) implements VectorFunction {
+    public MatrixVectorProductFunction {
+        if (left.cols() != right.length()) {
+            throw new IllegalArgumentException("Matrix width must match vector height for multiplication");
+        }
+    }
+
+    @Override
+    public int length() {
+        return left.rows();
+    }
+
     @Override
     public Vector apply(double[] input) {
         final Matrix leftValue = left.apply(input);
@@ -27,11 +38,11 @@ public record MatrixVectorMultFunction(MatrixFunction left, VectorFunction right
         final VectorFunction rightDerivative = right.differentiate(variableIndex);
 
         return new VectorSumFunction(
-                new MatrixVectorMultFunction(
+                new MatrixVectorProductFunction(
                         leftDerivative,
                         right
                 ),
-                new MatrixVectorMultFunction(
+                new MatrixVectorProductFunction(
                         left,
                         rightDerivative
                 )

@@ -1,6 +1,17 @@
 package neuralnerdwork.math;
 
 public record VectorSumFunction(VectorFunction left, VectorFunction right) implements VectorFunction {
+    public VectorSumFunction {
+        if (left.length() != right.length()) {
+            throw new IllegalArgumentException("Cannot add vectors of different lengths");
+        }
+    }
+
+    @Override
+    public int length() {
+        return left.length();
+    }
+
     @Override
     public Vector apply(double[] input) {
         final Vector left = this.left.apply(input);

@@ -49,7 +49,7 @@ public class MathTest {
         final ParameterMatrix w1 = new ParameterMatrix(0, 2, 2);
         final ParameterMatrix w2 = new ParameterMatrix(4, 2, 2);
         final VectorFunction vector = new ConstantVector(new double[] { 1.0, -1.0 });
-        final MatrixVectorMultFunction multiplication = new MatrixVectorMultFunction(
+        final MatrixVectorProductFunction multiplication = new MatrixVectorProductFunction(
                 new MatrixMultiplyFunction(
                         w2,
                         w1
@@ -77,7 +77,7 @@ public class MathTest {
         final ParameterMatrix w1 = new ParameterMatrix(0, 2, 2);
         final ParameterMatrix w2 = new ParameterMatrix(4, 2, 2);
         final VectorFunction vector = new ConstantVector(new double[] { 1.0, -1.0 });
-        final MatrixVectorMultFunction multiplication = new MatrixVectorMultFunction(
+        final MatrixVectorProductFunction multiplication = new MatrixVectorProductFunction(
                 new MatrixMultiplyFunction(
                         w2,
                         w1
@@ -109,9 +109,9 @@ public class MathTest {
         final ParameterMatrix w1 = new ParameterMatrix(0, 2, 2);
         final ParameterMatrix w2 = new ParameterMatrix(4, 2, 2);
         final VectorFunction vector = new ConstantVector(new double[] { 1.0, -1.0 });
-        final MatrixVectorMultFunction multiplication = new MatrixVectorMultFunction(
+        final MatrixVectorProductFunction multiplication = new MatrixVectorProductFunction(
                 w2,
-                new MatrixVectorMultFunction(
+                new MatrixVectorProductFunction(
                         w1,
                         vector
                 )
@@ -129,6 +129,34 @@ public class MathTest {
             assertEquals(-1.0 * firstVar, derivativeVector.get(0), 0.0001);
             assertEquals(-1.0 * secondVar, derivativeVector.get(1), 0.0001);
         });
+    }
+
+    @Test
+    void differentiateWeightsWithActivation() {
+        final ParameterMatrix w1 = new ParameterMatrix(0, 2, 2);
+        final ConstantVector vector = new ConstantVector(new double[] { 1.0, -1.0 });
+        final MatrixVectorProductFunction weightedInputs = new MatrixVectorProductFunction(
+                w1,
+                vector
+        );
+        final SingleVariableLogisticFunction logistic = new SingleVariableLogisticFunction();
+        final VectorizedSingleVariableFunctions activationFunction = new VectorizedSingleVariableFunctions(logistic, logistic);
+        final VectorFunctionComposition layerFunction = new VectorFunctionComposition(weightedInputs, activationFunction);
+
+        final VectorFunction partialDerivative = layerFunction.differentiate(w1.indexFor(0, 0));
+        assertArgumentInvariant(4, values -> {
+            final Vector observed = partialDerivative.apply(values);
+
+            assertEquals(2, observed.length(), "Length not equal");
+            final double logisticInput = values[0] * vector.get(0) + values[1] * vector.get(1);
+            final double firstExpected = logistic(logisticInput) * logistic(-logisticInput);
+            assertEquals(firstExpected, observed.get(0), 0.0001);
+            assertEquals(0.0, observed.get(1), 0.0001);
+        });
+    }
+
+    private double logistic(double x) {
+        return Math.exp(x) / (1 + Math.exp(x));
     }
 
     private void assertArgumentInvariant(int length, Consumer<double[]> assertions) {
