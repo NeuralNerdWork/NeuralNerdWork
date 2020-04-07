@@ -12,6 +12,11 @@ public record MatrixMultiplyFunction(MatrixFunction left, MatrixFunction right) 
     }
 
     @Override
+    public int inputLength() {
+        return Math.max(left.inputLength(), right.inputLength());
+    }
+
+    @Override
     public Matrix apply(double[] input) {
         final Matrix leftMatrix = left.apply(input);
         final Matrix rightMatrix = right.apply(input);

@@ -13,6 +13,11 @@ public record ConstantVector(double[] values) implements VectorFunction, Vector 
     }
 
     @Override
+    public int inputLength() {
+        return 0;
+    }
+
+    @Override
     public Vector apply(double[] input) {
         return this;
     }

@@ -22,6 +22,11 @@ public record ConstantMatrix(double[][] values) implements MatrixFunction, Matri
     }
 
     @Override
+    public int inputLength() {
+        return 0;
+    }
+
+    @Override
     public Matrix apply(double[] inputs) {
         return this;
     }

@@ -1,14 +1,28 @@
 package neuralnerdwork;
 
 import neuralnerdwork.math.*;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Random;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MathTest {
+
+    private Random random;
+
+    @BeforeEach
+    public void setup() {
+        final String seed = System.getProperty("neuralnerdwork.test.seed");
+        if (seed != null) {
+            random = new Random(Long.parseLong(seed));
+        } else {
+            random = new Random();
+        }
+    }
 
     @Test
     void multiplyByIdentityGivesSameMatrix() {
@@ -132,7 +146,7 @@ public class MathTest {
     }
 
     @Test
-    void differentiateWeightsWithActivation() {
+    void partialDerviativeWeightsWithActivation() {
         final ParameterMatrix w1 = new ParameterMatrix(0, 2, 2);
         final ConstantVector vector = new ConstantVector(new double[] { 1.0, -1.0 });
         final MatrixVectorProductFunction weightedInputs = new MatrixVectorProductFunction(
@@ -149,9 +163,53 @@ public class MathTest {
 
             assertEquals(2, observed.length(), "Length not equal");
             final double logisticInput = values[0] * vector.get(0) + values[1] * vector.get(1);
-            final double firstExpected = logistic(logisticInput) * logistic(-logisticInput);
+            final double firstExpected = logistic(logisticInput) * logistic(-logisticInput) * vector.get(0);
             assertEquals(firstExpected, observed.get(0), 0.0001);
             assertEquals(0.0, observed.get(1), 0.0001);
+        });
+    }
+
+    @Test
+    void fullDerivativeWeightsWithActivation() {
+        final ParameterMatrix w1 = new ParameterMatrix(0, 2, 2);
+        final ConstantVector vector = new ConstantVector(new double[] { 1.0, -1.0 });
+        final MatrixVectorProductFunction weightedInputs = new MatrixVectorProductFunction(
+                w1,
+                vector
+        );
+        final SingleVariableLogisticFunction logistic = new SingleVariableLogisticFunction();
+        final VectorizedSingleVariableFunctions activationFunction = new VectorizedSingleVariableFunctions(logistic, logistic);
+        final VectorFunctionComposition layerFunction = new VectorFunctionComposition(weightedInputs, activationFunction);
+
+        final MatrixFunction derivative = layerFunction.differentiate();
+        assertEquals(2, derivative.rows(), "Rows not equal");
+        assertEquals(4, derivative.cols(), "Cols not equal");
+
+        assertArgumentInvariant(4, values -> {
+            final Matrix observed = derivative.apply(values);
+
+            assertEquals(2, observed.rows(), "Rows not equal");
+            assertEquals(4, observed.cols(), "Cols not equal");
+
+            final double firstLogisticInput = values[0] * vector.get(0) + values[1] * vector.get(1);
+            final double secondLogisticInput = values[2] * vector.get(0) + values[3] * vector.get(1);
+
+            final double firstExpected = logistic(firstLogisticInput) * logistic(-firstLogisticInput) * vector.get(0);
+            final double secondExpected = logistic(firstLogisticInput) * logistic(-firstLogisticInput) * vector.get(1);
+            final double thirdExpected = logistic(secondLogisticInput) * logistic(-secondLogisticInput) * vector.get(0);
+            final double fourthExpected = logistic(secondLogisticInput) * logistic(-secondLogisticInput) * vector.get(1);
+
+            assertEquals(firstExpected, observed.get(0, 0), 0.0001);
+            assertEquals(0.0, observed.get(1, 0), 0.0001);
+
+            assertEquals(secondExpected, observed.get(0, 1), 0.0001);
+            assertEquals(0.0, observed.get(1, 1), 0.0001);
+
+            assertEquals(0.0, observed.get(0, 2), 0.0001);
+            assertEquals(thirdExpected, observed.get(1, 2), 0.0001);
+
+            assertEquals(0.0, observed.get(0, 3), 0.0001);
+            assertEquals(fourthExpected, observed.get(1, 3), 0.0001);
         });
     }
 
@@ -171,6 +229,6 @@ public class MathTest {
     }
 
     private double randomDouble() {
-        return (Math.random() - 0.5) * 100.0;
+        return (random.nextDouble() - 0.5) * 100.0;
     }
 }

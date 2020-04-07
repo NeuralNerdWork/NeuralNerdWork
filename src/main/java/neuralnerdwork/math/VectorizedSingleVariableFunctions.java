@@ -13,6 +13,11 @@ public record VectorizedSingleVariableFunctions(SingleVariableFunction... functi
     }
 
     @Override
+    public int inputLength() {
+        return functions.length;
+    }
+
+    @Override
     public Vector apply(double[] inputs) {
         if (inputs.length != functions.length) {
             throw new IllegalArgumentException("vectorized function accepts input of length " + functions.length + " but given " + inputs.length);

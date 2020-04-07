@@ -1,10 +1,18 @@
 package neuralnerdwork.math;
 
+import static java.lang.String.format;
+
 public record MatrixVectorProductFunction(MatrixFunction left, VectorFunction right) implements VectorFunction {
     public MatrixVectorProductFunction {
         if (left.cols() != right.length()) {
-            throw new IllegalArgumentException("Matrix width must match vector height for multiplication");
+            throw new IllegalArgumentException(format("Matrix width (%d) must match vector height (%d) for multiplication",
+                                                      left.cols(), right.length()));
         }
+    }
+
+    @Override
+    public int inputLength() {
+        return Math.max(left.inputLength(), right.inputLength());
     }
 
     @Override

@@ -8,6 +8,12 @@ public record VectorSumFunction(VectorFunction left, VectorFunction right) imple
     }
 
     @Override
+    public int inputLength() {
+        // Should these be the same? Not sure because of constants
+        return Math.max(left.inputLength(), right.inputLength());
+    }
+
+    @Override
     public int length() {
         return left.length();
     }

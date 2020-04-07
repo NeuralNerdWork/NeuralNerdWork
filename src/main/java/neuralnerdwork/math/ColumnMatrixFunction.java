@@ -17,6 +17,14 @@ public record ColumnMatrixFunction(VectorFunction[] columns) implements MatrixFu
     }
 
     @Override
+    public int inputLength() {
+        return Arrays.stream(columns)
+                     .mapToInt(VectorFunction::inputLength)
+                     .max()
+                     .orElseThrow();
+    }
+
+    @Override
     public int rows() {
         return columns[0].length();
     }
@@ -29,9 +37,9 @@ public record ColumnMatrixFunction(VectorFunction[] columns) implements MatrixFu
     @Override
     public Matrix apply(double[] inputs) {
         final double[][] values = new double[rows()][cols()];
-        for (int col = 0; col < rows(); col++) {
+        for (int col = 0; col < cols(); col++) {
             final Vector vector = columns[col].apply(inputs);
-            for (int row = 0; row < cols(); row++) {
+            for (int row = 0; row < rows(); row++) {
                 values[row][col] = vector.get(row);
             }
         }

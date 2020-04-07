@@ -18,6 +18,11 @@ public record ParameterMatrix(int variableStartIndex, int rows, int cols) implem
     }
 
     @Override
+    public int inputLength() {
+        return rows * cols;
+    }
+
+    @Override
     public MatrixFunction differentiate(int variableIndex) {
         final int length = rows * cols;
         if (variableIndex >= variableStartIndex && variableIndex < variableStartIndex + length) {

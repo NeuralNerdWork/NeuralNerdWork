@@ -8,10 +8,11 @@ public interface VectorFunction {
 
     Vector apply(double[] inputs);
     VectorFunction differentiate(int variableIndex);
+    int inputLength();
 
     default MatrixFunction differentiate() {
-        final VectorFunction[] columns = new VectorFunction[length()];
-        for (int i = 0; i < length(); i++) {
+        final VectorFunction[] columns = new VectorFunction[inputLength()];
+        for (int i = 0; i < inputLength(); i++) {
             columns[i] = differentiate(i);
         }
 

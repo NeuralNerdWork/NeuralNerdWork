@@ -12,6 +12,11 @@ public record MatrixSumFunction(MatrixFunction left, MatrixFunction right) imple
     }
 
     @Override
+    public int inputLength() {
+        return Math.max(left.inputLength(), right.inputLength());
+    }
+
+    @Override
     public int rows() {
         return left.rows();
     }

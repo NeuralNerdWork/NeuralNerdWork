@@ -10,6 +10,11 @@ public record VectorFunctionComposition(VectorFunction... functions) implements 
     }
 
     @Override
+    public int inputLength() {
+        return functions[0].inputLength();
+    }
+
+    @Override
     public int length() {
         return functions[functions.length-1].length();
     }
@@ -30,11 +35,11 @@ public record VectorFunctionComposition(VectorFunction... functions) implements 
             // Chain rule works from outside function to inside
             final int last = functions.length-1;
             final MatrixFunction lastDerivative = functions[last].differentiate();
-            final VectorFunction[] composedFunctions = Arrays.copyOf(functions, last);
 
             // Chain Rule
             // (fog)'(x) = f'(g(x))*g'(x)
-            final VectorFunctionComposition innerFunction = new VectorFunctionComposition(composedFunctions);
+            final VectorFunction innerFunction = last != 1 ? new VectorFunctionComposition(Arrays.copyOf(this.functions, last))
+                    : this.functions[0];
             return new MatrixVectorProductFunction(
                     new MatrixCompose(innerFunction, lastDerivative),
                     innerFunction.differentiate(variableIndex)

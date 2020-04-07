@@ -5,4 +5,5 @@ public interface MatrixFunction {
     int cols();
     Matrix apply(double[] inputs);
     MatrixFunction differentiate(int variableIndex);
+    int inputLength();
 }

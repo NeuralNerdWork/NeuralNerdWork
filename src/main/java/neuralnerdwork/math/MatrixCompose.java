@@ -12,6 +12,11 @@ public record MatrixCompose(VectorFunction vector, MatrixFunction matrix) implem
     }
 
     @Override
+    public int inputLength() {
+        return vector.inputLength();
+    }
+
+    @Override
     public Matrix apply(double[] inputs) {
         return matrix.apply(vector.apply(inputs).toArray());
     }

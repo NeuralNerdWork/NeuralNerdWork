@@ -9,6 +9,11 @@ public record SparseConstantMatrix(Map<Index, Double> values, int rows, int cols
     }
 
     @Override
+    public int inputLength() {
+        return 0;
+    }
+
+    @Override
     public MatrixFunction differentiate(int variableIndex) {
         return new SparseConstantMatrix(Map.of(), rows, cols);
     }
