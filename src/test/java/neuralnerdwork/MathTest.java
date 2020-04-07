@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MathTest {
 
-    private static final VectorVariableBinding EMPTY_BINDING = new VectorVariableBinding(new VectorVariable(new ScalarVariable[0]), new ConstantVector(new double[0]));
+    private static final ScalarVariableBinding[] EMPTY_BINDING = new ScalarVariableBinding[0];
 
     @Test
     void multiplyByIdentityGivesSameMatrix() {
@@ -123,7 +123,7 @@ public class MathTest {
                          .collect(Collectors.toSet()));
 
         assertArgumentInvariant(multiplication.variables(), valuesByVar -> {
-            final VectorVariableBinding vectorVarBinding = vectorBindingOf(valuesByVar);
+            final ScalarVariableBinding[] vectorVarBinding = vectorBindingOf(valuesByVar);
             final Vector derivativeVector = derivative.apply(vectorVarBinding);
             final double firstVar = lookupVariable("w2(0,0)", valuesByVar);
             final double secondVar = lookupVariable("w2(1,0)", valuesByVar);
@@ -170,7 +170,7 @@ public class MathTest {
                          .collect(Collectors.toSet()));
 
         assertArgumentInvariant(multiplication.variables(), valuesByVar -> {
-            final VectorVariableBinding vectorVarBinding = vectorBindingOf(valuesByVar);
+            final ScalarVariableBinding[] vectorVarBinding = vectorBindingOf(valuesByVar);
             final Vector derivativeVector = derivative.apply(vectorVarBinding);
             final double firstVar = lookupVariable("w2(0,0)", valuesByVar);
             final double secondVar = lookupVariable("w2(1,0)", valuesByVar);
@@ -199,18 +199,9 @@ public class MathTest {
                           .orElseThrow(() -> new AssertionError("Couldn't find variable"));
     }
 
-    private VectorVariableBinding vectorBindingOf(List<ScalarVariableBinding> valuesByVar) {
-        final ScalarVariable[] scalarVars = valuesByVar.stream()
-                                                       .map(ScalarVariableBinding::variable)
-                                                       .toArray(ScalarVariable[]::new);
-
-        final double[] inputValues = valuesByVar.stream()
-                                                .mapToDouble(ScalarVariableBinding::value)
-                                                .toArray();
-        return new VectorVariableBinding(new VectorVariable(scalarVars), new ConstantVector(inputValues));
+    private ScalarVariableBinding[] vectorBindingOf(List<ScalarVariableBinding> valuesByVar) {
+        return valuesByVar.toArray(ScalarVariableBinding[]::new);
     }
-
-}
 
     private double randomDouble() {
         return (Math.random() - 0.5) * 100.0;

@@ -22,7 +22,7 @@ public record ConstantMatrix(double[][] values) implements MatrixFunction, Matri
     }
 
     @Override
-    public Matrix apply(VectorVariableBinding input) {
+    public Matrix apply(ScalarVariableBinding[] input) {
         return this;
     }
 

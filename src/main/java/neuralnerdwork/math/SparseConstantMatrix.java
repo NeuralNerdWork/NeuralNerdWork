@@ -5,7 +5,7 @@ import java.util.Set;
 
 public record SparseConstantMatrix(Map<Index, Double> values, int rows, int cols) implements MatrixFunction, Matrix {
     @Override
-    public Matrix apply(VectorVariableBinding input) {
+    public Matrix apply(ScalarVariableBinding[] input) {
         return this;
     }
 

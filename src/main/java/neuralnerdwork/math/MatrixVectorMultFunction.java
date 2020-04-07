@@ -6,7 +6,7 @@ import java.util.stream.Stream;
 
 public record MatrixVectorMultFunction(MatrixFunction left, VectorFunction right) implements VectorFunction {
     @Override
-    public Vector apply(VectorVariableBinding input) {
+    public Vector apply(ScalarVariableBinding[] input) {
         final Matrix leftValue = left.apply(input);
         final Vector rightValue = right.apply(input);
         assert leftValue.rows() == rightValue.length();
@@ -39,7 +39,7 @@ public record MatrixVectorMultFunction(MatrixFunction left, VectorFunction right
     }
 
     @Override
-    public MatrixFunction differentiate(VectorVariable variable) {
+    public MatrixFunction differentiate(ScalarVariable[] variable) {
         throw new UnsupportedOperationException("Not yet implemented!");
     }
 

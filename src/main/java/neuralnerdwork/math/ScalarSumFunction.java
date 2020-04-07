@@ -7,7 +7,7 @@ import java.util.stream.Stream;
 public record ScalarSumFunction(ScalarFunction left, ScalarFunction right) implements ScalarFunction {
 
     @Override
-    public double apply(VectorVariableBinding input) {
+    public double apply(ScalarVariableBinding[] input) {
         return left.apply(input) + right.apply(input);
     }
 
@@ -17,7 +17,7 @@ public record ScalarSumFunction(ScalarFunction left, ScalarFunction right) imple
     }
 
     @Override
-    public VectorFunction differentiate(VectorVariable variable) {
+    public VectorFunction differentiate(ScalarVariable[] variable) {
         return new VectorSumFunction(left.differentiate(variable), right.differentiate(variable));
     }
 

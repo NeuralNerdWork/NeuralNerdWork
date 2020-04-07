@@ -18,7 +18,7 @@ public record MatrixMultiplyFunction(MatrixFunction left, MatrixFunction right) 
     }
 
     @Override
-    public Matrix apply(VectorVariableBinding input) {
+    public Matrix apply(ScalarVariableBinding[] input) {
         final Matrix leftMatrix = left.apply(input);
         final Matrix rightMatrix = right.apply(input);
         assert leftMatrix.cols() == rightMatrix.rows() :

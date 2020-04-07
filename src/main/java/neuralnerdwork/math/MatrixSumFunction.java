@@ -26,7 +26,7 @@ public record MatrixSumFunction(MatrixFunction left, MatrixFunction right) imple
     }
 
     @Override
-    public Matrix apply(VectorVariableBinding input) {
+    public Matrix apply(ScalarVariableBinding[] input) {
         final Matrix leftMatrix = left.apply(input);
         final Matrix rightMatrix = right.apply(input);
         assert leftMatrix.rows() == rightMatrix.rows() && leftMatrix.cols() == rightMatrix.cols() :

@@ -17,12 +17,13 @@ public record ScalarComposition(ScalarFunction... functions) implements ScalarFu
     }
 
     @Override
-    public double apply(VectorVariableBinding input) {
+    public double apply(ScalarVariableBinding[] input) {
         double curOutput = functions[0].apply(input);
         for (int i = 1; i < functions.length; i++) {
             final ScalarFunction f = functions[i];
             final ScalarVariable variable = f.variables().iterator().next();
-            curOutput = f.apply(new VectorVariableBinding(new VectorVariable(new ScalarVariable[]{variable}), new ConstantVector(new double[]{curOutput})));
+            final ScalarVariableBinding[] binding = {new ScalarVariableBinding(variable, curOutput)};
+            curOutput = f.apply(binding);
         }
 
         return curOutput;
@@ -49,7 +50,7 @@ public record ScalarComposition(ScalarFunction... functions) implements ScalarFu
     }
 
     @Override
-    public VectorFunction differentiate(VectorVariable variable) {
+    public VectorFunction differentiate(ScalarVariable[] variable) {
         throw new UnsupportedOperationException("Not yet implemented!");
     }
 

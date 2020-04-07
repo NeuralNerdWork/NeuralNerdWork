@@ -7,7 +7,7 @@ import java.util.stream.Stream;
 public record ScalarMultiplicationFunction(ScalarFunction left,
                                            ScalarFunction right) implements ScalarFunction {
     @Override
-    public double apply(VectorVariableBinding input) {
+    public double apply(ScalarVariableBinding[] input) {
         return left.apply(input) * right.apply(input);
     }
 
@@ -31,7 +31,7 @@ public record ScalarMultiplicationFunction(ScalarFunction left,
     }
 
     @Override
-    public VectorFunction differentiate(VectorVariable variable) {
+    public VectorFunction differentiate(ScalarVariable[] variable) {
         throw new UnsupportedOperationException("Not yet implemented!");
     }
 

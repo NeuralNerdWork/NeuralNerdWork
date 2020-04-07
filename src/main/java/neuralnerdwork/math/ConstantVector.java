@@ -15,7 +15,7 @@ public record ConstantVector(double[] values) implements VectorFunction, Vector 
     }
 
     @Override
-    public Vector apply(VectorVariableBinding input) {
+    public Vector apply(ScalarVariableBinding[] input) {
         return this;
     }
 
@@ -25,8 +25,8 @@ public record ConstantVector(double[] values) implements VectorFunction, Vector 
     }
 
     @Override
-    public MatrixFunction differentiate(VectorVariable variable) {
-        return new ConstantMatrix(new double[values.length][variable.variables().length]);
+    public MatrixFunction differentiate(ScalarVariable[] variable) {
+        return new ConstantMatrix(new double[values.length][variable.length]);
     }
 
     @Override

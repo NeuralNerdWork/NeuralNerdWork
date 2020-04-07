@@ -9,7 +9,7 @@ import java.util.stream.Stream;
 public record DotProduct(VectorFunction left, VectorFunction right) implements ScalarFunction {
 
     @Override
-    public double apply(VectorVariableBinding input) {
+    public double apply(ScalarVariableBinding[] input) {
         final Vector lVector = left.apply(input);
         final Vector rVector = right.apply(input);
 
@@ -31,7 +31,7 @@ public record DotProduct(VectorFunction left, VectorFunction right) implements S
     }
 
     @Override
-    public VectorFunction differentiate(VectorVariable variable) {
+    public VectorFunction differentiate(ScalarVariable[] variable) {
         throw new UnsupportedOperationException("Not yet implemented!");
     }
 

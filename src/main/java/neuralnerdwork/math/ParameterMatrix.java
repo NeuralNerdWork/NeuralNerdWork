@@ -1,5 +1,6 @@
 package neuralnerdwork.math;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -8,27 +9,20 @@ import java.util.stream.Stream;
 
 public record ParameterMatrix(String variablePrefix, int rows, int cols) implements MatrixFunction {
     @Override
-    public Matrix apply(VectorVariableBinding argument) {
+    public Matrix apply(ScalarVariableBinding[] argument) {
         final double[][] values = new double[rows][cols];
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
-                final String indexSymbol = new MatrixIndexVariable(variablePrefix, i, j).symbol();
-                int valueIndex = getIndexOf(indexSymbol, argument.variable().variables());
-                values[i][j] = argument.value().get(valueIndex);
+                final MatrixIndexVariable indexVariable = new MatrixIndexVariable(variablePrefix, i, j);
+                final ScalarVariableBinding scalarVariableBinding = Arrays.stream(argument)
+                                                                          .filter(binding -> binding.variable().equals(indexVariable))
+                                                                          .findFirst()
+                                                                          .orElseThrow(() -> new IllegalStateException(String.format("Variable %s is not valid for [%s]", indexVariable.symbol(), this)));
+                values[i][j] = scalarVariableBinding.value();
             }
         }
 
         return new ConstantMatrix(values);
-    }
-
-    private int getIndexOf(String indexSymbol, ScalarVariable[] variables) {
-        for (int i = 0; i < variables.length; i++) {
-            if (Objects.equals(indexSymbol, variables[i].symbol())) {
-                return i;
-            }
-        }
-
-        throw new IllegalStateException(String.format("Variable %s is not valid for [%s]", indexSymbol, this));
     }
 
     @Override

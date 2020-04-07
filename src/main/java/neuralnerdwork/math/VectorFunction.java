@@ -1,7 +1,7 @@
 package neuralnerdwork.math;
 
 public interface VectorFunction extends Differentiable {
-    Vector apply(VectorVariableBinding input);
+    Vector apply(ScalarVariableBinding[] input);
     VectorFunction differentiate(ScalarVariable variable);
-    MatrixFunction differentiate(VectorVariable variable);
+    MatrixFunction differentiate(ScalarVariable[] variable);
 }

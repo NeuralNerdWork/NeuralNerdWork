@@ -5,7 +5,7 @@ import java.util.Set;
 public record ConstantScalar(double value) implements ScalarFunction {
 
     @Override
-    public double apply(VectorVariableBinding input) {
+    public double apply(ScalarVariableBinding[] input) {
         return value;
     }
 
@@ -15,8 +15,8 @@ public record ConstantScalar(double value) implements ScalarFunction {
     }
 
     @Override
-    public VectorFunction differentiate(VectorVariable variable) {
-        return new ConstantVector(new double[variable.variables().length]);
+    public VectorFunction differentiate(ScalarVariable[] variables) {
+        return new ConstantVector(new double[variables.length]);
     }
 
     @Override

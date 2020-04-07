@@ -3,6 +3,6 @@ package neuralnerdwork.math;
 public interface MatrixFunction extends Differentiable {
     int rows();
     int cols();
-    Matrix apply(VectorVariableBinding input);
+    Matrix apply(ScalarVariableBinding[] input);
     MatrixFunction differentiate(ScalarVariable argument);
 }

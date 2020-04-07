@@ -5,14 +5,12 @@ import java.util.Set;
 
 public record NegateScalar(ScalarVariable variable) implements ScalarFunction {
     @Override
-    public double apply(VectorVariableBinding input) {
-        final int indexOfArgument = Arrays.asList(input.variable().variables())
-                                          .indexOf(variable);
-        if (indexOfArgument < 0) {
-            throw new IllegalArgumentException(String.format("Cannot invoke function without variable %s", variable.symbol()));
-        }
-
-        final double value = input.value().get(indexOfArgument);
+    public double apply(ScalarVariableBinding[] input) {
+        final ScalarVariableBinding scalarVariableBinding = Arrays.stream(input)
+                                                                  .filter(binding -> binding.variable().equals(variable))
+                                                                  .findFirst()
+                                                                  .orElseThrow(() -> new IllegalArgumentException(String.format("Cannot invoke function without variable %s", variable.symbol())));
+        final double value = scalarVariableBinding.value();
         return -value;
     }
 
@@ -26,7 +24,7 @@ public record NegateScalar(ScalarVariable variable) implements ScalarFunction {
     }
 
     @Override
-    public VectorFunction differentiate(VectorVariable variable) {
+    public VectorFunction differentiate(ScalarVariable[] variable) {
         // Needs to return -1 for arguments that are this functions variable and 0 for others
         throw new UnsupportedOperationException("Not yet implemented!");
     }

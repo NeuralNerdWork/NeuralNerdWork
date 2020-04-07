@@ -6,7 +6,7 @@ import java.util.stream.Stream;
 
 public record VectorSumFunction(VectorFunction left, VectorFunction right) implements VectorFunction {
     @Override
-    public Vector apply(VectorVariableBinding input) {
+    public Vector apply(ScalarVariableBinding[] input) {
         final Vector left = this.left.apply(input);
         final Vector right = this.right.apply(input);
         final int length = Math.max(left.length(), right.length());
@@ -25,7 +25,7 @@ public record VectorSumFunction(VectorFunction left, VectorFunction right) imple
     }
 
     @Override
-    public MatrixFunction differentiate(VectorVariable variable) {
+    public MatrixFunction differentiate(ScalarVariable[] variable) {
         return new MatrixSumFunction(left.differentiate(variable), right.differentiate(variable));
     }
 

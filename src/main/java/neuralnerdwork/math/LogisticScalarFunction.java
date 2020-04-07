@@ -6,14 +6,13 @@ import java.util.Set;
 public record LogisticScalarFunction(ScalarVariable variable) implements ScalarFunction {
 
     @Override
-    public double apply(VectorVariableBinding input) {
-        final int indexOfArgument = Arrays.asList(input.variable().variables())
-                                          .indexOf(variable);
-        if (indexOfArgument < 0) {
-            throw new IllegalArgumentException(String.format("Cannot apply function without binding for variable %s", variable.symbol()));
-        }
+    public double apply(ScalarVariableBinding[] input) {
+        final ScalarVariableBinding scalarVariableBinding = Arrays.stream(input)
+                                                                  .filter(binding -> binding.variable().equals(variable))
+                                                                  .findFirst()
+                                                                  .orElseThrow(() -> new IllegalArgumentException(String.format("Cannot apply function without binding for variable %s", variable.symbol())));
 
-        final double value = input.value().get(indexOfArgument);
+        final double value = scalarVariableBinding.value();
         return logistic(value);
     }
 
@@ -32,7 +31,7 @@ public record LogisticScalarFunction(ScalarVariable variable) implements ScalarF
     }
 
     @Override
-    public VectorFunction differentiate(VectorVariable variable) {
+    public VectorFunction differentiate(ScalarVariable[] variable) {
         throw new UnsupportedOperationException("Not yet implemented!");
     }
 
