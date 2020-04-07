@@ -22,7 +22,7 @@ public record MatrixMultiplyFunction(MatrixFunction left, MatrixFunction right) 
         final Matrix leftMatrix = left.apply(input);
         final Matrix rightMatrix = right.apply(input);
         assert leftMatrix.cols() == rightMatrix.rows() :
-                String.format("Cannot multiply matrices of dimentions (%dx%d) and (%dx%d)",
+                String.format("Cannot multiply matrices of dimensions (%dx%d) and (%dx%d)",
                               leftMatrix.rows(),
                               leftMatrix.cols(),
                               rightMatrix.rows(),

@@ -5,13 +5,14 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class MatrixTest {
+public class MathTest {
 
     private static final VectorVariableBinding EMPTY_BINDING = new VectorVariableBinding(new VectorVariable(new ScalarVariable[0]), new ConstantVector(new double[0]));
 
@@ -79,37 +80,15 @@ public class MatrixTest {
                          .map(ScalarVariable::symbol)
                          .collect(Collectors.toSet()));
 
-        for (int attempt = 0; attempt < 3; attempt++) {
-            final List<ScalarVariableBinding> valuesByVar = multiplication.variables()
-                                                                          .stream()
-                                                                          .map(var -> new ScalarVariableBinding(var, randomDouble()))
-                                                                          .collect(toList());
-            final ScalarVariable[] scalarVars = valuesByVar.stream()
-                                                           .map(ScalarVariableBinding::variable)
-                                                           .toArray(ScalarVariable[]::new);
-
-            final double[] inputValues = valuesByVar.stream()
-                                                    .mapToDouble(ScalarVariableBinding::value)
-                                                    .toArray();
-
-            final VectorVariableBinding vectorVarBinding = new VectorVariableBinding(new VectorVariable(scalarVars), new ConstantVector(inputValues));
-            final Vector derivativeVector = derivative.apply(vectorVarBinding);
-            final double firstVar = valuesByVar.stream()
-                                               .filter(binding -> binding.variable().symbol().equals("w1(1,0)"))
-                                               .mapToDouble(ScalarVariableBinding::value)
-                                               .findFirst()
-                                               .orElseThrow(() -> new AssertionError("Couldn't find variable"));
-            final double secondVar = valuesByVar.stream()
-                                                .filter(binding -> binding.variable().symbol().equals("w1(1,1)"))
-                                                .mapToDouble(ScalarVariableBinding::value)
-                                                .findFirst()
-                                                .orElseThrow(() -> new AssertionError("Couldn't find variable"));
+        assertArgumentInvariant(multiplication.variables(), valuesByVar -> {
+            final Vector derivativeVector = derivative.apply(vectorBindingOf(valuesByVar));
+            final double firstVar = lookupVariable("w1(1,0)", valuesByVar);
+            final double secondVar = lookupVariable("w1(1,1)", valuesByVar);
 
             assertEquals(2, derivativeVector.length(), "Length not equal");
             assertEquals(firstVar - secondVar, derivativeVector.get(0), 0.0001);
             assertEquals(0.0, derivativeVector.get(1), 0.0001);
-        }
-
+        });
     }
 
     @Test
@@ -143,37 +122,16 @@ public class MatrixTest {
                          .map(ScalarVariable::symbol)
                          .collect(Collectors.toSet()));
 
-        for (int attempt = 0; attempt < 3; attempt++) {
-            final List<ScalarVariableBinding> valuesByVar = multiplication.variables()
-                                                                          .stream()
-                                                                          .map(var -> new ScalarVariableBinding(var, randomDouble()))
-                                                                          .collect(toList());
-            final ScalarVariable[] scalarVars = valuesByVar.stream()
-                                                           .map(ScalarVariableBinding::variable)
-                                                           .toArray(ScalarVariable[]::new);
-
-            final double[] inputValues = valuesByVar.stream()
-                                               .mapToDouble(ScalarVariableBinding::value)
-                                               .toArray();
-
-            final VectorVariableBinding vectorVarBinding = new VectorVariableBinding(new VectorVariable(scalarVars), new ConstantVector(inputValues));
+        assertArgumentInvariant(multiplication.variables(), valuesByVar -> {
+            final VectorVariableBinding vectorVarBinding = vectorBindingOf(valuesByVar);
             final Vector derivativeVector = derivative.apply(vectorVarBinding);
-            final double firstVar = valuesByVar.stream()
-                                               .filter(binding -> binding.variable().symbol().equals("w2(0,0)"))
-                                               .mapToDouble(ScalarVariableBinding::value)
-                                               .findFirst()
-                                               .orElseThrow(() -> new AssertionError("Couldn't find variable"));
-            final double secondVar = valuesByVar.stream()
-                                                .filter(binding -> binding.variable().symbol().equals("w2(1,0)"))
-                                                .mapToDouble(ScalarVariableBinding::value)
-                                                .findFirst()
-                                                .orElseThrow(() -> new AssertionError("Couldn't find variable"));
+            final double firstVar = lookupVariable("w2(0,0)", valuesByVar);
+            final double secondVar = lookupVariable("w2(1,0)", valuesByVar);
 
             assertEquals(2, derivativeVector.length(), "Length not equal");
             assertEquals(-1.0 * firstVar, derivativeVector.get(0), 0.0001);
             assertEquals(-1.0 * secondVar, derivativeVector.get(1), 0.0001);
-        }
-
+        });
     }
 
     /*
@@ -211,38 +169,48 @@ public class MatrixTest {
                          .map(ScalarVariable::symbol)
                          .collect(Collectors.toSet()));
 
-        for (int attempt = 0; attempt < 3; attempt++) {
-            final List<ScalarVariableBinding> valuesByVar = multiplication.variables()
-                                                                          .stream()
-                                                                          .map(var -> new ScalarVariableBinding(var, randomDouble()))
-                                                                          .collect(toList());
-            final ScalarVariable[] scalarVars = valuesByVar.stream()
-                                                           .map(ScalarVariableBinding::variable)
-                                                           .toArray(ScalarVariable[]::new);
-
-            final double[] inputValues = valuesByVar.stream()
-                                                    .mapToDouble(ScalarVariableBinding::value)
-                                                    .toArray();
-
-            final VectorVariableBinding vectorVarBinding = new VectorVariableBinding(new VectorVariable(scalarVars), new ConstantVector(inputValues));
+        assertArgumentInvariant(multiplication.variables(), valuesByVar -> {
+            final VectorVariableBinding vectorVarBinding = vectorBindingOf(valuesByVar);
             final Vector derivativeVector = derivative.apply(vectorVarBinding);
-            final double firstVar = valuesByVar.stream()
-                                               .filter(binding -> binding.variable().symbol().equals("w2(0,0)"))
-                                               .mapToDouble(ScalarVariableBinding::value)
-                                               .findFirst()
-                                               .orElseThrow(() -> new AssertionError("Couldn't find variable"));
-            final double secondVar = valuesByVar.stream()
-                                                .filter(binding -> binding.variable().symbol().equals("w2(1,0)"))
-                                                .mapToDouble(ScalarVariableBinding::value)
-                                                .findFirst()
-                                                .orElseThrow(() -> new AssertionError("Couldn't find variable"));
+            final double firstVar = lookupVariable("w2(0,0)", valuesByVar);
+            final double secondVar = lookupVariable("w2(1,0)", valuesByVar);
 
             assertEquals(2, derivativeVector.length(), "Length not equal");
             assertEquals(-1.0 * firstVar, derivativeVector.get(0), 0.0001);
             assertEquals(-1.0 * secondVar, derivativeVector.get(1), 0.0001);
+        });
+    }
+
+    private void assertArgumentInvariant(Set<ScalarVariable> variables, Consumer<List<ScalarVariableBinding>> assertions) {
+        for (int attempt = 0; attempt < 3; attempt++) {
+            final List<ScalarVariableBinding> valuesByVar = variables.stream()
+                                                                     .map(var -> new ScalarVariableBinding(var, randomDouble()))
+                                                                     .collect(toList());
+            assertions.accept(valuesByVar);
         }
 
     }
+
+    private double lookupVariable(String variableSymbol, List<ScalarVariableBinding> valuesByVar) {
+        return valuesByVar.stream()
+                          .filter(binding -> binding.variable().symbol().equals(variableSymbol))
+                          .mapToDouble(ScalarVariableBinding::value)
+                          .findFirst()
+                          .orElseThrow(() -> new AssertionError("Couldn't find variable"));
+    }
+
+    private VectorVariableBinding vectorBindingOf(List<ScalarVariableBinding> valuesByVar) {
+        final ScalarVariable[] scalarVars = valuesByVar.stream()
+                                                       .map(ScalarVariableBinding::variable)
+                                                       .toArray(ScalarVariable[]::new);
+
+        final double[] inputValues = valuesByVar.stream()
+                                                .mapToDouble(ScalarVariableBinding::value)
+                                                .toArray();
+        return new VectorVariableBinding(new VectorVariable(scalarVars), new ConstantVector(inputValues));
+    }
+
+}
 
     private double randomDouble() {
         return (Math.random() - 0.5) * 100.0;
