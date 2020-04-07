@@ -3,18 +3,12 @@ package neuralnerdwork;
 import neuralnerdwork.math.*;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MathTest {
-
-    private static final ScalarVariableBinding[] EMPTY_BINDING = new ScalarVariableBinding[0];
 
     @Test
     void multiplyByIdentityGivesSameMatrix() {
@@ -39,10 +33,10 @@ public class MathTest {
                 )
         );
 
-        final Matrix result = multiplication.apply(EMPTY_BINDING);
+        final Matrix result = multiplication.apply(new double[0]);
         final MatrixEqualityComparator comparison = new MatrixEqualityComparator();
 
-        final Matrix expected = other.apply(EMPTY_BINDING);
+        final Matrix expected = other.apply(new double[0]);
         assertTrue(comparison.equal(expected, result, 0.0001),
                    String.format("Multiplying by identity was not equal\nExpected\n%s\nObserved\n%s\n",
                                  expected,
@@ -52,8 +46,8 @@ public class MathTest {
     @Test
     void twoMatrixPlusVectorDerivativeInOuterMatrix() {
         // https://www.wolframalpha.com/input/?i=derivative+of+%7B%7Ba%2Cb%7D%2C%7Bc%2Cd%7D%7D%7B%7Be%2Cf%7D%2C%7Bg%2Ch%7D%7D%7B%7B1%7D%2C%7B-1%7D%7D+by+b
-        final ParameterMatrix w1 = new ParameterMatrix("w1", 2, 2);
-        final ParameterMatrix w2 = new ParameterMatrix("w2", 2, 2);
+        final ParameterMatrix w1 = new ParameterMatrix(0, 2, 2);
+        final ParameterMatrix w2 = new ParameterMatrix(4, 2, 2);
         final VectorFunction vector = new ConstantVector(new double[] { 1.0, -1.0 });
         final MatrixVectorMultFunction multiplication = new MatrixVectorMultFunction(
                 new MatrixMultiplyFunction(
@@ -63,27 +57,13 @@ public class MathTest {
                 vector
         );
 
-        final ScalarVariable variable = w2.variableFor(0, 1);
-        final VectorFunction derivative = multiplication.differentiate(variable);
+        final int variableIndex = w2.indexFor(0, 1);
+        final VectorFunction derivative = multiplication.differentiate(variableIndex);
 
-        assertEquals(Set.of(
-                "w1(0,0)",
-                "w1(1,0)",
-                "w1(0,1)",
-                "w1(1,1)",
-                "w2(0,0)",
-                "w2(1,0)",
-                "w2(0,1)",
-                "w2(1,1)"
-        ), multiplication.variables()
-                         .stream()
-                         .map(ScalarVariable::symbol)
-                         .collect(Collectors.toSet()));
-
-        assertArgumentInvariant(multiplication.variables(), valuesByVar -> {
-            final Vector derivativeVector = derivative.apply(vectorBindingOf(valuesByVar));
-            final double firstVar = lookupVariable("w1(1,0)", valuesByVar);
-            final double secondVar = lookupVariable("w1(1,1)", valuesByVar);
+        assertArgumentInvariant(8, values -> {
+            final Vector derivativeVector = derivative.apply(values);
+            final double firstVar = values[w1.indexFor(1, 0)];
+            final double secondVar = values[w1.indexFor(1, 1)];
 
             assertEquals(2, derivativeVector.length(), "Length not equal");
             assertEquals(firstVar - secondVar, derivativeVector.get(0), 0.0001);
@@ -94,8 +74,8 @@ public class MathTest {
     @Test
     void twoMatrixPlusVectorDerivativeInInnerMatrix() {
         // https://www.wolframalpha.com/input/?i=derivative+of+%7B%7Ba%2Cb%7D%2C%7Bc%2Cd%7D%7D%7B%7Be%2Cf%7D%2C%7Bg%2Ch%7D%7D%7B%7B1%7D%2C%7B-1%7D%7D+by+f
-        final ParameterMatrix w1 = new ParameterMatrix("w1", 2, 2);
-        final ParameterMatrix w2 = new ParameterMatrix("w2", 2, 2);
+        final ParameterMatrix w1 = new ParameterMatrix(0, 2, 2);
+        final ParameterMatrix w2 = new ParameterMatrix(4, 2, 2);
         final VectorFunction vector = new ConstantVector(new double[] { 1.0, -1.0 });
         final MatrixVectorMultFunction multiplication = new MatrixVectorMultFunction(
                 new MatrixMultiplyFunction(
@@ -105,28 +85,13 @@ public class MathTest {
                 vector
         );
 
-        final ScalarVariable variable = w1.variableFor(0, 1);
-        final VectorFunction derivative = multiplication.differentiate(variable);
+        final int variableIndex = w1.indexFor(0, 1);
+        final VectorFunction derivative = multiplication.differentiate(variableIndex);
 
-        assertEquals(Set.of(
-                "w1(0,0)",
-                "w1(1,0)",
-                "w1(0,1)",
-                "w1(1,1)",
-                "w2(0,0)",
-                "w2(1,0)",
-                "w2(0,1)",
-                "w2(1,1)"
-        ), multiplication.variables()
-                         .stream()
-                         .map(ScalarVariable::symbol)
-                         .collect(Collectors.toSet()));
-
-        assertArgumentInvariant(multiplication.variables(), valuesByVar -> {
-            final ScalarVariableBinding[] vectorVarBinding = vectorBindingOf(valuesByVar);
-            final Vector derivativeVector = derivative.apply(vectorVarBinding);
-            final double firstVar = lookupVariable("w2(0,0)", valuesByVar);
-            final double secondVar = lookupVariable("w2(1,0)", valuesByVar);
+        assertArgumentInvariant(8, values -> {
+            final Vector derivativeVector = derivative.apply(values);
+            final double firstVar = values[w2.indexFor(0, 0)];
+            final double secondVar = values[w2.indexFor(1, 0)];
 
             assertEquals(2, derivativeVector.length(), "Length not equal");
             assertEquals(-1.0 * firstVar, derivativeVector.get(0), 0.0001);
@@ -141,8 +106,8 @@ public class MathTest {
     @Test
     void associativityOfDerivative() {
         // https://www.wolframalpha.com/input/?i=derivative+of+%7B%7Ba%2Cb%7D%2C%7Bc%2Cd%7D%7D%7B%7Be%2Cf%7D%2C%7Bg%2Ch%7D%7D%7B%7B1%7D%2C%7B-1%7D%7D+by+f
-        final ParameterMatrix w1 = new ParameterMatrix("w1", 2, 2);
-        final ParameterMatrix w2 = new ParameterMatrix("w2", 2, 2);
+        final ParameterMatrix w1 = new ParameterMatrix(0, 2, 2);
+        final ParameterMatrix w2 = new ParameterMatrix(4, 2, 2);
         final VectorFunction vector = new ConstantVector(new double[] { 1.0, -1.0 });
         final MatrixVectorMultFunction multiplication = new MatrixVectorMultFunction(
                 w2,
@@ -152,28 +117,13 @@ public class MathTest {
                 )
         );
 
-        final ScalarVariable variable = w1.variableFor(0, 1);
-        final VectorFunction derivative = multiplication.differentiate(variable);
+        final int variableIndex = w1.indexFor(0, 1);
+        final VectorFunction derivative = multiplication.differentiate(variableIndex);
 
-        assertEquals(Set.of(
-                "w1(0,0)",
-                "w1(1,0)",
-                "w1(0,1)",
-                "w1(1,1)",
-                "w2(0,0)",
-                "w2(1,0)",
-                "w2(0,1)",
-                "w2(1,1)"
-        ), multiplication.variables()
-                         .stream()
-                         .map(ScalarVariable::symbol)
-                         .collect(Collectors.toSet()));
-
-        assertArgumentInvariant(multiplication.variables(), valuesByVar -> {
-            final ScalarVariableBinding[] vectorVarBinding = vectorBindingOf(valuesByVar);
-            final Vector derivativeVector = derivative.apply(vectorVarBinding);
-            final double firstVar = lookupVariable("w2(0,0)", valuesByVar);
-            final double secondVar = lookupVariable("w2(1,0)", valuesByVar);
+        assertArgumentInvariant(8, values -> {
+            final Vector derivativeVector = derivative.apply(values);
+            final double firstVar = values[w2.indexFor(0, 0)];
+            final double secondVar = values[w2.indexFor(1, 0)];
 
             assertEquals(2, derivativeVector.length(), "Length not equal");
             assertEquals(-1.0 * firstVar, derivativeVector.get(0), 0.0001);
@@ -181,26 +131,15 @@ public class MathTest {
         });
     }
 
-    private void assertArgumentInvariant(Set<ScalarVariable> variables, Consumer<List<ScalarVariableBinding>> assertions) {
+    private void assertArgumentInvariant(int length, Consumer<double[]> assertions) {
         for (int attempt = 0; attempt < 3; attempt++) {
-            final List<ScalarVariableBinding> valuesByVar = variables.stream()
-                                                                     .map(var -> new ScalarVariableBinding(var, randomDouble()))
-                                                                     .collect(toList());
-            assertions.accept(valuesByVar);
+            final double[] values = new double[length];
+            for (int i = 0; i < length; i++) {
+                values[i] = randomDouble();
+            }
+            assertions.accept(values);
         }
 
-    }
-
-    private double lookupVariable(String variableSymbol, List<ScalarVariableBinding> valuesByVar) {
-        return valuesByVar.stream()
-                          .filter(binding -> binding.variable().symbol().equals(variableSymbol))
-                          .mapToDouble(ScalarVariableBinding::value)
-                          .findFirst()
-                          .orElseThrow(() -> new AssertionError("Couldn't find variable"));
-    }
-
-    private ScalarVariableBinding[] vectorBindingOf(List<ScalarVariableBinding> valuesByVar) {
-        return valuesByVar.toArray(ScalarVariableBinding[]::new);
     }
 
     private double randomDouble() {

@@ -1,12 +1,8 @@
 package neuralnerdwork.math;
 
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 public record MatrixVectorMultFunction(MatrixFunction left, VectorFunction right) implements VectorFunction {
     @Override
-    public Vector apply(ScalarVariableBinding[] input) {
+    public Vector apply(double[] input) {
         final Matrix leftValue = left.apply(input);
         final Vector rightValue = right.apply(input);
         assert leftValue.rows() == rightValue.length();
@@ -22,33 +18,23 @@ public record MatrixVectorMultFunction(MatrixFunction left, VectorFunction right
     }
 
     @Override
-    public VectorFunction differentiate(ScalarVariable variable) {
-        final boolean leftContains = left.variables().contains(variable);
-        final boolean rightContains = right.variables().contains(variable);
-        if (leftContains && rightContains) {
-            throw new UnsupportedOperationException("Not yet implemented!");
-        } else if (leftContains) {
-            final MatrixFunction leftDerivative = left.differentiate(variable);
-            return new MatrixVectorMultFunction(leftDerivative, right);
-        } else if (rightContains) {
-            final VectorFunction rightDerivative = right.differentiate(variable);
-            return new MatrixVectorMultFunction(left, rightDerivative);
-        } else {
-            return new ConstantVector(new double[left.rows()]);
-        }
-    }
+    public VectorFunction differentiate(int variableIndex) {
+        // Uses product rule
+        // (Fg)' = F'g + Fg'
+        // TODO optimize for constant case
 
-    @Override
-    public MatrixFunction differentiate(ScalarVariable[] variable) {
-        throw new UnsupportedOperationException("Not yet implemented!");
-    }
+        final MatrixFunction leftDerivative = left.differentiate(variableIndex);
+        final VectorFunction rightDerivative = right.differentiate(variableIndex);
 
-    @Override
-    public Set<ScalarVariable> variables() {
-        return Stream.concat(left.variables()
-                                 .stream(),
-                             right.variables()
-                                  .stream())
-                     .collect(Collectors.toSet());
+        return new VectorSumFunction(
+                new MatrixVectorMultFunction(
+                        leftDerivative,
+                        right
+                ),
+                new MatrixVectorMultFunction(
+                        left,
+                        rightDerivative
+                )
+        );
     }
 }

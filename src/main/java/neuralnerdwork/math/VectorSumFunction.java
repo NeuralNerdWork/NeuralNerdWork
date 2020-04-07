@@ -1,12 +1,8 @@
 package neuralnerdwork.math;
 
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 public record VectorSumFunction(VectorFunction left, VectorFunction right) implements VectorFunction {
     @Override
-    public Vector apply(ScalarVariableBinding[] input) {
+    public Vector apply(double[] input) {
         final Vector left = this.left.apply(input);
         final Vector right = this.right.apply(input);
         final int length = Math.max(left.length(), right.length());
@@ -20,21 +16,7 @@ public record VectorSumFunction(VectorFunction left, VectorFunction right) imple
     }
 
     @Override
-    public VectorFunction differentiate(ScalarVariable variable) {
-        return new VectorSumFunction(left.differentiate(variable), right.differentiate(variable));
-    }
-
-    @Override
-    public MatrixFunction differentiate(ScalarVariable[] variable) {
-        return new MatrixSumFunction(left.differentiate(variable), right.differentiate(variable));
-    }
-
-    @Override
-    public Set<ScalarVariable> variables() {
-        return Stream.concat(left.variables()
-                                 .stream(),
-                             right.variables()
-                                  .stream())
-                     .collect(Collectors.toSet());
+    public VectorFunction differentiate(int variableIndex) {
+        return new VectorSumFunction(left.differentiate(variableIndex), right.differentiate(variableIndex));
     }
 }

@@ -1,8 +1,8 @@
 package neuralnerdwork.math;
 
-public interface MatrixFunction extends Differentiable {
+public interface MatrixFunction {
     int rows();
     int cols();
-    Matrix apply(ScalarVariableBinding[] input);
-    MatrixFunction differentiate(ScalarVariable argument);
+    Matrix apply(double[] inputs);
+    MatrixFunction differentiate(int variableIndex);
 }

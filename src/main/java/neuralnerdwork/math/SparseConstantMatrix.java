@@ -1,22 +1,16 @@
 package neuralnerdwork.math;
 
 import java.util.Map;
-import java.util.Set;
 
 public record SparseConstantMatrix(Map<Index, Double> values, int rows, int cols) implements MatrixFunction, Matrix {
     @Override
-    public Matrix apply(ScalarVariableBinding[] input) {
+    public Matrix apply(double[] input) {
         return this;
     }
 
     @Override
-    public MatrixFunction differentiate(ScalarVariable argument) {
+    public MatrixFunction differentiate(int variableIndex) {
         return new SparseConstantMatrix(Map.of(), rows, cols);
-    }
-
-    @Override
-    public Set<ScalarVariable> variables() {
-        return Set.of();
     }
 
     @Override

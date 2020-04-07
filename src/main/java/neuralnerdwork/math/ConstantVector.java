@@ -1,7 +1,5 @@
 package neuralnerdwork.math;
 
-import java.util.Set;
-
 public record ConstantVector(double[] values) implements VectorFunction, Vector {
 
     @Override
@@ -15,22 +13,12 @@ public record ConstantVector(double[] values) implements VectorFunction, Vector 
     }
 
     @Override
-    public Vector apply(ScalarVariableBinding[] input) {
+    public Vector apply(double[] input) {
         return this;
     }
 
     @Override
-    public VectorFunction differentiate(ScalarVariable variable) {
+    public VectorFunction differentiate(int variableIndex) {
         return new ConstantVector(new double[values.length]);
-    }
-
-    @Override
-    public MatrixFunction differentiate(ScalarVariable[] variable) {
-        return new ConstantMatrix(new double[values.length][variable.length]);
-    }
-
-    @Override
-    public Set<ScalarVariable> variables() {
-        return Set.of();
     }
 }

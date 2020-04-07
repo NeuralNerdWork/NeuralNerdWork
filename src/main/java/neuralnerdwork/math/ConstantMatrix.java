@@ -22,18 +22,13 @@ public record ConstantMatrix(double[][] values) implements MatrixFunction, Matri
     }
 
     @Override
-    public Matrix apply(ScalarVariableBinding[] input) {
+    public Matrix apply(double[] inputs) {
         return this;
     }
 
     @Override
-    public MatrixFunction differentiate(ScalarVariable variable) {
+    public MatrixFunction differentiate(int variableIndex) {
         return new ConstantMatrix(new double[rows()][cols()]);
-    }
-
-    @Override
-    public Set<ScalarVariable> variables() {
-        return Set.of();
     }
 
     @Override

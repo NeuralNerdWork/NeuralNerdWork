@@ -1,9 +1,5 @@
 package neuralnerdwork.math;
 
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 public record MatrixSumFunction(MatrixFunction left, MatrixFunction right) implements MatrixFunction {
     public MatrixSumFunction {
         if (left.rows() != right.rows() || left.cols() != right.cols()) {
@@ -26,7 +22,7 @@ public record MatrixSumFunction(MatrixFunction left, MatrixFunction right) imple
     }
 
     @Override
-    public Matrix apply(ScalarVariableBinding[] input) {
+    public Matrix apply(double[] input) {
         final Matrix leftMatrix = left.apply(input);
         final Matrix rightMatrix = right.apply(input);
         assert leftMatrix.rows() == rightMatrix.rows() && leftMatrix.cols() == rightMatrix.cols() :
@@ -55,17 +51,7 @@ public record MatrixSumFunction(MatrixFunction left, MatrixFunction right) imple
     }
 
     @Override
-    public MatrixFunction differentiate(ScalarVariable variable) {
-        return new MatrixSumFunction(left.differentiate(variable), right.differentiate(variable));
-    }
-
-    @Override
-    public Set<ScalarVariable> variables() {
-        return Stream.concat(
-                left.variables()
-                    .stream(),
-                right.variables()
-                     .stream()
-        ).collect(Collectors.toSet());
+    public MatrixFunction differentiate(int variableIndex) {
+        return new MatrixSumFunction(left.differentiate(variableIndex), right.differentiate(variableIndex));
     }
 }

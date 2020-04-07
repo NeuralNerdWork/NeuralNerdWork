@@ -1,20 +1,16 @@
 package neuralnerdwork.math;
 
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 public record ScalarMultiplicationFunction(ScalarFunction left,
                                            ScalarFunction right) implements ScalarFunction {
     @Override
-    public double apply(ScalarVariableBinding[] input) {
+    public double apply(double[] input) {
         return left.apply(input) * right.apply(input);
     }
 
     @Override
-    public ScalarFunction differentiate(ScalarVariable variable) {
-        final ScalarFunction leftDerivative = left.differentiate(variable);
-        final ScalarFunction rightDerivative = right.differentiate(variable);
+    public ScalarFunction differentiate(int variableIndex) {
+        final ScalarFunction leftDerivative = left.differentiate(variableIndex);
+        final ScalarFunction rightDerivative = right.differentiate(variableIndex);
 
         // Product rule
         // (fg)' = f'g + fg'
@@ -28,18 +24,5 @@ public record ScalarMultiplicationFunction(ScalarFunction left,
                         rightDerivative
                 )
         );
-    }
-
-    @Override
-    public VectorFunction differentiate(ScalarVariable[] variable) {
-        throw new UnsupportedOperationException("Not yet implemented!");
-    }
-
-    @Override
-    public Set<ScalarVariable> variables() {
-        return Stream.concat(
-                left.variables().stream(),
-                right.variables().stream()
-        ).collect(Collectors.toSet());
     }
 }

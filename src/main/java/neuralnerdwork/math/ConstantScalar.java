@@ -1,26 +1,14 @@
 package neuralnerdwork.math;
 
-import java.util.Set;
-
 public record ConstantScalar(double value) implements ScalarFunction {
 
     @Override
-    public double apply(ScalarVariableBinding[] input) {
+    public double apply(double[] input) {
         return value;
     }
 
     @Override
-    public ScalarFunction differentiate(ScalarVariable variable) {
+    public ScalarFunction differentiate(int variableIndex) {
         return new ConstantScalar(0.0);
-    }
-
-    @Override
-    public VectorFunction differentiate(ScalarVariable[] variables) {
-        return new ConstantVector(new double[variables.length]);
-    }
-
-    @Override
-    public Set<ScalarVariable> variables() {
-        return Set.of();
     }
 }
