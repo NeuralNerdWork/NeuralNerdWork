@@ -1,13 +1,14 @@
 package neuralnerdwork.math;
 
-public class NegateScalar implements ScalarFunction {
+public class NegateScalar implements SingleVariableFunction {
     @Override
-    public double apply(double[] input) {
-        if (input.length != 1) {
-            throw new IllegalArgumentException("negation only works on scalar input");
-        }
+    public double apply(double input) {
+        return -input;
+    }
 
-        return -input[0];
+    @Override
+    public SingleVariableFunction differentiateBySingleVariable() {
+        return new ConstantScalar(-1.0);
     }
 
     @Override
