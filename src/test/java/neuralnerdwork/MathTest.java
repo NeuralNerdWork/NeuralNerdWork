@@ -4,9 +4,12 @@ import neuralnerdwork.math.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static java.lang.String.format;
 import static org.junit.jupiter.api.Assertions.*;
@@ -254,6 +257,50 @@ public class MathTest {
         });
     }
 
+    @Test
+    void derivativeOfManyLayers() {
+        final int rows = 10;
+        final int cols = 10;
+        final int numLayers = 100;
+
+        final ConstantVector trainingInput = new ConstantVector(randomDoubles(cols));
+
+        final SingleVariableLogisticFunction logistic = new SingleVariableLogisticFunction();
+        final SingleVariableFunction[] activations = new SingleVariableFunction[rows];
+        Arrays.fill(activations, logistic);
+        final VectorizedSingleVariableFunctions activationFunction = new VectorizedSingleVariableFunctions(activations);
+
+        VectorFunction networkFunction = trainingInput;
+        for (int i = 0; i < numLayers; i++) {
+            networkFunction = new VectorFunctionComposition(
+                    new MatrixVectorProductFunction(
+                            new ParameterMatrix(i*rows*cols, rows, cols),
+                            networkFunction
+                    ),
+                    activationFunction);
+        }
+
+        // TODO should make a scalar multiple combinator
+        final ConstantVector negatedTrainingOutput = new ConstantVector(randomDoubles(rows));
+        final VectorSumFunction error = new VectorSumFunction(networkFunction, negatedTrainingOutput);
+        // TODO should make a square combinator; this will differentiate error twice
+        final DotProduct squaredError = new DotProduct(error, error);
+
+        final VectorFunction derivative = logTiming("Computed derivative function", squaredError::differentiate);
+
+        assertArgumentInvariant(numLayers*rows*cols, values -> {
+            logTiming("Applied derivative function", () -> derivative.apply(values));
+        });
+    }
+
+    private <T> T logTiming(String actionName, Supplier<T> action) {
+        final Instant start = Instant.now();
+        final T retVal = action.get();
+        final Duration duration = Duration.between(start, Instant.now());
+        System.out.printf("%s function in %d ms\n", actionName, duration.toMillis());
+        return retVal;
+    }
+
     private double logisticDerivative(double x) {
         return logistic(x) * logistic(-x);
     }
@@ -264,13 +311,18 @@ public class MathTest {
 
     private void assertArgumentInvariant(int length, Consumer<double[]> assertions) {
         for (int attempt = 0; attempt < 3; attempt++) {
-            final double[] values = new double[length];
-            for (int i = 0; i < length; i++) {
-                values[i] = randomDouble();
-            }
+            final double[] values = randomDoubles(length);
             assertions.accept(values);
         }
 
+    }
+
+    private double[] randomDoubles(int length) {
+        final double[] values = new double[length];
+        for (int i = 0; i < length; i++) {
+            values[i] = randomDouble();
+        }
+        return values;
     }
 
     private double randomDouble() {
