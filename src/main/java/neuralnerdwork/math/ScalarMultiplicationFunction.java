@@ -2,6 +2,12 @@ package neuralnerdwork.math;
 
 public record ScalarMultiplicationFunction(ScalarFunction left,
                                            ScalarFunction right) implements ScalarFunction {
+
+    @Override
+    public int inputLength() {
+        return Math.max(left.inputLength(), right.inputLength());
+    }
+
     @Override
     public double apply(double[] input) {
         return left.apply(input) * right.apply(input);

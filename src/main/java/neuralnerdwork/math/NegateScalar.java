@@ -1,6 +1,7 @@
 package neuralnerdwork.math;
 
 public class NegateScalar implements SingleVariableFunction {
+
     @Override
     public double apply(double input) {
         return -input;

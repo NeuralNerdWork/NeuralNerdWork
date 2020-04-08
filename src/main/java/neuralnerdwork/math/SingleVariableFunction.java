@@ -11,6 +11,11 @@ public interface SingleVariableFunction extends ScalarFunction {
     }
 
     @Override
+    default int inputLength() {
+        return 1;
+    }
+
+    @Override
     default ScalarFunction differentiate(int variableIndex) {
         if (variableIndex != 1) {
             throw new IllegalArgumentException("only applicable for single variable");

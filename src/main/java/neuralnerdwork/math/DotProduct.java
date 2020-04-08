@@ -1,12 +1,11 @@
 package neuralnerdwork.math;
 
-import com.sun.security.auth.UnixNumericGroupPrincipal;
-
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 public record DotProduct(VectorFunction left, VectorFunction right) implements ScalarFunction {
+
+    @Override
+    public int inputLength() {
+        return Math.max(left.inputLength(), right.inputLength());
+    }
 
     @Override
     public double apply(double[] input) {
