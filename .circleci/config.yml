@@ -12,4 +12,4 @@ workflows:
   maven_test:
     jobs:
       - maven/test:
-          executor: java_11
+          executor: "java_14"
