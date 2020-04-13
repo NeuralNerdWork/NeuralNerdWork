@@ -1,5 +1,8 @@
 version: 2.1
 
+docker:
+- image: circleci/openjdk:14-jdk-buster
+
 orbs:
   maven: circleci/maven@0.0.12
 
