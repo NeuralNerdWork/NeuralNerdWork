@@ -6,10 +6,10 @@ orbs:
 executors:
   java_14:
     docker:
-      image: circleci/openjdk:14-jdk-buster
+      - image: "circleci/openjdk:14-jdk-buster"
 
 workflows:
   maven_test:
     jobs:
-      - maven/test # checkout, build, test, and upload test results
-          executor: java_11
+      - maven/test:
+          executor: "java_14"
