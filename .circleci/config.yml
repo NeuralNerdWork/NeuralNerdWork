@@ -11,5 +11,5 @@ executors:
 workflows:
   maven_test:
     jobs:
-      - maven/test # checkout, build, test, and upload test results
+      - maven/test:
           executor: java_11
