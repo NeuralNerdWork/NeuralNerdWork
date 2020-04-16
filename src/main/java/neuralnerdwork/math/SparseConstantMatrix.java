@@ -2,20 +2,23 @@ package neuralnerdwork.math;
 
 import java.util.Map;
 
-public record SparseConstantMatrix(Map<Index, Double> values, int rows, int cols) implements MatrixFunction, Matrix {
+public record SparseConstantMatrix(Map<Index, Double> values, int rows, int cols) implements MatrixExpression, Matrix {
     @Override
-    public Matrix apply(double[] input) {
+    public Matrix evaluate(Model.Binder bindings) {
         return this;
     }
 
     @Override
-    public int inputLength() {
-        return 0;
+    public MatrixExpression computePartialDerivative(int variable) {
+        return new SparseConstantMatrix(Map.of(), rows, cols);
     }
 
     @Override
-    public MatrixFunction differentiate(int variableIndex) {
-        return new SparseConstantMatrix(Map.of(), rows, cols);
+    public boolean isZero() {
+        return values.values()
+                     .stream()
+                     .mapToDouble(n -> n)
+                     .allMatch(n -> n == 0.0);
     }
 
     @Override

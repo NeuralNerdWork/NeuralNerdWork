@@ -1,29 +1,39 @@
 package neuralnerdwork.math;
 
-public interface SingleVariableFunction extends ScalarFunction {
-    @Override
-    default double apply(double[] inputs) {
-        if (inputs.length != 1) {
-            throw new IllegalArgumentException("only applicable for single variable");
-        }
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
-        return apply(inputs[0]);
-    }
-
-    @Override
-    default int inputLength() {
-        return 1;
-    }
-
-    @Override
-    default ScalarFunction differentiate(int variableIndex) {
-        if (variableIndex != 1) {
-            throw new IllegalArgumentException("only applicable for single variable");
-        }
-
-        return differentiateBySingleVariable();
-    }
+public interface SingleVariableFunction {
 
     double apply(double input);
-    SingleVariableFunction differentiateBySingleVariable();
+    SingleVariableFunction differentiateByInput();
+
+    default ScalarExpression invoke(ScalarExpression inputExpression) {
+        return new Invocation(inputExpression, this);
+    }
+
+    class Invocation implements ScalarExpression {
+        private final ScalarExpression inputExpression;
+        @JsonIgnore
+        private final SingleVariableFunction function;
+
+        public Invocation(ScalarExpression inputExpression, SingleVariableFunction function) {
+            this.inputExpression = inputExpression;
+            this.function = function;
+        }
+
+        @Override
+        public double evaluate(Model.Binder bindings) {
+            return function.apply(inputExpression.evaluate(bindings));
+        }
+
+        @Override
+        public ScalarExpression computePartialDerivative(int variable) {
+            return ScalarProduct.product(function.differentiateByInput().invoke(inputExpression), inputExpression.computePartialDerivative(variable));
+        }
+
+        @Override
+        public boolean isZero() {
+            return false;
+        }
+    }
 }

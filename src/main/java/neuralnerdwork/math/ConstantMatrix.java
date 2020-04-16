@@ -1,9 +1,8 @@
 package neuralnerdwork.math;
 
 import java.util.Arrays;
-import java.util.Set;
 
-public record ConstantMatrix(double[][] values) implements MatrixFunction, Matrix {
+public record ConstantMatrix(double[][] values) implements MatrixExpression, Matrix {
     @Override
     public double get(int row, int col) {
         return values[row][col];
@@ -22,17 +21,19 @@ public record ConstantMatrix(double[][] values) implements MatrixFunction, Matri
     }
 
     @Override
-    public int inputLength() {
-        return 0;
+    public boolean isZero() {
+        return Arrays.stream(values)
+                     .flatMapToDouble(Arrays::stream)
+                     .allMatch(n -> n == 0.0);
     }
 
     @Override
-    public Matrix apply(double[] inputs) {
+    public Matrix evaluate(Model.Binder bindings) {
         return this;
     }
 
     @Override
-    public MatrixFunction differentiate(int variableIndex) {
+    public MatrixExpression computePartialDerivative(int variable) {
         return new ConstantMatrix(new double[rows()][cols()]);
     }
 

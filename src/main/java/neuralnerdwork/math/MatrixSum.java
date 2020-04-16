@@ -1,7 +1,22 @@
 package neuralnerdwork.math;
 
-public record MatrixSumFunction(MatrixFunction left, MatrixFunction right) implements MatrixFunction {
-    public MatrixSumFunction {
+import java.util.Map;
+
+public record MatrixSum(MatrixExpression left, MatrixExpression right) implements MatrixExpression {
+    public static MatrixExpression sum(MatrixExpression left, MatrixExpression right) {
+        final MatrixSum fullSum = new MatrixSum(left, right);
+        if (fullSum.isZero()) {
+            return new SparseConstantMatrix(Map.of(), fullSum.rows(), fullSum.cols());
+        } else if (left.isZero()) {
+            return right;
+        } else if (right.isZero()) {
+            return left;
+        } else {
+            return fullSum;
+        }
+    }
+
+    public MatrixSum {
         if (left.rows() != right.rows() || left.cols() != right.cols()) {
             throw new IllegalArgumentException(String.format("Cannot add matrices of dimensions (%dx%d) and (%dx%d)",
                                                              left.rows(),
@@ -12,8 +27,8 @@ public record MatrixSumFunction(MatrixFunction left, MatrixFunction right) imple
     }
 
     @Override
-    public int inputLength() {
-        return Math.max(left.inputLength(), right.inputLength());
+    public boolean isZero() {
+        return left.isZero() && right.isZero();
     }
 
     @Override
@@ -23,13 +38,13 @@ public record MatrixSumFunction(MatrixFunction left, MatrixFunction right) imple
 
     @Override
     public int cols() {
-        return right.rows();
+        return right.cols();
     }
 
     @Override
-    public Matrix apply(double[] input) {
-        final Matrix leftMatrix = left.apply(input);
-        final Matrix rightMatrix = right.apply(input);
+    public Matrix evaluate(Model.Binder bindings) {
+        final Matrix leftMatrix = left.evaluate(bindings);
+        final Matrix rightMatrix = right.evaluate(bindings);
         assert leftMatrix.rows() == rightMatrix.rows() && leftMatrix.cols() == rightMatrix.cols() :
                 String.format("Cannot add matrices of dimensions (%dx%d) and (%dx%d)",
                               leftMatrix.rows(),
@@ -56,7 +71,7 @@ public record MatrixSumFunction(MatrixFunction left, MatrixFunction right) imple
     }
 
     @Override
-    public MatrixFunction differentiate(int variableIndex) {
-        return new MatrixSumFunction(left.differentiate(variableIndex), right.differentiate(variableIndex));
+    public MatrixExpression computePartialDerivative(int variable) {
+        return MatrixSum.sum(left.computePartialDerivative(variable), right.computePartialDerivative(variable));
     }
 }
