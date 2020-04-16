@@ -1,18 +1,18 @@
 package neuralnerdwork.math;
 
-public record ConstantScalar(double value) implements ScalarExpression {
+public record ScalarParameter(int variable) implements ScalarExpression {
     @Override
     public double evaluate(Model.Binder bindings) {
-        return value;
+        return bindings.get(variable);
     }
 
     @Override
     public ScalarExpression computePartialDerivative(int variable) {
-        return new ConstantScalar(0.0);
+        return new ConstantScalar(1.0);
     }
 
     @Override
     public boolean isZero() {
-        return value == 0.0;
+        return false;
     }
 }

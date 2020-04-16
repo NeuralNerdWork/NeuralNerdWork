@@ -1,6 +1,9 @@
 package neuralnerdwork.math;
 
-public class SingleVariableLogisticFunction implements SingleVariableFunction {
+public record SingleVariableLogisticFunction(String name) implements SingleVariableFunction {
+    public SingleVariableLogisticFunction() {
+        this("logistic");
+    }
 
     @Override
     public double apply(double input) {
@@ -9,7 +12,11 @@ public class SingleVariableLogisticFunction implements SingleVariableFunction {
     }
 
     @Override
-    public SingleVariableFunction differentiateBySingleVariable() {
-        return new SingleVariableProductFunction(this, new SingleVariableComposition(new NegateScalar(), this));
+    public SingleVariableFunction differentiateByInput() {
+        final int variable = 0;
+        final ScalarParameter param = new ScalarParameter(variable);
+        final ScalarExpression derivativeExpression = ScalarProduct.product(this.invoke(param), this.invoke(new ScalarConstantMultiple(-1.0, param)));
+
+        return new SingleVariableExpression(variable, derivativeExpression);
     }
 }

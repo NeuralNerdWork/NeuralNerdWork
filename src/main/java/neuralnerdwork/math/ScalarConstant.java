@@ -1,6 +1,6 @@
 package neuralnerdwork.math;
 
-public record ConstantScalar(double value) implements ScalarExpression {
+public record ScalarConstant(double value) implements ScalarExpression {
     @Override
     public double evaluate(Model.Binder bindings) {
         return value;
@@ -8,7 +8,7 @@ public record ConstantScalar(double value) implements ScalarExpression {
 
     @Override
     public ScalarExpression computePartialDerivative(int variable) {
-        return new ConstantScalar(0.0);
+        return new ScalarConstant(0.0);
     }
 
     @Override

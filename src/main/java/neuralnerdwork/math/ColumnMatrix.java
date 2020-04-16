@@ -2,13 +2,13 @@ package neuralnerdwork.math;
 
 import java.util.Arrays;
 
-public record ColumnMatrixFunction(VectorFunction[] columns) implements MatrixFunction {
-    public ColumnMatrixFunction {
+public record ColumnMatrix(VectorExpression[] columns) implements MatrixExpression {
+    public ColumnMatrix {
         if (columns == null || columns.length == 0) {
             throw new IllegalArgumentException("Cannot have column matrix with empty columns");
         }
         final long count = Arrays.stream(columns)
-                                 .map(VectorFunction::length)
+                                 .map(VectorExpression::length)
                                  .distinct()
                                  .count();
         if (count != 1) {
@@ -17,11 +17,9 @@ public record ColumnMatrixFunction(VectorFunction[] columns) implements MatrixFu
     }
 
     @Override
-    public int inputLength() {
+    public boolean isZero() {
         return Arrays.stream(columns)
-                     .mapToInt(VectorFunction::inputLength)
-                     .max()
-                     .orElseThrow();
+                     .allMatch(VectorExpression::isZero);
     }
 
     @Override
@@ -35,10 +33,10 @@ public record ColumnMatrixFunction(VectorFunction[] columns) implements MatrixFu
     }
 
     @Override
-    public Matrix apply(double[] inputs) {
+    public Matrix evaluate(Model.Binder bindings) {
         final double[][] values = new double[rows()][cols()];
         for (int col = 0; col < cols(); col++) {
-            final Vector vector = columns[col].apply(inputs);
+            final Vector vector = columns[col].evaluate(bindings);
             for (int row = 0; row < rows(); row++) {
                 values[row][col] = vector.get(row);
             }
@@ -48,7 +46,14 @@ public record ColumnMatrixFunction(VectorFunction[] columns) implements MatrixFu
     }
 
     @Override
-    public MatrixFunction differentiate(int variableIndex) {
+    public MatrixExpression computePartialDerivative(int variable) {
         throw new UnsupportedOperationException("Not yet implemented!");
+    }
+
+    @Override
+    public String toString() {
+        return "ColumnMatrix[" +
+                "columns=" + Arrays.toString(columns) +
+                ']';
     }
 }
