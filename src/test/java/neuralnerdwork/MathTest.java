@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -267,9 +266,8 @@ public class MathTest {
         final VectorExpression layerFunction = new VectorizedSingleVariableFunction(new SingleVariableLogisticFunction(),
                                                                                     weightedInputs);
 
-        // TODO should make a scalar multiple combinator
-        final ConstantVector negatedTrainingOutput = new ConstantVector(new double[] { -1.0, 0.0 });
-        final VectorSum error = new VectorSum(layerFunction, negatedTrainingOutput);
+        final ConstantVector trainingOutput = new ConstantVector(new double[] { 1.0, 0.0 });
+        final VectorSum error = new VectorSum(layerFunction, new ScaledVector(-1.0, trainingOutput));
         // TODO should make a square combinator; this will differentiate error twice
         final DotProduct squaredError = new DotProduct(error, error);
 
@@ -290,10 +288,10 @@ public class MathTest {
             final double unactivatedNeuron2 = binder.get(w1.variableIndexFor(1, 0)) * trainingInput.get(0) + binder.get(w1.variableIndexFor(1, 1)) * trainingInput.get(1);
 
             final double[] expected = new double[] {
-                    2.0 * (logistic(unactivatedNeuron1) + negatedTrainingOutput.get(0)) * logisticDerivative(unactivatedNeuron1) * trainingInput.get(0),
-                    2.0 * (logistic(unactivatedNeuron1) + negatedTrainingOutput.get(0)) * logisticDerivative(unactivatedNeuron1) * trainingInput.get(1),
-                    2.0 * (logistic(unactivatedNeuron2) + negatedTrainingOutput.get(1)) * logisticDerivative(unactivatedNeuron2) * trainingInput.get(0),
-                    2.0 * (logistic(unactivatedNeuron2) + negatedTrainingOutput.get(1)) * logisticDerivative(unactivatedNeuron2) * trainingInput.get(1)
+                    2.0 * (logistic(unactivatedNeuron1) - trainingOutput.get(0)) * logisticDerivative(unactivatedNeuron1) * trainingInput.get(0),
+                    2.0 * (logistic(unactivatedNeuron1) - trainingOutput.get(0)) * logisticDerivative(unactivatedNeuron1) * trainingInput.get(1),
+                    2.0 * (logistic(unactivatedNeuron2) - trainingOutput.get(1)) * logisticDerivative(unactivatedNeuron2) * trainingInput.get(0),
+                    2.0 * (logistic(unactivatedNeuron2) - trainingOutput.get(1)) * logisticDerivative(unactivatedNeuron2) * trainingInput.get(1)
             };
 
             assertArrayEquals(expected, observed.toArray(), 0.0001, format("Expected: %s, Observed: %s", Arrays.toString(expected), Arrays.toString(observed.toArray())));
@@ -323,9 +321,8 @@ public class MathTest {
                     );
         }
 
-        // TODO should make a scalar multiple combinator
-        final ConstantVector negatedTrainingOutput = new ConstantVector(randomDoubles(rows));
-        final VectorSum error = new VectorSum(networkFunction, negatedTrainingOutput);
+        final ConstantVector trainingOutput = new ConstantVector(randomDoubles(rows));
+        final VectorSum error = new VectorSum(networkFunction, new ScaledVector(-1.0, trainingOutput));
 
         final double[] ones = new double[rows];
         Arrays.fill(ones, 1.0);
@@ -359,9 +356,8 @@ public class MathTest {
                     );
         }
 
-        // TODO should make a scalar multiple combinator
-        final ConstantVector negatedTrainingOutput = new ConstantVector(randomDoubles(rows));
-        final VectorSum error = new VectorSum(networkFunction, negatedTrainingOutput);
+        final ConstantVector trainingOutput = new ConstantVector(randomDoubles(rows));
+        final VectorSum error = new VectorSum(networkFunction, new ScaledVector(-1.0, trainingOutput));
 
         final double[] ones = new double[rows];
         Arrays.fill(ones, 1.0);
