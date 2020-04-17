@@ -1,6 +1,4 @@
-package neuralnerdwork;
-
-import neuralnerdwork.math.*;
+package neuralnerdwork.math;
 
 public record SquaredSingleVariableFunction() implements SingleVariableFunction {
     @Override
