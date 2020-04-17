@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import neuralnerdwork.math.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.opentest4j.AssertionFailedError;
 
 import java.io.File;
 import java.io.IOException;
@@ -70,11 +71,11 @@ public class MathTest {
 
     @Test
     void twoMatrixPlusVectorDerivativeInOuterMatrix() {
-        // https://www.wolframalpha.com/input/?i=derivative+of+%7B%7Ba%2Cb%7D%2C%7Bc%2Cd%7D%7D%7B%7Be%2Cf%7D%2C%7Bg%2Ch%7D%7D%7B%7B1%7D%2C%7B-1%7D%7D+by+b
+        // https://www.wolframalpha.com/input/?i=derivative+of+%7B%7Ba%2Cb%7D%2C%7Bc%2Cd%7D%7D%7B%7Be%2Cf%7D%2C%7Bg%2Ch%7D%7D%7B%7Bi%7D%2C%7Bj%7D%7D+by+b
         final Model builder = new Model();
-        final ParameterMatrix w1 = builder.create(2, 2);
-        final ParameterMatrix w2 = builder.create(2, 2);
-        final VectorExpression vector = new ConstantVector(new double[] { 1.0, -1.0 });
+        final VectorExpression vector = builder.createParameterVector(2);
+        final ParameterMatrix w1 = builder.createParameterMatrix(2, 2);
+        final ParameterMatrix w2 = builder.createParameterMatrix(2, 2);
         final MatrixVectorProduct multiplication = new MatrixVectorProduct(
                 new MatrixProduct(
                         w2,
@@ -93,12 +94,13 @@ public class MathTest {
                 binder.put(vars[i], values[i]);
             }
 
+            final Vector inputEval = vector.evaluate(binder);
             final Vector derivativeVector = derivative.evaluate(binder);
             final double firstVar = binder.get(w1.variableIndexFor(1, 0));
             final double secondVar = binder.get(w1.variableIndexFor(1, 1));
 
             assertEquals(2, derivativeVector.length(), "Length not equal");
-            assertEquals(firstVar - secondVar, derivativeVector.get(0), 0.0001);
+            assertEquals(inputEval.get(0) * firstVar + inputEval.get(1) * secondVar, derivativeVector.get(0), 0.0001);
             assertEquals(0.0, derivativeVector.get(1), 0.0001);
         });
     }
@@ -107,9 +109,9 @@ public class MathTest {
     void twoMatrixPlusVectorDerivativeInInnerMatrix() {
         // https://www.wolframalpha.com/input/?i=derivative+of+%7B%7Ba%2Cb%7D%2C%7Bc%2Cd%7D%7D%7B%7Be%2Cf%7D%2C%7Bg%2Ch%7D%7D%7B%7B1%7D%2C%7B-1%7D%7D+by+f
         final Model builder = new Model();
-        final ParameterMatrix w1 = builder.create(2, 2);
-        final ParameterMatrix w2 = builder.create(2, 2);
-        final VectorExpression vector = new ConstantVector(new double[] { 1.0, -1.0 });
+        final VectorExpression vector = builder.createParameterVector(2);
+        final ParameterMatrix w1 = builder.createParameterMatrix(2, 2);
+        final ParameterMatrix w2 = builder.createParameterMatrix(2, 2);
         final MatrixVectorProduct multiplication = new MatrixVectorProduct(
                 new MatrixProduct(
                         w2,
@@ -121,20 +123,21 @@ public class MathTest {
         final int variable = w1.variableIndexFor(0, 1);
         final VectorExpression derivative = multiplication.computePartialDerivative(variable);
 
-        assertArgumentInvariant(8, values -> {
+        assertArgumentInvariant(builder.size(), values -> {
             final Model.Binder binder = builder.createBinder();
             final int[] vars = binder.variables();
             for (int i = 0; i < vars.length; i++) {
                 binder.put(vars[i], values[i]);
             }
 
+            final Vector inputEval = vector.evaluate(binder);
             final Vector derivativeVector = derivative.evaluate(binder);
             final double firstVar = binder.get(w2.variableIndexFor(0, 0));
             final double secondVar = binder.get(w2.variableIndexFor(1, 0));
 
             assertEquals(2, derivativeVector.length(), "Length not equal");
-            assertEquals(-1.0 * firstVar, derivativeVector.get(0), 0.0001);
-            assertEquals(-1.0 * secondVar, derivativeVector.get(1), 0.0001);
+            assertEquals(inputEval.get(1) * firstVar, derivativeVector.get(0), 0.0001);
+            assertEquals(inputEval.get(1) * secondVar, derivativeVector.get(1), 0.0001);
         });
     }
 
@@ -144,11 +147,11 @@ public class MathTest {
      */
     @Test
     void associativityOfDerivative() {
-        // https://www.wolframalpha.com/input/?i=derivative+of+%7B%7Ba%2Cb%7D%2C%7Bc%2Cd%7D%7D%7B%7Be%2Cf%7D%2C%7Bg%2Ch%7D%7D%7B%7B1%7D%2C%7B-1%7D%7D+by+f
+        // https://www.wolframalpha.com/input/?i=derivative+of+%7B%7Ba%2Cb%7D%2C%7Bc%2Cd%7D%7D%7B%7Be%2Cf%7D%2C%7Bg%2Ch%7D%7D%7B%7Bi%7D%2C%7Bj%7D%7D+by+f
         final Model builder = new Model();
-        final ParameterMatrix w1 = builder.create(2, 2);
-        final ParameterMatrix w2 = builder.create(2, 2);
-        final VectorExpression vector = new ConstantVector(new double[] { 1.0, -1.0 });
+        final VectorExpression vector = builder.createParameterVector(2);
+        final ParameterMatrix w1 = builder.createParameterMatrix(2, 2);
+        final ParameterMatrix w2 = builder.createParameterMatrix(2, 2);
         final MatrixVectorProduct multiplication = new MatrixVectorProduct(
                 w2,
                 new MatrixVectorProduct(
@@ -160,27 +163,28 @@ public class MathTest {
         final int variable = w1.variableIndexFor(0, 1);
         final VectorExpression derivative = multiplication.computePartialDerivative(variable);
 
-        assertArgumentInvariant(8, values -> {
+        assertArgumentInvariant(builder.size(), values -> {
             final Model.Binder binder = builder.createBinder();
             final int[] vars = binder.variables();
             for (int i = 0; i < vars.length; i++) {
                 binder.put(vars[i], values[i]);
             }
+            final Vector inputEval = vector.evaluate(binder);
             final Vector derivativeVector = derivative.evaluate(binder);
             final double firstVar = binder.get(w2.variableIndexFor(0, 0));
             final double secondVar = binder.get(w2.variableIndexFor(1, 0));
 
             assertEquals(2, derivativeVector.length(), "Length not equal");
-            assertEquals(-1.0 * firstVar, derivativeVector.get(0), 0.0001);
-            assertEquals(-1.0 * secondVar, derivativeVector.get(1), 0.0001);
+            assertEquals(inputEval.get(1) * firstVar, derivativeVector.get(0), 0.0001);
+            assertEquals(inputEval.get(1) * secondVar, derivativeVector.get(1), 0.0001);
         });
     }
 
     @Test
     void partialDerviativeWeightsWithActivation() {
         final Model builder = new Model();
-        final ParameterMatrix w1 = builder.create(2, 2);
-        final ConstantVector vector = new ConstantVector(new double[] { 1.0, -1.0 });
+        final VectorExpression vector = builder.createParameterVector(2);
+        final ParameterMatrix w1 = builder.createParameterMatrix(2, 2);
         final MatrixVectorProduct weightedInputs = new MatrixVectorProduct(
                 w1,
                 vector
@@ -198,8 +202,9 @@ public class MathTest {
             final Vector observed = partialDerivative.evaluate(binder);
 
             assertEquals(2, observed.length(), "Length not equal");
-            final double logisticInput = binder.get(w1.variableIndexFor(0, 0)) * vector.get(0) + binder.get(w1.variableIndexFor(0, 1)) * vector.get(1);
-            final double firstExpected = logistic(logisticInput) * logistic(-logisticInput) * vector.get(0);
+            final Vector inputEval = vector.evaluate(binder);
+            final double logisticInput = binder.get(w1.variableIndexFor(0, 0)) * inputEval.get(0) + binder.get(w1.variableIndexFor(0, 1)) * inputEval.get(1);
+            final double firstExpected = logistic(logisticInput) * logistic(-logisticInput) * inputEval.get(0);
             assertEquals(firstExpected, observed.get(0), 0.0001);
             assertEquals(0.0, observed.get(1), 0.0001);
         });
@@ -208,8 +213,8 @@ public class MathTest {
     @Test
     void fullDerivativeWeightsWithActivation() {
         final Model builder = new Model();
-        final ParameterMatrix w1 = builder.create(2, 2);
-        final ConstantVector vector = new ConstantVector(new double[] { 1.0, -1.0 });
+        final ParameterVector vector = builder.createParameterVector(2);
+        final ParameterMatrix w1 = builder.createParameterMatrix(2, 2);
         final MatrixVectorProduct weightedInputs = new MatrixVectorProduct(
                 w1,
                 vector
@@ -217,7 +222,8 @@ public class MathTest {
         final VectorExpression layerFunction = new VectorizedSingleVariableFunction(new SingleVariableLogisticFunction(),
                                                                                     weightedInputs);
 
-        final MatrixExpression derivative = layerFunction.computeDerivative(builder.variables());
+        final int[] weightVariables = Arrays.copyOfRange(builder.variables(), vector.variableStartIndex() + vector.length(), builder.size());
+        final MatrixExpression derivative = layerFunction.computeDerivative(weightVariables);
         assertEquals(2, derivative.rows(), "Rows not equal");
         assertEquals(4, derivative.cols(), "Cols not equal");
 
@@ -232,13 +238,14 @@ public class MathTest {
             assertEquals(2, observed.rows(), "Rows not equal");
             assertEquals(4, observed.cols(), "Cols not equal");
 
-            final double firstLogisticInput = binder.get(w1.variableIndexFor(0, 0)) * vector.get(0) + binder.get(w1.variableIndexFor(0, 1)) * vector.get(1);
-            final double secondLogisticInput = binder.get(w1.variableIndexFor(1, 0)) * vector.get(0) + binder.get(w1.variableIndexFor(1, 1)) * vector.get(1);
+            final Vector inputEval = vector.evaluate(binder);
+            final double firstLogisticInput = binder.get(w1.variableIndexFor(0, 0)) * inputEval.get(0) + binder.get(w1.variableIndexFor(0, 1)) * inputEval.get(1);
+            final double secondLogisticInput = binder.get(w1.variableIndexFor(1, 0)) * inputEval.get(0) + binder.get(w1.variableIndexFor(1, 1)) * inputEval.get(1);
 
-            final double firstExpected = logistic(firstLogisticInput) * logistic(-firstLogisticInput) * vector.get(0);
-            final double secondExpected = logistic(firstLogisticInput) * logistic(-firstLogisticInput) * vector.get(1);
-            final double thirdExpected = logistic(secondLogisticInput) * logistic(-secondLogisticInput) * vector.get(0);
-            final double fourthExpected = logistic(secondLogisticInput) * logistic(-secondLogisticInput) * vector.get(1);
+            final double firstExpected = logistic(firstLogisticInput) * logistic(-firstLogisticInput) * inputEval.get(0);
+            final double secondExpected = logistic(firstLogisticInput) * logistic(-firstLogisticInput) * inputEval.get(1);
+            final double thirdExpected = logistic(secondLogisticInput) * logistic(-secondLogisticInput) * inputEval.get(0);
+            final double fourthExpected = logistic(secondLogisticInput) * logistic(-secondLogisticInput) * inputEval.get(1);
 
             assertEquals(firstExpected, observed.get(0, 0), 0.0001);
             assertEquals(0.0, observed.get(1, 0), 0.0001);
@@ -257,8 +264,8 @@ public class MathTest {
     @Test
     void fullDerivativeOfLossFunctionOnLayer() {
         final Model builder = new Model();
-        final ParameterMatrix w1 = builder.create(2, 2);
-        final ConstantVector trainingInput = new ConstantVector(new double[] { 1.0, -1.0 });
+        final ParameterVector trainingInput = builder.createParameterVector(2);
+        final ParameterMatrix w1 = builder.createParameterMatrix(2, 2);
         final MatrixVectorProduct weightedInputs = new MatrixVectorProduct(
                 w1,
                 trainingInput
@@ -271,8 +278,9 @@ public class MathTest {
         // TODO should make a square combinator; this will differentiate error twice
         final DotProduct squaredError = new DotProduct(error, error);
 
-        final VectorExpression derivative = squaredError.computeDerivative(builder.variables());
-        assertEquals(builder.size(), derivative.length(), "Length not equal");
+        final int[] weightVariables = Arrays.copyOfRange(builder.variables(), trainingInput.variableStartIndex() + trainingInput.length(), builder.size());
+        final VectorExpression derivative = squaredError.computeDerivative(weightVariables);
+        assertEquals(builder.size() - trainingInput.length(), derivative.length(), "Length not equal");
 
         assertArgumentInvariant(builder.size(), values -> {
             final Model.Binder binder = builder.createBinder();
@@ -284,14 +292,15 @@ public class MathTest {
 
             assertEquals(4, observed.length(), "Length not equal");
 
-            final double unactivatedNeuron1 = binder.get(w1.variableIndexFor(0, 0)) * trainingInput.get(0) + binder.get(w1.variableIndexFor(0, 1)) * trainingInput.get(1);
-            final double unactivatedNeuron2 = binder.get(w1.variableIndexFor(1, 0)) * trainingInput.get(0) + binder.get(w1.variableIndexFor(1, 1)) * trainingInput.get(1);
+            final Vector inputEval = trainingInput.evaluate(binder);
+            final double unactivatedNeuron1 = binder.get(w1.variableIndexFor(0, 0)) * inputEval.get(0) + binder.get(w1.variableIndexFor(0, 1)) * inputEval.get(1);
+            final double unactivatedNeuron2 = binder.get(w1.variableIndexFor(1, 0)) * inputEval.get(0) + binder.get(w1.variableIndexFor(1, 1)) * inputEval.get(1);
 
             final double[] expected = new double[] {
-                    2.0 * (logistic(unactivatedNeuron1) - trainingOutput.get(0)) * logisticDerivative(unactivatedNeuron1) * trainingInput.get(0),
-                    2.0 * (logistic(unactivatedNeuron1) - trainingOutput.get(0)) * logisticDerivative(unactivatedNeuron1) * trainingInput.get(1),
-                    2.0 * (logistic(unactivatedNeuron2) - trainingOutput.get(1)) * logisticDerivative(unactivatedNeuron2) * trainingInput.get(0),
-                    2.0 * (logistic(unactivatedNeuron2) - trainingOutput.get(1)) * logisticDerivative(unactivatedNeuron2) * trainingInput.get(1)
+                    2.0 * (logistic(unactivatedNeuron1) - trainingOutput.get(0)) * logisticDerivative(unactivatedNeuron1) * inputEval.get(0),
+                    2.0 * (logistic(unactivatedNeuron1) - trainingOutput.get(0)) * logisticDerivative(unactivatedNeuron1) * inputEval.get(1),
+                    2.0 * (logistic(unactivatedNeuron2) - trainingOutput.get(1)) * logisticDerivative(unactivatedNeuron2) * inputEval.get(0),
+                    2.0 * (logistic(unactivatedNeuron2) - trainingOutput.get(1)) * logisticDerivative(unactivatedNeuron2) * inputEval.get(1)
             };
 
             assertArrayEquals(expected, observed.toArray(), 0.0001, format("Expected: %s, Observed: %s", Arrays.toString(expected), Arrays.toString(observed.toArray())));
@@ -304,18 +313,18 @@ public class MathTest {
         final int cols = 10;
         final int numLayers = 5;
 
-        final ConstantVector trainingInput = new ConstantVector(randomDoubles(cols));
+        final Model builder = new Model();
+        final VectorExpression trainingInput = builder.createParameterVector(cols);
 
         final SingleVariableLogisticFunction logistic = new SingleVariableLogisticFunction();
 
-        final Model builder = new Model();
         VectorExpression networkFunction = trainingInput;
         for (int i = 0; i < numLayers; i++) {
             networkFunction =
                     new VectorizedSingleVariableFunction(
                             logistic,
                             new MatrixVectorProduct(
-                                    builder.create(rows, cols),
+                                    builder.createParameterMatrix(rows, cols),
                                     networkFunction
                             )
                     );
@@ -339,18 +348,18 @@ public class MathTest {
         final int cols = 10;
         final int numLayers = 50;
 
-        final ConstantVector trainingInput = new ConstantVector(randomDoubles(cols));
+        final Model builder = new Model();
+        final VectorExpression trainingInput = builder.createParameterVector(cols);
 
         final SingleVariableLogisticFunction logistic = new SingleVariableLogisticFunction();
 
-        final Model builder = new Model();
         VectorExpression networkFunction = trainingInput;
         for (int i = 0; i < numLayers; i++) {
             networkFunction =
                     new VectorizedSingleVariableFunction(
                             logistic,
                             new MatrixVectorProduct(
-                                    builder.create(rows, cols),
+                                    builder.createParameterMatrix(rows, cols),
                                     networkFunction
                             )
                     );
@@ -441,7 +450,11 @@ public class MathTest {
     private void assertArgumentInvariant(int length, Consumer<double[]> assertions) {
         for (int attempt = 0; attempt < 3; attempt++) {
             final double[] values = randomDoubles(length);
-            assertions.accept(values);
+            try {
+                assertions.accept(values);
+            } catch (Exception | AssertionFailedError e) {
+                throw new AssertionError("Failed on inputs: " + Arrays.toString(values), e);
+            }
         }
 
     }
@@ -455,6 +468,6 @@ public class MathTest {
     }
 
     private double randomDouble() {
-        return (random.nextDouble() - 0.5) * 100.0;
+        return (random.nextDouble() - 0.5) * 10.0;
     }
 }

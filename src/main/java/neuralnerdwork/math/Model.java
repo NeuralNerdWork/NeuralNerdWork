@@ -7,15 +7,22 @@ import java.util.stream.Stream;
 public class Model {
     private int nextParameterIndex = 0;
 
-    public ParameterMatrix create(int rows, int cols) {
+    public ParameterMatrix createParameterMatrix(int rows, int cols) {
         final int start = nextParameterIndex;
         nextParameterIndex += rows * cols;
 
         return new ParameterMatrix(start, rows, cols);
     }
 
-    public int createVariable() {
-        return nextParameterIndex++;
+    public ParameterVector createParameterVector(int length) {
+        final int start = nextParameterIndex;
+        nextParameterIndex += length;
+
+        return new ParameterVector(start, length);
+    }
+
+    public ScalarParameter createScalarParameter() {
+        return new ScalarParameter(nextParameterIndex++);
     }
 
     public int size() {
