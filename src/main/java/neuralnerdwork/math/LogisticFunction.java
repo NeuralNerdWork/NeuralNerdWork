@@ -1,14 +1,19 @@
 package neuralnerdwork.math;
 
-public record SingleVariableLogisticFunction(String name) implements SingleVariableFunction {
-    public SingleVariableLogisticFunction() {
-        this("logistic");
+public class LogisticFunction implements SingleVariableFunction {
+    @Override
+    public String getFunctionName() {
+        return "logistic";
     }
 
     @Override
     public double apply(double input) {
-        final double eToX = Math.exp(input);
-        return eToX / (1 + eToX);
+        final double exp = Math.exp(-input);
+        if (Double.isInfinite(exp)) {
+            return 0;
+        } else {
+            return 1 / (1 + exp);
+        }
     }
 
     @Override

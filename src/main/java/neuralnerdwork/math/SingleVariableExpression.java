@@ -2,6 +2,10 @@ package neuralnerdwork.math;
 
 public record SingleVariableExpression(int variable,
                                        ScalarExpression expression) implements SingleVariableFunction {
+    @Override
+    public String getFunctionName() {
+        return "single variable function";
+    }
 
     @Override
     public double apply(double input) {

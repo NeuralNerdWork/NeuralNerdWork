@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public interface SingleVariableFunction {
 
+    String getFunctionName();
     double apply(double input);
     SingleVariableFunction differentiateByInput();
 

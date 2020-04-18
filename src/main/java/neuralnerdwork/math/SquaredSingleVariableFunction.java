@@ -1,6 +1,11 @@
 package neuralnerdwork.math;
 
-public record SquaredSingleVariableFunction() implements SingleVariableFunction {
+public class SquaredSingleVariableFunction implements SingleVariableFunction {
+    @Override
+    public String getFunctionName() {
+        return "sqaured";
+    }
+
     @Override
     public double apply(double input) {
         return input * input;
