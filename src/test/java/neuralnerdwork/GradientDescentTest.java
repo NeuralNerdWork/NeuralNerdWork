@@ -17,7 +17,7 @@ public class GradientDescentTest {
     private static final int singleDescentStep_layers = 50;
     private static final int singleDescentStep_parameters =
             singleDescentStep_rows
-                    * singleDescentStep_cols
+                    * (singleDescentStep_cols + 1)
                     * singleDescentStep_layers
                     + singleDescentStep_cols;
     @Property(tries = 3, shrinking = ShrinkingMode.OFF)
@@ -32,17 +32,29 @@ public class GradientDescentTest {
 
         final LogisticFunction logistic = new LogisticFunction();
 
-        VectorExpression networkFunction = trainingInput;
-        for (int i = 0; i < numLayers; i++) {
+        final ConstantVector biasComponent = new ConstantVector(new double[]{1.0});
+        VectorExpression networkFunction = new VectorConcat(trainingInput, biasComponent);
+        for (int i = 0; i < numLayers-1; i++) {
             networkFunction =
-                    new VectorizedSingleVariableFunction(
-                            logistic,
-                            new MatrixVectorProduct(
-                                    builder.createParameterMatrix(rows, cols),
-                                    networkFunction
-                            )
+                    new VectorConcat(
+                            new VectorizedSingleVariableFunction(
+                                    logistic,
+                                    new MatrixVectorProduct(
+                                            builder.createParameterMatrix(rows, cols + 1),
+                                            networkFunction
+                                    )
+                            ),
+                            biasComponent
                     );
         }
+        networkFunction =
+                new VectorizedSingleVariableFunction(
+                        logistic,
+                        new MatrixVectorProduct(
+                                builder.createParameterMatrix(rows, cols + 1),
+                                networkFunction
+                        )
+                );
 
         final ConstantVector trainingOutput = new ConstantVector(outputValues);
         final VectorSum error = new VectorSum(networkFunction, new ScaledVector(-1.0, trainingOutput));
