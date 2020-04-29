@@ -1,5 +1,7 @@
 package neuralnerdwork;
 
-record TrainingSample(Double[] input, Double[] output){
+import neuralnerdwork.math.ConstantVector;
+
+record TrainingSample(ConstantVector input, ConstantVector output){
 
 }
