@@ -10,14 +10,11 @@ import neuralnerdwork.math.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Random;
 
 import static java.lang.String.format;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class MathTest {
-
-    private Random random = new Random();
 
     @Example
     void multiplyByIdentityGivesSameMatrix() {

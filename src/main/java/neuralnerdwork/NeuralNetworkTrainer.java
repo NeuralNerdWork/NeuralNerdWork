@@ -1,6 +1,5 @@
 package neuralnerdwork;
 
-import java.beans.ParameterDescriptor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -33,7 +32,7 @@ public class NeuralNetworkTrainer {
         });
     */
     
-    Object train(List<TrainingSample> samples) {
+    NeuralNetwork train(List<TrainingSample> samples) {
         /*
           (inp)               (out)
            l0   l1   l2   l3  l4
@@ -78,25 +77,7 @@ public class NeuralNetworkTrainer {
                 throw new IllegalArgumentException("Sample " + i + " has wrong size (got " + sample.output().length() + "; expected " + layerSizes[layerSizes.length-1] + ")");
             }
             
-            //start at first hidden layer; end at output layer (TODO: bias on output layer should be optional)
-            VectorExpression network = inputLayer;
-            var logistic = new LogisticFunction();
-            var biasComponent = new ConstantVector(new double[] {1.0});
-            for (int l = 1; l < layerSizes.length; l++) {
-                // columns: input size including bias
-                // rows: output size
-                var weightMatrix = weightMatrices.get(l);
-                network = new VectorConcat(
-                        new VectorizedSingleVariableFunction(
-                                logistic,
-                                new MatrixVectorProduct(
-                                        weightMatrix,
-                                        network
-                                )
-                        ),
-                        biasComponent
-                );
-            }
+            VectorExpression network = buildNetwork(weightMatrices, inputLayer);
             
             // find (squared) error amount
             final ScalarExpression squaredError = squaredError(sample, network);
@@ -115,15 +96,61 @@ public class NeuralNetworkTrainer {
         }
 
         // Repeat this until converged
-        // TODO - Update neuron weights based on gradient and learning parameter
-        var weightUpdateVector = lossDerivative.evaluate(binder);
-        for (int w = 0; w < binder.variables().length; w++) {
-            binder.put(w, binder.get(w) - trainingRate * weightUpdateVector.get(w));
-        }
+        Vector weightUpdateVector = null;
+        do {
+            weightUpdateVector = lossDerivative.evaluate(binder);
+            for (int w = 0; w < binder.variables().length; w++) {
+                binder.put(w, binder.get(w) - trainingRate * weightUpdateVector.get(w));
+            }
+        } while (weightUpdateVector.lOneNorm() > 0.001);
         // training cycle end
-
         // TODO - Stop when we have converged
-        return null;
+
+       return input -> {
+        var inputVector = new ConstantVector(input);
+        var runtimeNetwork = buildNetwork(weightMatrices, inputVector);
+
+        return runtimeNetwork.evaluate(binder).toArray();
+       };
+    }
+
+    private VectorExpression buildNetwork(ArrayList<? extends MatrixExpression> weightMatrices, VectorExpression inputLayer) {
+        //start at first hidden layer; end at output layer (TODO: bias on output layer should be optional)
+        var biasComponent = new ConstantVector(new double[] {1.0});
+        VectorExpression network = new VectorConcat(inputLayer, biasComponent);
+        var logistic = new LogisticFunction();
+        for (int l = 1; l < layerSizes.length; l++) try {
+            
+            // columns: input size including bias
+            // rows: output size
+            var weightMatrix = weightMatrices.get(l - 1);
+            // TODO: move out of loop
+            if(l == layerSizes.length - 1) {
+                network = 
+                    new VectorizedSingleVariableFunction(
+                            logistic,
+                            new MatrixVectorProduct(
+                                    weightMatrix,
+                                    network
+                            )
+                    );
+            } else {
+                network = new VectorConcat(
+                        new VectorizedSingleVariableFunction(
+                                logistic,
+                                new MatrixVectorProduct(
+                                        weightMatrix,
+                                        network
+                                )
+                        ),
+                        biasComponent
+                );
+            }
+        } catch(Exception e) {
+            throw new RuntimeException("Exception building layer " + l, e);
+        }
+        
+        return network;
     }
 
     private static ScalarExpression squaredError(TrainingSample sample, VectorExpression network) {
