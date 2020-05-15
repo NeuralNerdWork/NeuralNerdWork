@@ -66,7 +66,7 @@ public class NeuralNetworkTrainer {
             weightMatrices.add(layerLWeights);
         }
 
-        ScalarExpression sumOfSquaredError = new ScalarConstant(0.0);
+        final ScalarExpression[] squaredErrors = new ScalarExpression[samples.size()];
         for (int i = 0; i < samples.size(); i++) {
             var sample = samples.get(i);
             var inputLayer = sample.input();
@@ -80,9 +80,9 @@ public class NeuralNetworkTrainer {
             VectorExpression network = buildNetwork(weightMatrices, inputLayer);
             
             // find (squared) error amount
-            final ScalarExpression squaredError = squaredError(sample, network);
-            sumOfSquaredError = ScalarSum.sum(sumOfSquaredError, squaredError);
+            squaredErrors[i] = squaredError(sample, network);
         }
+        final ScalarExpression sumOfSquaredError = ScalarSum.sum(squaredErrors);
 
         // this is a function that hasn't been evaluated yet
         ScalarExpression meanSquaredError = new ScalarConstantMultiple(samples.size(), sumOfSquaredError);

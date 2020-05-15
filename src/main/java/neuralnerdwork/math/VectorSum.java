@@ -1,59 +1,71 @@
 package neuralnerdwork.math;
 
-public record VectorSum(VectorExpression left, VectorExpression right) implements VectorExpression {
-    public static VectorExpression sum(VectorExpression left, VectorExpression right) {
-        final VectorSum sum = new VectorSum(left, right);
-        if (sum.isZero()) {
-            return new ConstantVector(new double[sum.length()]);
-        } else if (left.isZero()) {
-            return right;
-        } else if (right.isZero()) {
-            return left;
+import java.util.Arrays;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+public record VectorSum(VectorExpression... expressions) implements VectorExpression {
+    public static VectorExpression sum(VectorExpression... expressions) {
+        VectorExpression[] nonZeroExpressions = Arrays.stream(expressions)
+                                                      .filter(exp -> !exp.isZero())
+                                                      .toArray(VectorExpression[]::new);
+        if (nonZeroExpressions.length == 0) {
+            return new ConstantVector(new double[expressions[0].length()]);
         } else {
-            return sum;
+            return new VectorSum(nonZeroExpressions);
         }
     }
 
     public VectorSum {
-        if (left.length() != right.length()) {
-            throw new IllegalArgumentException("Cannot add vectors of different lengths");
+        if (Arrays.stream(expressions).mapToInt(VectorExpression::length).distinct().count() != 1) {
+            throw new IllegalArgumentException("Cannot add vectors of different lengths: " + Arrays.stream(expressions)
+                                                                                                   .distinct()
+                                                                                                   .map(VectorExpression::length)
+                                                                                                   .map(Object::toString)
+                                                                                                   .collect(Collectors.joining(",")));
         }
     }
 
     @Override
     public int length() {
-        return left.length();
+        return expressions[0].length();
     }
 
     @Override
     public boolean isZero() {
-        return left.isZero() && right.isZero();
+        return Arrays.stream(expressions)
+                     .allMatch(VectorExpression::isZero);
     }
 
     @Override
     public Vector evaluate(Model.Binder bindings) {
-        final Vector left = this.left.evaluate(bindings);
-        final Vector right = this.right.evaluate(bindings);
-        final int length = Math.max(left.length(), right.length());
+        Vector[] evaluated = Arrays.stream(expressions)
+                                   .map(exp -> exp.evaluate(bindings))
+                                   .toArray(Vector[]::new);
 
-        final double[] values = new double[length];
-        for (int i = 0; i < length; i++) {
-            values[i] = left.get(i) + right.get(i);
-        }
+        final int length = length();
+        final double[] values = IntStream.iterate(0, i -> i < length, i -> i + 1)
+                                         .mapToDouble(i -> Arrays.stream(evaluated)
+                                                                 .mapToDouble(components -> components.get(i))
+                                                                 .sum())
+                                         .toArray();
 
         return new ConstantVector(values);
     }
 
     @Override
     public MatrixExpression computeDerivative(int[] variables) {
-        return MatrixSum.sum(left.computeDerivative(variables), right.computeDerivative(variables));
+        return MatrixSum.sum(Arrays.stream(expressions)
+                                   .map(exp -> exp.computeDerivative(variables))
+                                   .toArray(MatrixExpression[]::new));
     }
 
     @Override
     public VectorExpression computePartialDerivative(int variable) {
         return VectorSum.sum(
-                this.left.computePartialDerivative(variable),
-                this.right.computePartialDerivative(variable)
+                Arrays.stream(expressions)
+                      .map(exp -> exp.computePartialDerivative(variable))
+                      .toArray(VectorExpression[]::new)
         );
     }
 }

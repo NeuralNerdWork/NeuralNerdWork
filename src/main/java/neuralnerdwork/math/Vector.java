@@ -12,6 +12,15 @@ public interface Vector {
         return sum;
     }
 
+    default double lTwoNorm() {
+        double sum = 0.0;
+        for (int i = 0; i < length(); i++) {
+            double component = get(i);
+            sum += component * component;
+        }
+        return Math.sqrt(sum);
+    }
+
     default double[] toArray() {
         final double[] retVal = new double[length()];
         for (int i = 0; i < length(); i++) {

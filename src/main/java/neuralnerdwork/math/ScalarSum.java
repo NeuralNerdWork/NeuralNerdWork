@@ -1,31 +1,48 @@
 package neuralnerdwork.math;
 
-public record ScalarSum(ScalarExpression left, ScalarExpression right) implements ScalarExpression {
-    public static ScalarExpression sum(ScalarExpression left, ScalarExpression right) {
-        final ScalarSum sum = new ScalarSum(left, right);
-        if (sum.isZero()) {
+import java.util.Arrays;
+
+public record ScalarSum(ScalarExpression... expressions) implements ScalarExpression {
+    public static ScalarExpression sum(ScalarExpression... expressions) {
+        ScalarExpression[] nonZeroExpressions = Arrays.stream(expressions)
+                                                      .filter(exp -> !exp.isZero())
+                                                      .toArray(ScalarExpression[]::new);
+
+        if (nonZeroExpressions.length == 0) {
             return new ScalarConstant(0.0);
-        } else if (left.isZero()) {
-            return right;
-        } else if (right.isZero()) {
-            return left;
         } else {
-            return sum;
+            return new ScalarSum(nonZeroExpressions);
         }
     }
 
     @Override
     public double evaluate(Model.Binder bindings) {
-        return left.evaluate(bindings) + right.evaluate(bindings);
+        return Arrays.stream(expressions)
+                     .mapToDouble(exp -> exp.evaluate(bindings))
+                     .sum();
     }
 
     @Override
     public ScalarExpression computePartialDerivative(int variable) {
-        return ScalarSum.sum(left.computePartialDerivative(variable), right.computePartialDerivative(variable));
+        return ScalarSum.sum(
+                Arrays.stream(expressions)
+                      .map(exp -> exp.computePartialDerivative(variable))
+                      .toArray(ScalarExpression[]::new)
+        );
+    }
+
+    @Override
+    public VectorExpression computeDerivative(int[] variables) {
+        return VectorSum.sum(
+                Arrays.stream(expressions)
+                      .map(exp -> exp.computeDerivative(variables))
+                      .toArray(VectorExpression[]::new)
+        );
     }
 
     @Override
     public boolean isZero() {
-        return left.isZero() && right.isZero();
+        return Arrays.stream(expressions)
+                     .allMatch(ScalarExpression::isZero);
     }
 }
