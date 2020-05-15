@@ -11,17 +11,21 @@ public class NeuralNetworkTrainer {
     private final int[] layerSizes;
     private final double trainingRate;
     private final Supplier<Double> initialWeightSupplier;
+    private final double convergenceThreshold;
+    private double maxIterations;
 
     /**
      * @param layerSizes the number of neurons in each layer. Layer 0 is the input layer; layer (layerSizes.length-1) is the output layer.
      * Must have length at least 2.
      */
-    public NeuralNetworkTrainer(int[] layerSizes, double trainingRate, Supplier<Double> initialWeightSupplier) {
+    public NeuralNetworkTrainer(int[] layerSizes, double trainingRate, double convergenceThreshold, double maxIterations, Supplier<Double> initialWeightSupplier) {
         if (layerSizes.length < 2) {
             throw new IllegalArgumentException("layerSizes must be at least 2 (input+output)");
         }
         this.layerSizes = layerSizes;
         this.trainingRate = trainingRate;
+        this.convergenceThreshold = convergenceThreshold;
+        this.maxIterations = maxIterations;
         this.initialWeightSupplier = initialWeightSupplier;
     }
 
@@ -85,7 +89,7 @@ public class NeuralNetworkTrainer {
         final ScalarExpression sumOfSquaredError = ScalarSum.sum(squaredErrors);
 
         // this is a function that hasn't been evaluated yet
-        ScalarExpression meanSquaredError = new ScalarConstantMultiple(samples.size(), sumOfSquaredError);
+        ScalarExpression meanSquaredError = new ScalarConstantMultiple(1.0 / (double) samples.size(), sumOfSquaredError);
 
         // use derivative to adjust weights
         var binder = modelBuilder.createBinder();
@@ -97,12 +101,20 @@ public class NeuralNetworkTrainer {
 
         // Repeat this until converged
         Vector weightUpdateVector = null;
+        long iterations = 0;
         do {
             weightUpdateVector = lossDerivative.evaluate(binder);
             for (int w = 0; w < binder.variables().length; w++) {
                 binder.put(w, binder.get(w) - trainingRate * weightUpdateVector.get(w));
             }
-        } while (weightUpdateVector.lOneNorm() > 0.001);
+            if (iterations % 10 == 0) {
+                System.out.println("Completed iteration " + iterations);
+                System.out.println("  gradient: " + weightUpdateVector);
+                System.out.println("  gradient length: " + weightUpdateVector.lTwoNorm());
+            }
+            iterations++;
+        } while (weightUpdateVector.lTwoNorm() > convergenceThreshold && iterations < maxIterations);
+        System.out.println("Terminated after " + iterations + " iterations");
         // training cycle end
         // TODO - Stop when we have converged
 
@@ -119,6 +131,7 @@ public class NeuralNetworkTrainer {
         var biasComponent = new ConstantVector(new double[] {1.0});
         VectorExpression network = new VectorConcat(inputLayer, biasComponent);
         var logistic = new LogisticFunction();
+        var relu = new ReluFunction();
         for (int l = 1; l < layerSizes.length; l++) try {
             
             // columns: input size including bias
@@ -137,7 +150,7 @@ public class NeuralNetworkTrainer {
             } else {
                 network = new VectorConcat(
                         new VectorizedSingleVariableFunction(
-                                logistic,
+                                relu,
                                 new MatrixVectorProduct(
                                         weightMatrix,
                                         network

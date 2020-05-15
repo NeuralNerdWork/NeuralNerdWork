@@ -12,9 +12,11 @@ public class LinearRegressionTest {
     void testBasicLinearRegressionTraining() {
 
         NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(
-            new int[]{2, 1}, 
-            0.1, 
-            () -> (Math.random()-0.5)*2.0
+                new int[]{2, 1},
+                0.1,
+                0.001,
+                1000,
+                () -> (Math.random() - 0.5) * 2.0
         );
 
         NeuralNetwork network = trainer.train(Arrays.asList(
