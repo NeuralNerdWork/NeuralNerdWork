@@ -1,6 +1,7 @@
 package neuralnerdwork.math;
 
 import java.util.Arrays;
+import java.util.Map;
 
 public record ConstantMatrix(double[][] values) implements MatrixExpression, Matrix {
     @Override
@@ -34,7 +35,7 @@ public record ConstantMatrix(double[][] values) implements MatrixExpression, Mat
 
     @Override
     public MatrixExpression computePartialDerivative(int variable) {
-        return new ConstantMatrix(new double[rows()][cols()]);
+        return new SparseConstantMatrix(Map.of(), rows(), cols());
     }
 
     @Override

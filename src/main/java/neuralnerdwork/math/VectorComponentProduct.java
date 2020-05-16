@@ -56,4 +56,21 @@ public record VectorComponentProduct(VectorExpression left,
                 )
         );
     }
+
+    @Override
+    public MatrixExpression computeDerivative(int[] variables) {
+        final MatrixExpression leftDerivative = left.computeDerivative(variables);
+        final MatrixExpression rightDerivative = right.computeDerivative(variables);
+
+        return MatrixSum.sum(
+                MatrixProduct.product(
+                        new DiagonalizedVector(right),
+                        leftDerivative
+                ),
+                MatrixProduct.product(
+                        new DiagonalizedVector(left),
+                        rightDerivative
+                )
+        );
+    }
 }

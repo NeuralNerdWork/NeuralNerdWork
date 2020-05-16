@@ -25,19 +25,9 @@ public interface VectorExpression {
     boolean isZero();
 
     /**
-     * This method has a default implementation that calls {@link #computePartialDerivative(int)} for each given
-     * variable and combines them into the derivative matrix. This may be inefficient for nested expressions.
-     *
      * @param variables An ordered list of variables by which to differentiate this expression.
      * @return <a href="https://en.wikipedia.org/wiki/Jacobian_matrix_and_determinant">The derivative matrix</a> expression
      * for this vector expression, with respect to the given variables (and order).
      */
-    default MatrixExpression computeDerivative(int[] variables) {
-        final VectorExpression[] columns = new VectorExpression[variables.length];
-        for (int i = 0; i < variables.length; i++) {
-            columns[i] = computePartialDerivative(variables[i]);
-        }
-
-        return new ColumnMatrix(columns);
-    }
+    MatrixExpression computeDerivative(int[] variables);
 }

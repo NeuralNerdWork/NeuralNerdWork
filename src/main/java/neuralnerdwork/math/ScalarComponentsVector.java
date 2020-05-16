@@ -39,6 +39,17 @@ public record ScalarComponentsVector(ScalarExpression[] components) implements V
     }
 
     @Override
+    public MatrixExpression computeDerivative(int[] variables) {
+        return new Transpose(
+                new ColumnMatrix(
+                        Arrays.stream(components)
+                              .map(f -> f.computeDerivative(variables))
+                              .toArray(VectorExpression[]::new)
+                )
+        );
+    }
+
+    @Override
     public String toString() {
         return "ScalarComponentsVector{" +
                 "components=" + Arrays.toString(components) +
