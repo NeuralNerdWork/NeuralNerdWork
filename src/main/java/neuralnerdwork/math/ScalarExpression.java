@@ -20,18 +20,8 @@ public interface ScalarExpression {
     boolean isZero();
 
     /**
-     * This method has a default implementation that calls {@link #computePartialDerivative(int)} for each given
-     * variable and combines them into the gradient. This may be inefficient for nested expressions.
-     *
      * @param variables An ordered list of variables by which to differentiate this expression.
      * @return The gradient vector expression for this scalar expression, with respect to the given variables (and order).
      */
-    default VectorExpression computeDerivative(int[] variables) {
-        final ScalarExpression[] partialDerivatives = new ScalarExpression[variables.length];
-        for (int i = 0; i < variables.length; i++) {
-            partialDerivatives[i] = computePartialDerivative(variables[i]);
-        }
-
-        return new ScalarComponentsVector(partialDerivatives);
-    }
+    VectorExpression computeDerivative(int[] variables);
 }

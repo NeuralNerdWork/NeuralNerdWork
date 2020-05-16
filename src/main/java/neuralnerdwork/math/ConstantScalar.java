@@ -12,6 +12,11 @@ public record ConstantScalar(double value) implements ScalarExpression {
     }
 
     @Override
+    public VectorExpression computeDerivative(int[] variables) {
+        return new ConstantVector(new double[variables.length]);
+    }
+
+    @Override
     public boolean isZero() {
         return value == 0.0;
     }

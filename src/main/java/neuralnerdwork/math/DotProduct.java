@@ -4,7 +4,7 @@ public record DotProduct(VectorExpression left, VectorExpression right) implemen
     public static ScalarExpression product(VectorExpression left, VectorExpression right) {
         final DotProduct product = new DotProduct(left, right);
         if (product.isZero()) {
-            return new ScalarConstant(0.0);
+            return new ConstantScalar(0.0);
         } else {
             return product;
         }

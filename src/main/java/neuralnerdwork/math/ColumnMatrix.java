@@ -16,6 +16,10 @@ public record ColumnMatrix(VectorExpression[] columns) implements MatrixExpressi
         }
     }
 
+    public ColumnMatrix(VectorExpression column) {
+        this(new VectorExpression[] {column});
+    }
+
     @Override
     public boolean isZero() {
         return Arrays.stream(columns)

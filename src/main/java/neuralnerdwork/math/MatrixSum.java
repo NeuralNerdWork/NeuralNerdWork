@@ -43,7 +43,7 @@ public record MatrixSum(MatrixExpression... expressions) implements MatrixExpres
 
     @Override
     public int cols() {
-        return expressions[1].cols();
+        return expressions[0].cols();
     }
 
     @Override

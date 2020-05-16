@@ -9,7 +9,7 @@ public record ScalarSum(ScalarExpression... expressions) implements ScalarExpres
                                                       .toArray(ScalarExpression[]::new);
 
         if (nonZeroExpressions.length == 0) {
-            return new ScalarConstant(0.0);
+            return new ConstantScalar(0.0);
         } else {
             return new ScalarSum(nonZeroExpressions);
         }

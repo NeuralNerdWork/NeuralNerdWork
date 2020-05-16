@@ -2,6 +2,8 @@ package neuralnerdwork.math;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import java.util.Arrays;
+
 public interface SingleVariableFunction {
 
     String getFunctionName();
@@ -30,6 +32,17 @@ public interface SingleVariableFunction {
         @Override
         public ScalarExpression computePartialDerivative(int variable) {
             return ScalarProduct.product(function.differentiateByInput().invoke(inputExpression), inputExpression.computePartialDerivative(variable));
+        }
+
+        @Override
+        public VectorExpression computeDerivative(int[] variables) {
+            VectorExpression innerDerivative = inputExpression.computeDerivative(variables);
+            SingleVariableFunction outerDerivative = function.differentiateByInput();
+
+            return new ScaledVector(
+                    outerDerivative.invoke(inputExpression),
+                    innerDerivative
+            );
         }
 
         @Override
