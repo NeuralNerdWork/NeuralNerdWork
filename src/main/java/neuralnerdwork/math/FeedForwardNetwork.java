@@ -106,15 +106,8 @@ public record FeedForwardNetwork(ConstantVector input, Layer[] layers) implement
                     try {
                         /*
                          The way we handle bias is by padding the activation of a previous layer with a `1`.
-                         A consequence of this: as we backpropogate, the derivatives of these padded 1s become 0s,
-                         and we gain extra padding as we move backwards through layers.
+                         Whenever we take a derivative of a 1-padded vector, the padding turns into a zero.
                          */
-                        final MatrixExpression paddedWeights =
-                                new ZeroPaddedMatrix(
-                                        layers[l + 1].weights(),
-                                        layers.length - l - 2,
-                                        layers.length - l - 2
-                                );
                         final MatrixExpression paddedDiagonalActivationDerivative =
                                 new ZeroPaddedMatrix(
                                         new DiagonalizedVector(
@@ -123,19 +116,31 @@ public record FeedForwardNetwork(ConstantVector input, Layer[] layers) implement
                                                         new ConstantVector(feedForwardEvaluations[l].activationInputs())
                                                 )
                                         ),
-                                        layers.length - l - 1,
-                                        layers.length - l - 1
+                                        1,
+                                        1
+                                );
+                        /*
+                         The right-most column of the previous delta are errors associated with
+                         the bias of that layer. Since the bias is added at each layer, we need to strip
+                         off that column so the matrix multiplication is valid.
+                         */
+                        final MatrixExpression truncatedUpperLayerDelta =
+                                new TruncatedMatrix(
+                                        new ConstantMatrixExpression(deltas[l + 1]),
+                                        deltas[l + 1].rows(),
+                                        // don't need to strip off anything for output layer that has no bias
+                                        deltas[l + 1].cols() - (l == layers.length - 2 ? 0 : 1)
                                 );
                         deltas[l] =
                                 new MatrixProduct(
                                         new MatrixProduct(
-                                                new ConstantMatrixExpression(deltas[l + 1]),
-                                                paddedWeights
+                                                truncatedUpperLayerDelta,
+                                                layers[l + 1].weights()
                                         ),
                                         paddedDiagonalActivationDerivative
                                 ).evaluate(bindings);
                     } catch (IllegalArgumentException iae) {
-                        throw new RuntimeException("Problem building deltas in layer " + l, iae);
+                        throw new RuntimeException("Problem building deltas in layer index " + l + " of " + layers.length, iae);
                     }
                 }
 
@@ -153,6 +158,7 @@ public record FeedForwardNetwork(ConstantVector input, Layer[] layers) implement
                     try {
                         final double[] lowerLayerValues = (layerIndex == layers.length - 1) ?
                                                           new double[layers[layerIndex].weights().rows()] :
+                                                          // +1 for bias added to hidden layer output
                                                           new double[layers[layerIndex].weights().rows() + 1];
                         /*
                          Special cases for input layer, and for bias weight
@@ -175,12 +181,7 @@ public record FeedForwardNetwork(ConstantVector input, Layer[] layers) implement
                         partialDerivatives[varIndex] =
                                 new MatrixVectorProduct(
                                         layerDeltas,
-                                        new ZeroPaddedVector(
-                                                new ConstantVector(lowerLayerValues),
-                                                layerIndex == layers.length - 1 ?
-                                                0 :
-                                                (layers.length - 1) - layerIndex - 1
-                                        )
+                                        new ConstantVector(lowerLayerValues)
                                 ).evaluate(bindings)
                                  .toArray();
                     } catch (RuntimeException e) {
@@ -189,6 +190,10 @@ public record FeedForwardNetwork(ConstantVector input, Layer[] layers) implement
                     }
                 }
 
+                /*
+                 * Because we represent matrices as row-major 2d-arrays, it is more work to assign an entire column
+                 * at once than to assign an entire row. For convenience, we build up the transpose of the result.
+                 */
                 return new Transpose(new ConstantArrayMatrix(partialDerivatives));
             }
 

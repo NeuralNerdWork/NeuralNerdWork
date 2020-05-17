@@ -90,7 +90,7 @@ public class GradientDescentTest {
 
     private static final int backpropShouldBeSameAsRegularGradient_rows = 2;
     private static final int backpropShouldBeSameAsRegularGradient_cols = 2;
-    private static final int backpropShouldBeSameAsRegularGradient_layers = 3;
+    private static final int backpropShouldBeSameAsRegularGradient_layers = 10;
     private static final int backpropShouldBeSameAsRegularGradient_parameters =
             backpropShouldBeSameAsRegularGradient_rows
             * (backpropShouldBeSameAsRegularGradient_cols + 1)

@@ -33,12 +33,12 @@ public record ZeroPaddedMatrix(MatrixExpression expression, int extraRows, int e
 
             @Override
             public int rows() {
-                return ZeroPaddedMatrix.this.rows();
+                return matrix.rows() + extraRows;
             }
 
             @Override
             public int cols() {
-                return ZeroPaddedMatrix.this.cols();
+                return matrix.cols() + extraColumns;
             }
         };
     }
