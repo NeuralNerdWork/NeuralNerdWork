@@ -58,7 +58,7 @@ public class GradientDescentTest {
                 );
 
         final ConstantVector trainingOutput = new ConstantVector(outputValues);
-        final VectorSum error = new VectorSum(networkFunction, new ScaledVector(-1.0, trainingOutput));
+        final VectorExpression error = VectorSum.sum(networkFunction, new ScaledVector(-1.0, trainingOutput));
 
         final double[] ones = new double[rows];
         Arrays.fill(ones, 1.0);
@@ -117,7 +117,7 @@ public class GradientDescentTest {
         final FeedForwardNetwork networkFunction = new FeedForwardNetwork(trainingInput, layers);
 
         final ConstantVector trainingOutput = new ConstantVector(outputValues);
-        final VectorSum error = new VectorSum(networkFunction, new ScaledVector(-1.0, trainingOutput));
+        final VectorExpression error = VectorSum.sum(networkFunction, new ScaledVector(-1.0, trainingOutput));
 
         final double[] ones = new double[rows];
         Arrays.fill(ones, 1.0);

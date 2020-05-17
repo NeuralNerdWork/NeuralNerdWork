@@ -1,5 +1,6 @@
 package neuralnerdwork;
 
+import neuralnerdwork.descent.SimpleBatchGradientDescent;
 import neuralnerdwork.math.ConstantVector;
 import org.junit.jupiter.api.Test;
 
@@ -10,6 +11,7 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class LinearRegressionTest {
     @Test
@@ -17,10 +19,13 @@ public class LinearRegressionTest {
 
         NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(
                 new int[]{2, 1},
-                0.1,
-                0.001,
-                1000,
-                () -> (Math.random() - 0.5) * 2.0
+                new SimpleBatchGradientDescent(
+                        new SimpleBatchGradientDescent.HyperParameters(
+                                0.1,
+                                0.001,
+                                1000
+                        ),
+                        () -> (Math.random() - 0.5) * 2.0)
         );
 
         NeuralNetwork network = trainer.train(Arrays.asList(
@@ -64,10 +69,13 @@ public class LinearRegressionTest {
 
         NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(
                 new int[]{2, 4, 1},
-                1.0,
-                0.001,
-                2000,
-                () -> (r.nextDouble() - 0.5) * 2.0
+                new SimpleBatchGradientDescent(
+                        new SimpleBatchGradientDescent.HyperParameters(
+                                1.0,
+                                0.001,
+                                2000
+                        ),
+                        () -> (r.nextDouble() - 0.5) * 2.0)
         );
 
         NeuralNetwork network = trainer.train(trainingSet);
@@ -87,9 +95,13 @@ public class LinearRegressionTest {
                                         .filter(eval -> Math.round(Math.abs(eval.output() - eval.sample.output().get(0))) != 0L)
                                         .count();
 
-        System.out.printf("Training set accuracy: %.2f%%\n", 100.0 * (1.0 - trainingSetFailures / (double) trainingSet.size()));
-        System.out.printf("Validation set accuracy: %.2f%%\n", 100.0 * (1.0 - validationFailures / (double) validationSetSize));
+        final double trainingSetAccuracy = 100.0 * (1.0 - trainingSetFailures / (double) trainingSet.size());
+        System.out.printf("Training set accuracy: %.2f%%\n", trainingSetAccuracy);
+        final double validationSetAccuracy = 100.0 * (1.0 - validationFailures / (double) validationSetSize);
+        System.out.printf("Validation set accuracy: %.2f%%\n", validationSetAccuracy);
 
+        assertTrue(trainingSetAccuracy > 95.0);
+        assertTrue(validationSetAccuracy > 95.0);
     }
 
     private Point pointInUnitCircle(Random random) {

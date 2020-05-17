@@ -3,6 +3,6 @@ package neuralnerdwork;
 @FunctionalInterface
 public interface NeuralNetwork {
 
-    public double[] apply(double[] input);
-    
+    double[] apply(double[] input);
+
 }
