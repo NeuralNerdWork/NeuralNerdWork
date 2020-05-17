@@ -41,11 +41,25 @@ public record FeedForwardNetwork(ConstantVector input, Layer[] layers) implement
 
             @Override
             public Matrix evaluate(Model.Binder bindings) {
+                /*
+                 Algorithm Summary:
+                    - (Bottom to top) Evaluate network with current parameter arguments, saving activations and weighted sums for each layer
+                    - (Top to bottom) Using pre-calculated activations and weighted sums, calculate error deltas at each layer
+                            Note: Lower layers error deltas depend on higher layers
+                    - Calculate partial derivatives for each parameter using deltas
+                            Note: We do this as a separate step because of the current VectorExpression API requiring
+                                    partial derivatives to be returned in a layout consistent with a given variable order.
+                 */
+
                 record LayerEval(double[] activations, double[] activationInputs) {}
                 final LayerEval[] feedForwardEvaluations = new LayerEval[layers.length];
                 final ConstantVector biasComponent = new ConstantVector(new double[]{1.0});
                 double[] lastOutput = input.toArray();
-                // Feed forward
+
+                /* Feed forward
+                    Evaluate network, saving activation values and weighted sums of inputs at each layer to be re-used
+                    in derivative calculations.
+                 */
                 for (int l = 0; l < layers.length; l++) {
                     final Layer layer = layers[l];
                     final VectorConcat input = new VectorConcat(new ConstantVector(lastOutput), biasComponent);
@@ -66,7 +80,13 @@ public record FeedForwardNetwork(ConstantVector input, Layer[] layers) implement
                     feedForwardEvaluations[l] = new LayerEval(lastOutput, curActivationInputs);
                 }
 
-                // Backprop
+                /* Backpropogate
+                    Calculate deltas starting at last layer, going backwards.
+                    This code has some extra complexity because the input and output layers are both special cases.
+                    The input layer is not represented in the `layers` array, and the ouptut layer does not have bias.
+
+                    The formula for deltas at each layer is recursive, based on definitions of deltas of higher layers.
+                 */
                 final Matrix[] deltas = new Matrix[layers.length];
 
                 // Special case: output layer
@@ -84,6 +104,11 @@ public record FeedForwardNetwork(ConstantVector input, Layer[] layers) implement
                     final Layer curLayer = layers[l];
                     final SingleVariableFunction curActivationDerivative = curLayer.activation().differentiateByInput();
                     try {
+                        /*
+                         The way we handle bias is by padding the activation of a previous layer with a `1`.
+                         A consequence of this: as we backpropogate, the derivatives of these padded 1s become 0s,
+                         and we gain extra padding as we move backwards through layers.
+                         */
                         final MatrixExpression paddedWeights =
                                 new ZeroPaddedMatrix(
                                         layers[l + 1].weights(),
@@ -114,10 +139,12 @@ public record FeedForwardNetwork(ConstantVector input, Layer[] layers) implement
                     }
                 }
 
-                // Build up derivatives using deltas and activations
+                /* Build up derivatives using deltas and activations
+                    We do this separately from the last step so that we can iterate in order that
+                    variables were listed in `computeDerivative`.
+                 */
                 final double[][] partialDerivatives = new double[variables.length][];
-                for (int varIndex = variables.length - 1; varIndex > -1; varIndex--) {
-//                for (int varIndex = 0; varIndex < variables.length; varIndex++) {
+                for (int varIndex = 0; varIndex < variables.length; varIndex++) {
                     final int variable = variables[varIndex];
                     final int layerIndex = findLayerIndex(variable);
                     final int row = layers[layerIndex].weights().rowIndexFor(variable);
@@ -127,6 +154,10 @@ public record FeedForwardNetwork(ConstantVector input, Layer[] layers) implement
                         final double[] lowerLayerValues = (layerIndex == layers.length - 1) ?
                                                           new double[layers[layerIndex].weights().rows()] :
                                                           new double[layers[layerIndex].weights().rows() + 1];
+                        /*
+                         Special cases for input layer, and for bias weight
+                         (which has a `1.0` as input instead of an activation from previous layer)
+                         */
                         if (layerIndex > 0) {
                             if (col < feedForwardEvaluations[layerIndex - 1].activations().length) {
                                 lowerLayerValues[row] = feedForwardEvaluations[layerIndex - 1].activations()[col];
