@@ -29,7 +29,7 @@ public record ScaledVector(ScalarExpression scalarExpression, VectorExpression v
             MatrixProduct.product(
                     new ColumnMatrix(vectorExpression),
                     // TODO Make RowMatrix
-                    new Transpose(new ColumnMatrix(scalarExpression.computeDerivative(variables)))
+                    new TransposeExpression(new ColumnMatrix(scalarExpression.computeDerivative(variables)))
             )
         );
     }

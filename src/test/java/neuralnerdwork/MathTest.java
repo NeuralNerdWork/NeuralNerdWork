@@ -18,13 +18,13 @@ public class MathTest {
 
     @Example
     void multiplyByIdentityGivesSameMatrix() {
-        final ConstantMatrix identity = new ConstantMatrix(new double[][]{
+        final ConstantArrayMatrix identity = new ConstantArrayMatrix(new double[][]{
                 {1.0, 0.0},
                 {0.0, 1.0}
         });
 
 
-        MatrixExpression other = new ConstantMatrix(
+        MatrixExpression other = new ConstantArrayMatrix(
                 new double[][] {
                         { 2.0, -1.0 },
                         { 42.0, -1337 }

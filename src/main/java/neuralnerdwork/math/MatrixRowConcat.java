@@ -40,7 +40,7 @@ public record MatrixRowConcat(MatrixExpression left,
             }
         }
 
-        return new ConstantMatrix(values);
+        return new ConstantArrayMatrix(values);
     }
 
     @Override

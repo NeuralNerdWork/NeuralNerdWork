@@ -47,7 +47,7 @@ public record MatrixProduct(MatrixExpression left, MatrixExpression right) imple
             }
         }
 
-        return new ConstantMatrix(values);
+        return new ConstantArrayMatrix(values);
     }
 
     @Override

@@ -31,7 +31,7 @@ public record ScaledMatrix(ScalarExpression scalarExpression, MatrixExpression m
             }
         }
 
-        return new ConstantMatrix(values);
+        return new ConstantArrayMatrix(values);
     }
 
     @Override

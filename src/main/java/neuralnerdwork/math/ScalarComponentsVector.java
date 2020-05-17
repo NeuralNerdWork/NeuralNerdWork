@@ -40,7 +40,7 @@ public record ScalarComponentsVector(ScalarExpression[] components) implements V
 
     @Override
     public MatrixExpression computeDerivative(int[] variables) {
-        return new Transpose(
+        return new TransposeExpression(
                 new ColumnMatrix(
                         Arrays.stream(components)
                               .map(f -> f.computeDerivative(variables))

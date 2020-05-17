@@ -46,7 +46,7 @@ public record ColumnMatrix(VectorExpression[] columns) implements MatrixExpressi
             }
         }
 
-        return new ConstantMatrix(values);
+        return new ConstantArrayMatrix(values);
     }
 
     @Override

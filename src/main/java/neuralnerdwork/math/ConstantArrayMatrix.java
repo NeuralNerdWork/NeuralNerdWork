@@ -3,7 +3,7 @@ package neuralnerdwork.math;
 import java.util.Arrays;
 import java.util.Map;
 
-public record ConstantMatrix(double[][] values) implements MatrixExpression, Matrix {
+public record ConstantArrayMatrix(double[][] values) implements MatrixExpression, Matrix {
     @Override
     public double get(int row, int col) {
         return values[row][col];

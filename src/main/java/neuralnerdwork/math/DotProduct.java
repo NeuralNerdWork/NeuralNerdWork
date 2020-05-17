@@ -34,8 +34,8 @@ public record DotProduct(VectorExpression left, VectorExpression right) implemen
         final MatrixExpression leftDerivative = left.computeDerivative(variables);
         final MatrixExpression rightDerivative = right.computeDerivative(variables);
 
-        return VectorSum.sum(MatrixVectorProduct.product(new Transpose(leftDerivative), right),
-                             MatrixVectorProduct.product(new Transpose(rightDerivative), left));
+        return VectorSum.sum(MatrixVectorProduct.product(new TransposeExpression(leftDerivative), right),
+                             MatrixVectorProduct.product(new TransposeExpression(rightDerivative), left));
     }
 
     @Override

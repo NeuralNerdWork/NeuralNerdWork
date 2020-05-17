@@ -19,7 +19,7 @@ public record ParameterMatrix(int variableStartIndex, int rows, int cols) implem
             values[row][col] = bindings.get(this.variableStartIndex + i);
         }
 
-        return new ConstantMatrix(values);
+        return new ConstantArrayMatrix(values);
     }
 
     @Override
@@ -35,5 +35,17 @@ public record ParameterMatrix(int variableStartIndex, int rows, int cols) implem
 
     public int variableIndexFor(int row, int col) {
         return variableStartIndex + row * cols + col;
+    }
+
+    public boolean containsVariable(int variable) {
+        return variable >= variableStartIndex && variable < variableStartIndex + rows * cols;
+    }
+
+    public int rowIndexFor(int variable) {
+        return (variable - variableStartIndex) / cols;
+    }
+
+    public int colIndexFor(int variable) {
+        return (variable - variableStartIndex) % cols;
     }
 }
