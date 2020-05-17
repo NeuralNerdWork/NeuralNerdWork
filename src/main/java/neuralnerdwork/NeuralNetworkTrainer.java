@@ -126,44 +126,24 @@ public class NeuralNetworkTrainer {
        };
     }
 
-    private VectorExpression buildNetwork(ArrayList<ParameterMatrix> weightMatrices, VectorExpression inputLayer) {
+    private VectorExpression buildNetwork(ArrayList<ParameterMatrix> weightMatrices, ConstantVector inputLayer) {
         //start at first hidden layer; end at output layer (TODO: bias on output layer should be optional)
-        var biasComponent = new ConstantVector(new double[] {1.0});
-        VectorExpression network = new VectorConcat(inputLayer, biasComponent);
         var logistic = new LogisticFunction();
         var relu = new ReluFunction();
+        final FeedForwardNetwork.Layer[] layers = new FeedForwardNetwork.Layer[layerSizes.length - 1];
         for (int l = 1; l < layerSizes.length; l++) try {
-            
+
             // columns: input size including bias
             // rows: output size
             var weightMatrix = weightMatrices.get(l - 1);
             // TODO: move out of loop
-            if(l == layerSizes.length - 1) {
-                network = 
-                    new VectorizedSingleVariableFunction(
-                            logistic,
-                            new MatrixVectorProduct(
-                                    weightMatrix,
-                                    network
-                            )
-                    );
-            } else {
-                network = new VectorConcat(
-                        new VectorizedSingleVariableFunction(
-                                relu,
-                                new MatrixVectorProduct(
-                                        weightMatrix,
-                                        network
-                                )
-                        ),
-                        biasComponent
-                );
-            }
+            var activation = (l == layerSizes.length - 1) ? logistic : relu;
+            layers[l-1] = new FeedForwardNetwork.Layer(weightMatrix, activation);
         } catch(Exception e) {
             throw new RuntimeException("Exception building layer " + l, e);
         }
         
-        return network;
+        return new FeedForwardNetwork(inputLayer, layers);
     }
 
     private static ScalarExpression squaredError(TrainingSample sample, VectorExpression network) {
