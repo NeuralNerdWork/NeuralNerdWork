@@ -10,13 +10,14 @@ public record FeedForwardNetwork(ConstantVector input, Layer[] layers) implement
     @Override
     public Vector evaluate(Model.Binder bindings) {
         VectorExpression network = input;
+        final ConstantVector biasComponent = new ConstantVector(new double[]{1.0});
         for (int l = 0; l < layers.length; l++) {
             final Layer layer = layers[l];
             network = new VectorizedSingleVariableFunction(
                     layer.activation(),
                     new MatrixVectorProduct(
                             layer.weights(),
-                            network
+                            new VectorConcat(network, biasComponent)
                     )
             );
         }
@@ -42,15 +43,19 @@ public record FeedForwardNetwork(ConstantVector input, Layer[] layers) implement
             public Matrix evaluate(Model.Binder bindings) {
                 record LayerEval(double[] activations, double[] activationInputs) {}
                 final LayerEval[] feedForwardEvaluations = new LayerEval[layers.length];
+                final ConstantVector biasComponent = new ConstantVector(new double[]{1.0});
                 double[] lastOutput = input.toArray();
                 // Feed forward
                 for (int l = 0; l < layers.length; l++) {
                     final Layer layer = layers[l];
-                    final double[] curActivationInputs = new MatrixVectorProduct(
-                            layer.weights(),
-                            new ConstantVector(lastOutput)
-                    ).evaluate(bindings)
-                     .toArray();
+                    final VectorConcat input = new VectorConcat(new ConstantVector(lastOutput), biasComponent);
+                    final double[] curActivationInputs =
+                            new MatrixVectorProduct(
+                                    layer.weights(),
+                                    input
+
+                            ).evaluate(bindings)
+                             .toArray();
 
                     lastOutput = new VectorizedSingleVariableFunction(
                             layer.activation(),
@@ -78,54 +83,96 @@ public record FeedForwardNetwork(ConstantVector input, Layer[] layers) implement
                 for (int l = layers.length-2; l > -1; l--) {
                     final Layer curLayer = layers[l];
                     final SingleVariableFunction curActivationDerivative = curLayer.activation().differentiateByInput();
-                    deltas[l] = new MatrixProduct(
-                            new MatrixProduct(
-                                    new ConstantMatrixExpression(deltas[l + 1]),
-                                    layers[l + 1].weights()
-                            ),
-                            new DiagonalizedVector(
-                                    new VectorizedSingleVariableFunction(
-                                            curActivationDerivative,
-                                            new ConstantVector(feedForwardEvaluations[l].activationInputs())
-                                    )
-                            )
-                    ).evaluate(bindings);
+                    try {
+                        final MatrixExpression paddedWeights =
+                                new ZeroPaddedMatrix(
+                                        layers[l + 1].weights(),
+                                        layers.length - l - 2,
+                                        layers.length - l - 2
+                                );
+                        final MatrixExpression paddedDiagonalActivationDerivative =
+                                new ZeroPaddedMatrix(
+                                        new DiagonalizedVector(
+                                                new VectorizedSingleVariableFunction(
+                                                        curActivationDerivative,
+                                                        new ConstantVector(feedForwardEvaluations[l].activationInputs())
+                                                )
+                                        ),
+                                        layers.length - l - 1,
+                                        layers.length - l - 1
+                                );
+                        deltas[l] =
+                                new MatrixProduct(
+                                        new MatrixProduct(
+                                                new ConstantMatrixExpression(deltas[l + 1]),
+                                                paddedWeights
+                                        ),
+                                        paddedDiagonalActivationDerivative
+                                ).evaluate(bindings);
+                    } catch (IllegalArgumentException iae) {
+                        throw new RuntimeException("Problem building deltas in layer " + l, iae);
+                    }
                 }
 
+                // Build up derivatives using deltas and activations
                 final double[][] partialDerivatives = new double[variables.length][];
-                for (int varIndex = 0; varIndex < variables.length; varIndex++) {
+                for (int varIndex = variables.length - 1; varIndex > -1; varIndex--) {
+//                for (int varIndex = 0; varIndex < variables.length; varIndex++) {
                     final int variable = variables[varIndex];
-                    int l;
-                    for (l = 0; l < layers.length; l++) {
-                        final ParameterMatrix layerWeights = layers[l].weights();
-                        if (layerWeights.containsVariable(variable)) {
-                            break;
+                    final int layerIndex = findLayerIndex(variable);
+                    final int row = layers[layerIndex].weights().rowIndexFor(variable);
+                    final int col = layers[layerIndex].weights().colIndexFor(variable);
+
+                    try {
+                        final double[] lowerLayerValues = (layerIndex == layers.length - 1) ?
+                                                          new double[layers[layerIndex].weights().rows()] :
+                                                          new double[layers[layerIndex].weights().rows() + 1];
+                        if (layerIndex > 0) {
+                            if (col < feedForwardEvaluations[layerIndex - 1].activations().length) {
+                                lowerLayerValues[row] = feedForwardEvaluations[layerIndex - 1].activations()[col];
+                            } else {
+                                lowerLayerValues[row] = 1.0;
+                            }
+                        } else {
+                            if (col < input.length()) {
+                                lowerLayerValues[row] = input.get(col);
+                            } else {
+                                lowerLayerValues[row] = 1.0;
+                            }
                         }
+                        final ConstantMatrixExpression layerDeltas = new ConstantMatrixExpression(deltas[layerIndex]);
+                        partialDerivatives[varIndex] =
+                                new MatrixVectorProduct(
+                                        layerDeltas,
+                                        new ZeroPaddedVector(
+                                                new ConstantVector(lowerLayerValues),
+                                                layerIndex == layers.length - 1 ?
+                                                0 :
+                                                (layers.length - 1) - layerIndex - 1
+                                        )
+                                ).evaluate(bindings)
+                                 .toArray();
+                    } catch (RuntimeException e) {
+                        throw new RuntimeException(String.format("Problem in (varIndex/totalVars, layerIndex/totalLayers, row, col) = (%d/%d, %d/%d, %d, %d)",
+                                                                 varIndex, variables.length, layerIndex, layers.length, row, col), e);
                     }
-                    if (l == layers.length) {
-                        throw new IllegalArgumentException("Cannot find layer containing variable " + variable);
-                    }
-
-                    final int row = layers[l].weights().rowIndexFor(variable);
-                    final int col = layers[l].weights().colIndexFor(variable);
-
-                    final double[] lowerLayerValues = new double[layers[l].weights().cols()];
-                    if (l > 0) {
-                        lowerLayerValues[row] = feedForwardEvaluations[l-1].activations()[col];
-                    } else {
-                        lowerLayerValues[row] = input.get(col);
-
-                    }
-                    final ConstantMatrixExpression layerDeltas = new ConstantMatrixExpression(deltas[l]);
-                    partialDerivatives[varIndex] =
-                            new MatrixVectorProduct(
-                                    layerDeltas,
-                                    new ConstantVector(lowerLayerValues)
-                            ).evaluate(bindings)
-                             .toArray();
                 }
 
                 return new Transpose(new ConstantArrayMatrix(partialDerivatives));
+            }
+
+            private int findLayerIndex(int variable) {
+                int l;
+                for (l = 0; l < layers.length; l++) {
+                    final ParameterMatrix layerWeights = layers[l].weights();
+                    if (layerWeights.containsVariable(variable)) {
+                        break;
+                    }
+                }
+                if (l == layers.length) {
+                    throw new IllegalArgumentException("Cannot find layer containing variable " + variable);
+                }
+                return l;
             }
 
             @Override

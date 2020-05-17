@@ -1,32 +1,32 @@
 package neuralnerdwork.math;
 
-public record MatrixRowConcat(MatrixExpression left,
-                              MatrixExpression right) implements MatrixExpression {
+public record MatrixRowConcat(MatrixExpression top,
+                              MatrixExpression bottom) implements MatrixExpression {
     public MatrixRowConcat {
-        if (left.cols() != right.cols()) {
+        if (top.cols() != bottom.cols()) {
             throw new IllegalArgumentException();
         }
     }
 
     @Override
     public int rows() {
-        return left.rows() + right.rows();
+        return top.rows() + bottom.rows();
     }
 
     @Override
     public int cols() {
-        return left.cols();
+        return top.cols();
     }
 
     @Override
     public boolean isZero() {
-        return left.isZero() && right.isZero();
+        return top.isZero() && bottom.isZero();
     }
 
     @Override
     public Matrix evaluate(Model.Binder bindings) {
-        final Matrix leftEval = left.evaluate(bindings);
-        final Matrix rightEval = right.evaluate(bindings);
+        final Matrix leftEval = top.evaluate(bindings);
+        final Matrix rightEval = bottom.evaluate(bindings);
         final double[][] values = new double[rows()][cols()];
 
         for (int i = 0; i < leftEval.rows(); i++) {
@@ -45,8 +45,8 @@ public record MatrixRowConcat(MatrixExpression left,
 
     @Override
     public MatrixExpression computePartialDerivative(int variable) {
-        final MatrixExpression leftDerivative = left.computePartialDerivative(variable);
-        final MatrixExpression rightDerivative = right.computePartialDerivative(variable);
+        final MatrixExpression leftDerivative = top.computePartialDerivative(variable);
+        final MatrixExpression rightDerivative = bottom.computePartialDerivative(variable);
 
         return new MatrixRowConcat(leftDerivative, rightDerivative);
     }

@@ -94,7 +94,8 @@ public class GradientDescentTest {
     private static final int backpropShouldBeSameAsRegularGradient_parameters =
             backpropShouldBeSameAsRegularGradient_rows
             * (backpropShouldBeSameAsRegularGradient_cols + 1)
-            * backpropShouldBeSameAsRegularGradient_layers;
+            * backpropShouldBeSameAsRegularGradient_layers
+            + backpropShouldBeSameAsRegularGradient_cols;
     @Property(tries = 3, shrinking = ShrinkingMode.OFF)
     void backpropShouldBeSameAsRegularGradient(@ForAll @Size(value = backpropShouldBeSameAsRegularGradient_parameters) @Weight double[] values,
                            @ForAll @TrainingOutput @Size(backpropShouldBeSameAsRegularGradient_rows) double[] outputValues) {
@@ -108,9 +109,10 @@ public class GradientDescentTest {
         final LogisticFunction logistic = new LogisticFunction();
 
         final FeedForwardNetwork.Layer[] layers = new FeedForwardNetwork.Layer[backpropShouldBeSameAsRegularGradient_layers];
-        VectorExpression genericNetworkBuilder = trainingInput;
+        final ConstantVector biasComponent = new ConstantVector(new double[]{1.0});
+        VectorExpression genericNetworkBuilder = new VectorConcat(trainingInput, biasComponent);
         for (int i = 0; i < numLayers; i++) {
-            ParameterMatrix weights = builder.createParameterMatrix(rows, cols);
+            ParameterMatrix weights = builder.createParameterMatrix(rows, cols + 1);
             layers[i] = new FeedForwardNetwork.Layer(weights, logistic);
             genericNetworkBuilder =
                     new VectorizedSingleVariableFunction(
@@ -120,6 +122,9 @@ public class GradientDescentTest {
                                     genericNetworkBuilder
                             )
                     );
+            if (i != numLayers - 1) {
+                genericNetworkBuilder = new VectorConcat(genericNetworkBuilder, biasComponent);
+            }
         }
 
         final VectorExpression genericNetwork = genericNetworkBuilder;

@@ -21,8 +21,8 @@ public record MatrixVectorProduct(MatrixExpression left, VectorExpression right)
 
     public MatrixVectorProduct {
         if (left.cols() != right.length()) {
-            throw new IllegalArgumentException(format("Matrix width (%d) must match vectorExpression height (%d) for multiplication",
-                                                      left.cols(), right.length()));
+            throw new IllegalArgumentException(format("Cannot multiply (%dx%d) matrix by (%dx1) vector",
+                                                      left.rows(), left.cols(), right.length()));
         }
     }
 

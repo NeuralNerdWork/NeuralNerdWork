@@ -1,11 +1,11 @@
 package neuralnerdwork;
 
+import neuralnerdwork.math.*;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
-
-import neuralnerdwork.math.*;
 
 public class NeuralNetworkTrainer {
     private final int[] layerSizes;
@@ -126,7 +126,7 @@ public class NeuralNetworkTrainer {
        };
     }
 
-    private VectorExpression buildNetwork(ArrayList<? extends MatrixExpression> weightMatrices, VectorExpression inputLayer) {
+    private VectorExpression buildNetwork(ArrayList<ParameterMatrix> weightMatrices, VectorExpression inputLayer) {
         //start at first hidden layer; end at output layer (TODO: bias on output layer should be optional)
         var biasComponent = new ConstantVector(new double[] {1.0});
         VectorExpression network = new VectorConcat(inputLayer, biasComponent);
