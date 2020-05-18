@@ -88,6 +88,24 @@ public class LinearRegressionTest {
                         ),
                         () -> (r.nextDouble() - 0.5) * 2.0,
                         () -> new NesterovMomentumGradientUpdate(0.1, 0.9)
+                ),
+                new StochasticGradientDescent(
+                        new StochasticGradientDescent.HyperParameters(
+                                1e-8,
+                                5000,
+                                200
+                        ),
+                        () -> (r.nextDouble() - 0.5) * 2.0,
+                        () -> new AdagradUpdate(0.1, 1e-8)
+                ),
+                new StochasticGradientDescent(
+                        new StochasticGradientDescent.HyperParameters(
+                                1e-8,
+                                5000,
+                                200
+                        ),
+                        () -> (r.nextDouble() - 0.5) * 2.0,
+                        () -> new AdagradDeltaUpdate(0.9, 1e-4)
                 )
         );
     }
