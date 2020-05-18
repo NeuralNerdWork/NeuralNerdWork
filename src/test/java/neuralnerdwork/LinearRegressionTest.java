@@ -106,6 +106,15 @@ public class LinearRegressionTest {
                         ),
                         () -> (r.nextDouble() - 0.5) * 2.0,
                         () -> new AdagradDeltaUpdate(0.9, 1e-4)
+                ),
+                new StochasticGradientDescent(
+                        new StochasticGradientDescent.HyperParameters(
+                                1e-8,
+                                5000,
+                                200
+                        ),
+                        () -> (r.nextDouble() - 0.5) * 2.0,
+                        () -> new RmsPropUPdate(0.001, 0.9, 1e-8)
                 )
         );
     }
