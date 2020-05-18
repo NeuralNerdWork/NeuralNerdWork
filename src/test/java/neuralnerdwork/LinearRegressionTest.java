@@ -79,6 +79,15 @@ public class LinearRegressionTest {
                         ),
                         () -> (r.nextDouble() - 0.5) * 2.0,
                         () -> new MomentumGradientUpdate(0.1, 0.9)
+                ),
+                new StochasticGradientDescent(
+                        new StochasticGradientDescent.HyperParameters(
+                                0.0001,
+                                5000,
+                                200
+                        ),
+                        () -> (r.nextDouble() - 0.5) * 2.0,
+                        () -> new NesterovMomentumGradientUpdate(0.1, 0.9)
                 )
         );
     }

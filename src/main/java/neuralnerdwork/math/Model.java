@@ -1,5 +1,6 @@
 package neuralnerdwork.math;
 
+import java.util.Arrays;
 import java.util.stream.Stream;
 
 public class Model {
@@ -40,10 +41,14 @@ public class Model {
 
     public static class ParameterBindings {
         private final int start;
-        private final Double[] values;
+        private final double[] values;
         ParameterBindings(int start, int length) {
             this.start = start;
-            values = new Double[length];
+            values = new double[length];
+        }
+        private ParameterBindings(int start, double[] values) {
+            this.start = start;
+            this.values = values;
         }
 
         public int[] variables() {
@@ -57,7 +62,7 @@ public class Model {
             return values[key - start];
         }
 
-        public Double put(int key, Double value) {
+        public double put(int key, Double value) {
             if (key >= start && key < start + values.length) {
                 final Double prev = values[key - start];
                 values[key - start] = value;
@@ -68,8 +73,8 @@ public class Model {
             }
         }
 
-        public int size() {
-            return values.length;
+        public ParameterBindings copy() {
+            return new ParameterBindings(start, Arrays.copyOf(values, values.length));
         }
     }
 }
