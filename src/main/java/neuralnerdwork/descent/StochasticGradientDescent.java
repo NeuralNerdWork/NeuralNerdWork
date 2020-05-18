@@ -37,7 +37,8 @@ public record StochasticGradientDescent(HyperParameters hyperParameters,
         long iterations = 0;
         do {
             Collections.shuffle(trainingSamples, rand);
-            final List<TrainingSample> iterationSamples = trainingSamples.subList(0, hyperParameters.batchSize());
+            final int batchSize = Math.min(hyperParameters.batchSize(), trainingSamples.size());
+            final List<TrainingSample> iterationSamples = trainingSamples.subList(0, batchSize);
             final ScalarExpression error = errorFunction.apply(iterationSamples);
             // use derivative to adjust weights
             weightUpdateVector = updateStrategy.updateVector(error, parameterBindings);
