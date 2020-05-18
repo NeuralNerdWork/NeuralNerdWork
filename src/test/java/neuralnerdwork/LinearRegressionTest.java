@@ -1,8 +1,6 @@
 package neuralnerdwork;
 
-import neuralnerdwork.descent.GradientDescentStrategy;
-import neuralnerdwork.descent.SimpleBatchGradientDescent;
-import neuralnerdwork.descent.StochasticGradientDescent;
+import neuralnerdwork.descent.*;
 import neuralnerdwork.math.ConstantVector;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -50,18 +48,29 @@ public class LinearRegressionTest {
                 new SimpleBatchGradientDescent(
                         new SimpleBatchGradientDescent.HyperParameters(
                                 1.0,
-                                0.005,
+                                0.001,
                                 2000
                         ),
-                        () -> (r.nextDouble() - 0.5) * 2.0),
+                        () -> (r.nextDouble() - 0.5) * 2.0
+                ),
                 new StochasticGradientDescent(
                         new StochasticGradientDescent.HyperParameters(
-                                0.5,
-                                0.005,
+                                0.001,
                                 5000,
-                                100
+                                200
                         ),
-                        () -> (r.nextDouble() - 0.5) * 2.0)
+                        () -> (r.nextDouble() - 0.5) * 2.0,
+                        () -> new FixedLearningRateUpdate(0.5)
+                ),
+                new StochasticGradientDescent(
+                        new StochasticGradientDescent.HyperParameters(
+                                0.001,
+                                5000,
+                                200
+                        ),
+                        () -> (r.nextDouble() - 0.5) * 2.0,
+                        () -> new AverageGradientUpdate(0.5, 5)
+                )
         );
     }
 
@@ -90,7 +99,7 @@ public class LinearRegressionTest {
         System.out.println("Positive examples: " + positiveExampleCount);
 
         NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(
-                new int[]{2, 4, 1},
+                new int[]{2, 4, 2, 1},
                 gradientDescentStrategy
         );
 
