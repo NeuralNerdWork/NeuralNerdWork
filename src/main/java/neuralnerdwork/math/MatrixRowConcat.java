@@ -24,7 +24,7 @@ public record MatrixRowConcat(MatrixExpression top,
     }
 
     @Override
-    public Matrix evaluate(Model.Binder bindings) {
+    public Matrix evaluate(Model.ParameterBindings bindings) {
         final Matrix leftEval = top.evaluate(bindings);
         final Matrix rightEval = bottom.evaluate(bindings);
         final double[][] values = new double[rows()][cols()];

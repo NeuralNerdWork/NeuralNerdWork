@@ -1,8 +1,5 @@
 package neuralnerdwork.math;
 
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.function.DoubleSupplier;
 import java.util.stream.Stream;
 
 public class Model {
@@ -37,14 +34,14 @@ public class Model {
                      .toArray();
     }
 
-    public Binder createBinder() {
-        return new Binder(0, nextParameterIndex);
+    public ParameterBindings createBinder() {
+        return new ParameterBindings(0, nextParameterIndex);
     }
 
-    public static class Binder {
+    public static class ParameterBindings {
         private final int start;
         private final Double[] values;
-        Binder(int start, int length) {
+        ParameterBindings(int start, int length) {
             this.start = start;
             values = new Double[length];
         }

@@ -8,7 +8,7 @@ public record FeedForwardNetwork(ConstantVector input, Layer[] layers) implement
     }
 
     @Override
-    public Vector evaluate(Model.Binder bindings) {
+    public Vector evaluate(Model.ParameterBindings bindings) {
         VectorExpression network = input;
         final ConstantVector biasComponent = new ConstantVector(new double[]{1.0});
         for (int l = 0; l < layers.length; l++) {
@@ -40,7 +40,7 @@ public record FeedForwardNetwork(ConstantVector input, Layer[] layers) implement
             }
 
             @Override
-            public Matrix evaluate(Model.Binder bindings) {
+            public Matrix evaluate(Model.ParameterBindings bindings) {
                 /*
                  Algorithm Summary:
                     - (Bottom to top) Evaluate network with current parameter arguments, saving activations and weighted sums for each layer

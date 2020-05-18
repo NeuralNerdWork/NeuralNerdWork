@@ -16,7 +16,7 @@ public record DotProduct(VectorExpression left, VectorExpression right) implemen
     }
 
     @Override
-    public double evaluate(Model.Binder bindings) {
+    public double evaluate(Model.ParameterBindings bindings) {
         final Vector lVector = left.evaluate(bindings);
         final Vector rVector = right.evaluate(bindings);
 

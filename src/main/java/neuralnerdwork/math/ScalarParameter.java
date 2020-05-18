@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 public record ScalarParameter(int variable) implements ScalarExpression {
     @Override
-    public double evaluate(Model.Binder bindings) {
+    public double evaluate(Model.ParameterBindings bindings) {
         return bindings.get(variable);
     }
 

@@ -17,7 +17,7 @@ public record TransposeExpression(MatrixExpression matrix) implements MatrixExpr
     }
 
     @Override
-    public Matrix evaluate(Model.Binder bindings) {
+    public Matrix evaluate(Model.ParameterBindings bindings) {
         final Matrix evaluated = matrix.evaluate(bindings);
 
         return new Matrix() {

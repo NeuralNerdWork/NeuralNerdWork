@@ -2,8 +2,6 @@ package neuralnerdwork.math;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import java.util.Arrays;
-
 public interface SingleVariableFunction {
 
     String getFunctionName();
@@ -25,7 +23,7 @@ public interface SingleVariableFunction {
         }
 
         @Override
-        public double evaluate(Model.Binder bindings) {
+        public double evaluate(Model.ParameterBindings bindings) {
             return function.apply(inputExpression.evaluate(bindings));
         }
 

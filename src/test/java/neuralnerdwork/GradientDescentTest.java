@@ -69,21 +69,21 @@ public class GradientDescentTest {
                 Arrays.copyOfRange(builder.variables(), trainingInput.length(), builder.size())
         ));
 
-        final Model.Binder binder = builder.createBinder();
-        final int[] vars = binder.variables();
+        final Model.ParameterBindings parameterBindings = builder.createBinder();
+        final int[] vars = parameterBindings.variables();
         for (int i = 0; i < vars.length; i++) {
-            binder.put(vars[i], values[i]);
+            parameterBindings.put(vars[i], values[i]);
         }
         System.out.println();
-        final double originalError = Util.logTiming("Invoked undifferentiated error", () -> squaredError.evaluate(binder));
+        final double originalError = Util.logTiming("Invoked undifferentiated error", () -> squaredError.evaluate(parameterBindings));
         Util.logFunctionStructure(lossDerivative);
-        final Vector updatedWeights = Util.logTiming("Applied derivative function", () -> lossDerivative.evaluate(binder));
+        final Vector updatedWeights = Util.logTiming("Applied derivative function", () -> lossDerivative.evaluate(parameterBindings));
         final double learningRate = 0.01;
         for (int i = 0; i < updatedWeights.length(); i++) {
             final int weightVariableIndex = trainingInput.length() + i;
-            binder.put(weightVariableIndex, binder.get(weightVariableIndex) - learningRate * updatedWeights.get(i));
+            parameterBindings.put(weightVariableIndex, parameterBindings.get(weightVariableIndex) - learningRate * updatedWeights.get(i));
         }
-        final double updated = squaredError.evaluate(binder);
+        final double updated = squaredError.evaluate(parameterBindings);
         assertTrue(updated <= originalError, String.format("Expected error to decrease, but observed (original, updated) = (%f, %f)", originalError, updated));
         System.out.println();
     }
@@ -128,21 +128,21 @@ public class GradientDescentTest {
                 Arrays.copyOfRange(builder.variables(), trainingInput.length(), builder.size())
         ));
 
-        final Model.Binder binder = builder.createBinder();
-        final int[] vars = binder.variables();
+        final Model.ParameterBindings parameterBindings = builder.createBinder();
+        final int[] vars = parameterBindings.variables();
         for (int i = 0; i < vars.length; i++) {
-            binder.put(vars[i], values[i]);
+            parameterBindings.put(vars[i], values[i]);
         }
         System.out.println();
-        final double originalError = Util.logTiming("Invoked undifferentiated error", () -> squaredError.evaluate(binder));
+        final double originalError = Util.logTiming("Invoked undifferentiated error", () -> squaredError.evaluate(parameterBindings));
         Util.logFunctionStructure(lossDerivative);
-        final Vector updatedWeights = Util.logTiming("Applied derivative function", () -> lossDerivative.evaluate(binder));
+        final Vector updatedWeights = Util.logTiming("Applied derivative function", () -> lossDerivative.evaluate(parameterBindings));
         final double learningRate = 0.01;
         for (int i = 0; i < updatedWeights.length(); i++) {
             final int weightVariableIndex = trainingInput.length() + i;
-            binder.put(weightVariableIndex, binder.get(weightVariableIndex) - learningRate * updatedWeights.get(i));
+            parameterBindings.put(weightVariableIndex, parameterBindings.get(weightVariableIndex) - learningRate * updatedWeights.get(i));
         }
-        final double updated = squaredError.evaluate(binder);
+        final double updated = squaredError.evaluate(parameterBindings);
         assertTrue(updated <= originalError, String.format("Expected error to decrease, but observed (original, updated) = (%f, %f)", originalError, updated));
         System.out.println();
     }
@@ -189,17 +189,17 @@ public class GradientDescentTest {
         final VectorExpression genericNetwork = genericNetworkBuilder;
         final FeedForwardNetwork specializedImplementation = new FeedForwardNetwork(trainingInput, layers);
 
-        final Model.Binder binder = builder.createBinder();
-        final int[] vars = binder.variables();
+        final Model.ParameterBindings parameterBindings = builder.createBinder();
+        final int[] vars = parameterBindings.variables();
         for (int i = 0; i < vars.length; i++) {
-            binder.put(vars[i], values[i]);
+            parameterBindings.put(vars[i], values[i]);
         }
 
-        final MatrixExpression genericDerivative = genericNetwork.computeDerivative(binder.variables());
-        final MatrixExpression specializedDerivative = specializedImplementation.computeDerivative(binder.variables());
+        final MatrixExpression genericDerivative = genericNetwork.computeDerivative(parameterBindings.variables());
+        final MatrixExpression specializedDerivative = specializedImplementation.computeDerivative(parameterBindings.variables());
 
-        final Matrix genericResult = Util.logTiming("Evaluated generic derivative", () -> genericDerivative.evaluate(binder));
-        final Matrix specializedResult = Util.logTiming("Evaluated specialized derivative", () -> specializedDerivative.evaluate(binder));
+        final Matrix genericResult = Util.logTiming("Evaluated generic derivative", () -> genericDerivative.evaluate(parameterBindings));
+        final Matrix specializedResult = Util.logTiming("Evaluated specialized derivative", () -> specializedDerivative.evaluate(parameterBindings));
 
         final double delta = 0.0000001;
 

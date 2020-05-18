@@ -60,7 +60,7 @@ public class LinearRegressionTest {
                                 200
                         ),
                         () -> (r.nextDouble() - 0.5) * 2.0,
-                        () -> new FixedLearningRateUpdate(0.5)
+                        () -> new FixedLearningRateGradientUpdate(0.5)
                 ),
                 new StochasticGradientDescent(
                         new StochasticGradientDescent.HyperParameters(
@@ -70,6 +70,15 @@ public class LinearRegressionTest {
                         ),
                         () -> (r.nextDouble() - 0.5) * 2.0,
                         () -> new AverageGradientUpdate(0.5, 5)
+                ),
+                new StochasticGradientDescent(
+                        new StochasticGradientDescent.HyperParameters(
+                                0.0001,
+                                5000,
+                                200
+                        ),
+                        () -> (r.nextDouble() - 0.5) * 2.0,
+                        () -> new MomentumGradientUpdate(0.1, 0.9)
                 )
         );
     }

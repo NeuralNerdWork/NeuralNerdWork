@@ -10,7 +10,7 @@ public interface VectorExpression {
      * @param bindings A mapping of variable indices to values, used for substitution in this expression.
      * @return The vector value of this expression with all parameters substituted from the given bindings.
      */
-    Vector evaluate(Model.Binder bindings);
+    Vector evaluate(Model.ParameterBindings bindings);
 
     /**
      * @param variable The index of a variable by which this expression should be differentiated.
@@ -19,7 +19,7 @@ public interface VectorExpression {
     VectorExpression computePartialDerivative(int variable);
 
     /**
-     * @return If this method returns true, the given expression is guaranteed to {@link #evaluate(Model.Binder) evaluate}
+     * @return If this method returns true, the given expression is guaranteed to {@link #evaluate(Model.ParameterBindings) evaluate}
      * to zero, no matter what bindings it is given.
      */
     boolean isZero();

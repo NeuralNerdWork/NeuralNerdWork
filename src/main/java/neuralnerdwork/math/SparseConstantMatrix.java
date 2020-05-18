@@ -4,7 +4,7 @@ import java.util.Map;
 
 public record SparseConstantMatrix(Map<Index, Double> values, int rows, int cols) implements MatrixExpression, Matrix {
     @Override
-    public Matrix evaluate(Model.Binder bindings) {
+    public Matrix evaluate(Model.ParameterBindings bindings) {
         return this;
     }
 

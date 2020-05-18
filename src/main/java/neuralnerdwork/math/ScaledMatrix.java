@@ -21,7 +21,7 @@ public record ScaledMatrix(ScalarExpression scalarExpression, MatrixExpression m
     }
 
     @Override
-    public Matrix evaluate(Model.Binder bindings) {
+    public Matrix evaluate(Model.ParameterBindings bindings) {
         final Matrix matrix = matrixExpression.evaluate(bindings);
         final double value = scalarExpression.evaluate(bindings);
         final double[][] values = new double[matrix.rows()][matrix.cols()];

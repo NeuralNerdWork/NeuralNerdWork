@@ -65,7 +65,7 @@ public class NeuralNetworkTrainer {
             weightMatrices.add(layerLWeights);
         }
 
-        Model.Binder binder = gradientDescentStrategy.runGradientDescent(
+        Model.ParameterBindings parameterBindings = gradientDescentStrategy.runGradientDescent(
                 samples,
                 modelBuilder.createBinder(),
                 ts -> {
@@ -94,7 +94,7 @@ public class NeuralNetworkTrainer {
             var inputVector = new ConstantVector(input);
             var runtimeNetwork = buildNetwork(weightMatrices, inputVector);
 
-            return runtimeNetwork.evaluate(binder).toArray();
+            return runtimeNetwork.evaluate(parameterBindings).toArray();
         };
     }
 

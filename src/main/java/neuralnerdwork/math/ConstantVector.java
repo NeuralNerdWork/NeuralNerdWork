@@ -22,7 +22,7 @@ public record ConstantVector(double[] values) implements VectorExpression, Vecto
     }
 
     @Override
-    public Vector evaluate(Model.Binder bindings) {
+    public Vector evaluate(Model.ParameterBindings bindings) {
         return this;
     }
 

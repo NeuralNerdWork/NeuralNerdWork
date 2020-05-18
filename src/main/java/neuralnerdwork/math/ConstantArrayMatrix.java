@@ -31,7 +31,7 @@ public record ConstantArrayMatrix(double[][] values, int cols) implements Matrix
     }
 
     @Override
-    public Matrix evaluate(Model.Binder bindings) {
+    public Matrix evaluate(Model.ParameterBindings bindings) {
         return this;
     }
 

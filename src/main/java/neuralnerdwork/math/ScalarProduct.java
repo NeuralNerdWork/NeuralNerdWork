@@ -14,7 +14,7 @@ public record ScalarProduct(ScalarExpression left,
     }
 
     @Override
-    public double evaluate(Model.Binder bindings) {
+    public double evaluate(Model.ParameterBindings bindings) {
         return left.evaluate(bindings) * right.evaluate(bindings);
     }
 

@@ -2,17 +2,17 @@ package neuralnerdwork.math;
 
 public interface MatrixExpression {
     /**
-     * @return The number of rows in the {@link #evaluate(Model.Binder) evaluated} matrix.
+     * @return The number of rows in the {@link #evaluate(Model.ParameterBindings) evaluated} matrix.
      */
     int rows();
 
     /**
-     * @return The number of columns in the {@link #evaluate(Model.Binder) evaluated} matrix.
+     * @return The number of columns in the {@link #evaluate(Model.ParameterBindings) evaluated} matrix.
      */
     int cols();
 
     /**
-     * @return If this method returns true, the given expression is guaranteed to {@link #evaluate(Model.Binder) evaluate}
+     * @return If this method returns true, the given expression is guaranteed to {@link #evaluate(Model.ParameterBindings) evaluate}
      * to zero, no matter what bindings it is given.
      */
     boolean isZero();
@@ -21,7 +21,7 @@ public interface MatrixExpression {
      * @param bindings A mapping of variable indices to values, used for substitution in this expression.
      * @return The matrix value of this expression with all parameters substituted from the given bindings.
      */
-    Matrix evaluate(Model.Binder bindings);
+    Matrix evaluate(Model.ParameterBindings bindings);
 
     /**
      * @param variable The index of a variable by which this expression should be differentiated.

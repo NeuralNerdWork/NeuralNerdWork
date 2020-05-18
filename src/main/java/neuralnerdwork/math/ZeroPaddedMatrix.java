@@ -17,7 +17,7 @@ public record ZeroPaddedMatrix(MatrixExpression expression, int extraRows, int e
     }
 
     @Override
-    public Matrix evaluate(Model.Binder bindings) {
+    public Matrix evaluate(Model.ParameterBindings bindings) {
         final Matrix matrix = expression.evaluate(bindings);
         return new Matrix() {
             @Override

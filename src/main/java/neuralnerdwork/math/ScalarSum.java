@@ -16,7 +16,7 @@ public record ScalarSum(ScalarExpression... expressions) implements ScalarExpres
     }
 
     @Override
-    public double evaluate(Model.Binder bindings) {
+    public double evaluate(Model.ParameterBindings bindings) {
         return Arrays.stream(expressions)
                      .mapToDouble(exp -> exp.evaluate(bindings))
                      .sum();

@@ -1,13 +1,15 @@
 package neuralnerdwork.descent;
 
 import neuralnerdwork.math.ConstantVector;
+import neuralnerdwork.math.Model;
+import neuralnerdwork.math.ScalarExpression;
 import neuralnerdwork.math.Vector;
 
 import java.util.Arrays;
 
 public class AverageGradientUpdate implements WeightUpdateStrategy {
     private final double learningRate;
-    private Vector[] buffer;
+    private final Vector[] buffer;
     private double[] movingAverage;
     int curIndex = 0;
 
@@ -17,7 +19,9 @@ public class AverageGradientUpdate implements WeightUpdateStrategy {
     }
 
     @Override
-    public Vector updateVector(Vector rawGradient) {
+    public Vector updateVector(ScalarExpression error, Model.ParameterBindings parameterBindings) {
+        final Vector rawGradient = error.computeDerivative(parameterBindings.variables())
+                                        .evaluate(parameterBindings);
         if (movingAverage == null) {
             movingAverage = rawGradient.toArray();
             Arrays.fill(buffer, rawGradient);

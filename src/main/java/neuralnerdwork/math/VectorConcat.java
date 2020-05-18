@@ -7,7 +7,7 @@ public record VectorConcat(VectorExpression left, VectorExpression right) implem
     }
 
     @Override
-    public Vector evaluate(Model.Binder bindings) {
+    public Vector evaluate(Model.ParameterBindings bindings) {
         final Vector leftEval = left.evaluate(bindings);
         final Vector rightEval = right.evaluate(bindings);
         final double[] values = new double[length()];

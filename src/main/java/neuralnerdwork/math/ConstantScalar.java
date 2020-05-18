@@ -2,7 +2,7 @@ package neuralnerdwork.math;
 
 public record ConstantScalar(double value) implements ScalarExpression {
     @Override
-    public double evaluate(Model.Binder bindings) {
+    public double evaluate(Model.ParameterBindings bindings) {
         return value;
     }
 

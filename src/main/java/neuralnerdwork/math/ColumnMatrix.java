@@ -37,7 +37,7 @@ public record ColumnMatrix(VectorExpression[] columns) implements MatrixExpressi
     }
 
     @Override
-    public Matrix evaluate(Model.Binder bindings) {
+    public Matrix evaluate(Model.ParameterBindings bindings) {
         final double[][] values = new double[rows()][cols()];
         for (int col = 0; col < cols(); col++) {
             final Vector vector = columns[col].evaluate(bindings);

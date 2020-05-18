@@ -31,7 +31,7 @@ public record VectorComponentProduct(VectorExpression left,
     }
 
     @Override
-    public Vector evaluate(Model.Binder bindings) {
+    public Vector evaluate(Model.ParameterBindings bindings) {
         final Vector leftEval = left.evaluate(bindings);
         final Vector rightEval = right.evaluate(bindings);
 

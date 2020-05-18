@@ -28,7 +28,7 @@ public record ConstantMatrixExpression(Matrix matrix) implements MatrixExpressio
     }
 
     @Override
-    public Matrix evaluate(Model.Binder bindings) {
+    public Matrix evaluate(Model.ParameterBindings bindings) {
         return matrix;
     }
 

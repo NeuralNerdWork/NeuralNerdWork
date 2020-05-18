@@ -67,16 +67,16 @@ public class MathTest {
         final int variable = w2.variableIndexFor(0, 1);
         final VectorExpression derivative = multiplication.computePartialDerivative(variable);
 
-        final Model.Binder binder = builder.createBinder();
-        final int[] vars = binder.variables();
+        final Model.ParameterBindings parameterBindings = builder.createBinder();
+        final int[] vars = parameterBindings.variables();
         for (int i = 0; i < vars.length; i++) {
-            binder.put(vars[i], values[i]);
+            parameterBindings.put(vars[i], values[i]);
         }
 
-        final Vector inputEval = vector.evaluate(binder);
-        final Vector derivativeVector = derivative.evaluate(binder);
-        final double firstVar = binder.get(w1.variableIndexFor(1, 0));
-        final double secondVar = binder.get(w1.variableIndexFor(1, 1));
+        final Vector inputEval = vector.evaluate(parameterBindings);
+        final Vector derivativeVector = derivative.evaluate(parameterBindings);
+        final double firstVar = parameterBindings.get(w1.variableIndexFor(1, 0));
+        final double secondVar = parameterBindings.get(w1.variableIndexFor(1, 1));
 
         assertEquals(2, derivativeVector.length(), "Length not equal");
         assertEquals(inputEval.get(0) * firstVar + inputEval.get(1) * secondVar, derivativeVector.get(0), 0.0001);
@@ -101,16 +101,16 @@ public class MathTest {
         final int variable = w1.variableIndexFor(0, 1);
         final VectorExpression derivative = multiplication.computePartialDerivative(variable);
 
-        final Model.Binder binder = builder.createBinder();
-        final int[] vars = binder.variables();
+        final Model.ParameterBindings parameterBindings = builder.createBinder();
+        final int[] vars = parameterBindings.variables();
         for (int i = 0; i < vars.length; i++) {
-            binder.put(vars[i], values[i]);
+            parameterBindings.put(vars[i], values[i]);
         }
 
-        final Vector inputEval = vector.evaluate(binder);
-        final Vector derivativeVector = derivative.evaluate(binder);
-        final double firstVar = binder.get(w2.variableIndexFor(0, 0));
-        final double secondVar = binder.get(w2.variableIndexFor(1, 0));
+        final Vector inputEval = vector.evaluate(parameterBindings);
+        final Vector derivativeVector = derivative.evaluate(parameterBindings);
+        final double firstVar = parameterBindings.get(w2.variableIndexFor(0, 0));
+        final double secondVar = parameterBindings.get(w2.variableIndexFor(1, 0));
 
         assertEquals(2, derivativeVector.length(), "Length not equal");
         assertEquals(inputEval.get(1) * firstVar, derivativeVector.get(0), 0.0001);
@@ -139,15 +139,15 @@ public class MathTest {
         final int variable = w1.variableIndexFor(0, 1);
         final VectorExpression derivative = multiplication.computePartialDerivative(variable);
 
-        final Model.Binder binder = builder.createBinder();
-        final int[] vars = binder.variables();
+        final Model.ParameterBindings parameterBindings = builder.createBinder();
+        final int[] vars = parameterBindings.variables();
         for (int i = 0; i < vars.length; i++) {
-            binder.put(vars[i], values[i]);
+            parameterBindings.put(vars[i], values[i]);
         }
-        final Vector inputEval = vector.evaluate(binder);
-        final Vector derivativeVector = derivative.evaluate(binder);
-        final double firstVar = binder.get(w2.variableIndexFor(0, 0));
-        final double secondVar = binder.get(w2.variableIndexFor(1, 0));
+        final Vector inputEval = vector.evaluate(parameterBindings);
+        final Vector derivativeVector = derivative.evaluate(parameterBindings);
+        final double firstVar = parameterBindings.get(w2.variableIndexFor(0, 0));
+        final double secondVar = parameterBindings.get(w2.variableIndexFor(1, 0));
 
         assertEquals(2, derivativeVector.length(), "Length not equal");
         assertEquals(inputEval.get(1) * firstVar, derivativeVector.get(0), 0.0001);
@@ -167,16 +167,16 @@ public class MathTest {
                                                                                     weightedInputs);
 
         final VectorExpression partialDerivative = layerFunction.computePartialDerivative(w1.variableIndexFor(0, 0));
-        final Model.Binder binder = builder.createBinder();
-        final int[] vars = binder.variables();
+        final Model.ParameterBindings parameterBindings = builder.createBinder();
+        final int[] vars = parameterBindings.variables();
         for (int i = 0; i < vars.length; i++) {
-            binder.put(vars[i], values[i]);
+            parameterBindings.put(vars[i], values[i]);
         }
-        final Vector observed = partialDerivative.evaluate(binder);
+        final Vector observed = partialDerivative.evaluate(parameterBindings);
 
         assertEquals(2, observed.length(), "Length not equal");
-        final Vector inputEval = vector.evaluate(binder);
-        final double logisticInput = binder.get(w1.variableIndexFor(0, 0)) * inputEval.get(0) + binder.get(w1.variableIndexFor(0, 1)) * inputEval.get(1);
+        final Vector inputEval = vector.evaluate(parameterBindings);
+        final double logisticInput = parameterBindings.get(w1.variableIndexFor(0, 0)) * inputEval.get(0) + parameterBindings.get(w1.variableIndexFor(0, 1)) * inputEval.get(1);
         final double firstExpected = Util.logistic(logisticInput) * Util.logistic(-logisticInput) * inputEval.get(0);
         assertEquals(firstExpected, observed.get(0), 0.0001);
         assertEquals(0.0, observed.get(1), 0.0001);
@@ -199,19 +199,19 @@ public class MathTest {
         assertEquals(2, derivative.rows(), "Rows not equal");
         assertEquals(4, derivative.cols(), "Cols not equal");
 
-        final Model.Binder binder = builder.createBinder();
-        final int[] vars = binder.variables();
+        final Model.ParameterBindings parameterBindings = builder.createBinder();
+        final int[] vars = parameterBindings.variables();
         for (int i = 0; i < vars.length; i++) {
-            binder.put(vars[i], values[i]);
+            parameterBindings.put(vars[i], values[i]);
         }
-        final Matrix observed = derivative.evaluate(binder);
+        final Matrix observed = derivative.evaluate(parameterBindings);
 
         assertEquals(2, observed.rows(), "Rows not equal");
         assertEquals(4, observed.cols(), "Cols not equal");
 
-        final Vector inputEval = vector.evaluate(binder);
-        final double firstLogisticInput = binder.get(w1.variableIndexFor(0, 0)) * inputEval.get(0) + binder.get(w1.variableIndexFor(0, 1)) * inputEval.get(1);
-        final double secondLogisticInput = binder.get(w1.variableIndexFor(1, 0)) * inputEval.get(0) + binder.get(w1.variableIndexFor(1, 1)) * inputEval.get(1);
+        final Vector inputEval = vector.evaluate(parameterBindings);
+        final double firstLogisticInput = parameterBindings.get(w1.variableIndexFor(0, 0)) * inputEval.get(0) + parameterBindings.get(w1.variableIndexFor(0, 1)) * inputEval.get(1);
+        final double secondLogisticInput = parameterBindings.get(w1.variableIndexFor(1, 0)) * inputEval.get(0) + parameterBindings.get(w1.variableIndexFor(1, 1)) * inputEval.get(1);
 
         final double firstExpected = Util.logistic(firstLogisticInput) * Util.logistic(-firstLogisticInput) * inputEval.get(0);
         final double secondExpected = Util.logistic(firstLogisticInput) * Util.logistic(-firstLogisticInput) * inputEval.get(1);
@@ -252,18 +252,18 @@ public class MathTest {
         final VectorExpression derivative = squaredError.computeDerivative(weightVariables);
         assertEquals(builder.size() - trainingInput.length(), derivative.length(), "Length not equal");
 
-        final Model.Binder binder = builder.createBinder();
-        final int[] vars = binder.variables();
+        final Model.ParameterBindings parameterBindings = builder.createBinder();
+        final int[] vars = parameterBindings.variables();
         for (int i = 0; i < vars.length; i++) {
-            binder.put(vars[i], values[i]);
+            parameterBindings.put(vars[i], values[i]);
         }
-        final Vector observed = derivative.evaluate(binder);
+        final Vector observed = derivative.evaluate(parameterBindings);
 
         assertEquals(4, observed.length(), "Length not equal");
 
-        final Vector inputEval = trainingInput.evaluate(binder);
-        final double unactivatedNeuron1 = binder.get(w1.variableIndexFor(0, 0)) * inputEval.get(0) + binder.get(w1.variableIndexFor(0, 1)) * inputEval.get(1);
-        final double unactivatedNeuron2 = binder.get(w1.variableIndexFor(1, 0)) * inputEval.get(0) + binder.get(w1.variableIndexFor(1, 1)) * inputEval.get(1);
+        final Vector inputEval = trainingInput.evaluate(parameterBindings);
+        final double unactivatedNeuron1 = parameterBindings.get(w1.variableIndexFor(0, 0)) * inputEval.get(0) + parameterBindings.get(w1.variableIndexFor(0, 1)) * inputEval.get(1);
+        final double unactivatedNeuron2 = parameterBindings.get(w1.variableIndexFor(1, 0)) * inputEval.get(0) + parameterBindings.get(w1.variableIndexFor(1, 1)) * inputEval.get(1);
 
         final double[] expected = new double[] {
                 2.0 * (Util.logistic(unactivatedNeuron1) - trainingOutput.get(0)) * Util.logisticDerivative(unactivatedNeuron1) * inputEval.get(0),

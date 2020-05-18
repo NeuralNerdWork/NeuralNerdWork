@@ -18,7 +18,7 @@ public record TruncatedMatrix(MatrixExpression expression, int rows, int cols) i
     }
 
     @Override
-    public Matrix evaluate(Model.Binder bindings) {
+    public Matrix evaluate(Model.ParameterBindings bindings) {
         final Matrix matrix = expression.evaluate(bindings);
         return new Matrix() {
             @Override

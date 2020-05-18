@@ -19,15 +19,15 @@ public record StochasticGradientDescent(HyperParameters hyperParameters,
     public static record HyperParameters(double convergenceThreshold, long maxIterations, int batchSize) {}
 
     @Override
-    public Model.Binder runGradientDescent(List<TrainingSample> trainingSamples,
-                                           Model.Binder binder,
-                                           Function<List<TrainingSample>, ScalarExpression> errorFunction) {
+    public Model.ParameterBindings runGradientDescent(List<TrainingSample> trainingSamples,
+                                                      Model.ParameterBindings parameterBindings,
+                                                      Function<List<TrainingSample>, ScalarExpression> errorFunction) {
         // Make a copy that we can shuffle
         trainingSamples = new ArrayList<>(trainingSamples);
-        final int[] variables = binder.variables();
+        final int[] variables = parameterBindings.variables();
         // initialize weights
         for (int variable : variables) {
-            binder.put(variable, initialWeightSupplier.getAsDouble());
+            parameterBindings.put(variable, initialWeightSupplier.getAsDouble());
         }
 
         // Repeat this until converged
@@ -40,12 +40,10 @@ public record StochasticGradientDescent(HyperParameters hyperParameters,
             final List<TrainingSample> iterationSamples = trainingSamples.subList(0, hyperParameters.batchSize());
             final ScalarExpression error = errorFunction.apply(iterationSamples);
             // use derivative to adjust weights
-            final Vector rawGradient = error.computeDerivative(binder.variables())
-                                         .evaluate(binder);
-            weightUpdateVector = updateStrategy.updateVector(rawGradient);
-            for (int variableIndex = 0; variableIndex < binder.variables().length; variableIndex++) {
+            weightUpdateVector = updateStrategy.updateVector(error, parameterBindings);
+            for (int variableIndex = 0; variableIndex < parameterBindings.variables().length; variableIndex++) {
                 int variable = variables[variableIndex];
-                binder.put(variable, binder.get(variable) + weightUpdateVector.get(variable));
+                parameterBindings.put(variable, parameterBindings.get(variable) + weightUpdateVector.get(variable));
             }
             if (iterations % 10 == 0) {
                 System.out.println("Completed iteration " + iterations);
@@ -57,6 +55,6 @@ public record StochasticGradientDescent(HyperParameters hyperParameters,
         System.out.println("Terminated after " + iterations + " iterations");
         // training cycle end
         // TODO - Stop when we have converged
-        return binder;
+        return parameterBindings;
     }
 }

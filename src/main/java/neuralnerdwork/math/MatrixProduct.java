@@ -40,7 +40,7 @@ public record MatrixProduct(MatrixExpression left, MatrixExpression right) imple
     }
 
     @Override
-    public Matrix evaluate(Model.Binder bindings) {
+    public Matrix evaluate(Model.ParameterBindings bindings) {
         final Matrix leftMatrix = left.evaluate(bindings);
         final Matrix rightMatrix = right.evaluate(bindings);
 

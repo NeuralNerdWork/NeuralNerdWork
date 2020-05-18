@@ -9,7 +9,7 @@ public record ParameterMatrix(int variableStartIndex, int rows, int cols) implem
     }
 
     @Override
-    public Matrix evaluate(Model.Binder bindings) {
+    public Matrix evaluate(Model.ParameterBindings bindings) {
         final int length = this.rows * this.cols;
         final double[][] values = new double[this.rows][this.cols];
         for (int i = 0; i < length; i++) {

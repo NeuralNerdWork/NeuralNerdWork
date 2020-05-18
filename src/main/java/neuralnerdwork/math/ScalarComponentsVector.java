@@ -21,7 +21,7 @@ public record ScalarComponentsVector(ScalarExpression[] components) implements V
     }
 
     @Override
-    public Vector evaluate(Model.Binder bindings) {
+    public Vector evaluate(Model.ParameterBindings bindings) {
         return new ConstantVector(
                 Arrays.stream(components)
                       .mapToDouble(f -> f.evaluate(bindings))

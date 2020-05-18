@@ -11,7 +11,7 @@ public record ScaledVector(ScalarExpression scalarExpression, VectorExpression v
     }
 
     @Override
-    public Vector evaluate(Model.Binder bindings) {
+    public Vector evaluate(Model.ParameterBindings bindings) {
         final Vector vector = vectorExpression.evaluate(bindings);
         final double value = scalarExpression.evaluate(bindings);
         final double[] scaled = new double[vector.length()];

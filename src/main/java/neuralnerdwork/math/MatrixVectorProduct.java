@@ -32,7 +32,7 @@ public record MatrixVectorProduct(MatrixExpression left, VectorExpression right)
     }
 
     @Override
-    public Vector evaluate(Model.Binder bindings) {
+    public Vector evaluate(Model.ParameterBindings bindings) {
         final Matrix leftValue = this.left.evaluate(bindings);
         final Vector rightValue = this.right.evaluate(bindings);
 

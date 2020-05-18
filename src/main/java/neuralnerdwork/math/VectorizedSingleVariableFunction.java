@@ -13,7 +13,7 @@ public record VectorizedSingleVariableFunction(SingleVariableFunction function, 
     }
 
     @Override
-    public Vector evaluate(Model.Binder bindings) {
+    public Vector evaluate(Model.ParameterBindings bindings) {
         final Vector vector = vectorExpression.evaluate(bindings);
         final double[] values = new double[vector.length()];
         for (int i = 0; i < values.length; i++) {
