@@ -1,5 +1,8 @@
 package neuralnerdwork.math;
 
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.function.DoubleSupplier;
 import java.util.stream.Stream;
 
 public class Model {
@@ -66,6 +69,10 @@ public class Model {
             } else {
                 throw new IllegalArgumentException("invalid index for key " + key);
             }
+        }
+
+        public int size() {
+            return values.length;
         }
     }
 }

@@ -4,22 +4,23 @@ import neuralnerdwork.TrainingSample;
 import neuralnerdwork.math.Model;
 import neuralnerdwork.math.ScalarExpression;
 import neuralnerdwork.math.Vector;
-import neuralnerdwork.math.VectorExpression;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.function.DoubleSupplier;
 import java.util.function.Function;
 
-public record SimpleBatchGradientDescent(HyperParameters hyperParameters, DoubleSupplier initialWeightSupplier) implements GradientDescentStrategy {
-    public static record HyperParameters(double trainingRate, double convergenceThreshold, long maxIterations) {}
+public record StochasticGradientDescent(HyperParameters hyperParameters, DoubleSupplier initialWeightSupplier) implements GradientDescentStrategy {
+    public static record HyperParameters(double trainingRate, double convergenceThreshold, long maxIterations, int batchSize) {}
 
     @Override
     public Model.Binder runGradientDescent(List<TrainingSample> trainingSamples,
                                            Model.Binder binder,
                                            Function<List<TrainingSample>, ScalarExpression> errorFunction) {
-        final ScalarExpression error = errorFunction.apply(trainingSamples);
-        // use derivative to adjust weights
-        VectorExpression lossDerivative = error.computeDerivative(binder.variables());
+        // Make a copy that we can shuffle
+        trainingSamples = new ArrayList<>(trainingSamples);
         final int[] variables = binder.variables();
         // initialize weights
         for (int variable : variables) {
@@ -28,9 +29,15 @@ public record SimpleBatchGradientDescent(HyperParameters hyperParameters, Double
 
         // Repeat this until converged
         Vector weightUpdateVector;
+        final Random rand = new Random();
         long iterations = 0;
         do {
-            weightUpdateVector = lossDerivative.evaluate(binder);
+            Collections.shuffle(trainingSamples, rand);
+            final List<TrainingSample> iterationSamples = trainingSamples.subList(0, hyperParameters.batchSize());
+            final ScalarExpression error = errorFunction.apply(iterationSamples);
+            // use derivative to adjust weights
+            weightUpdateVector = error.computeDerivative(binder.variables())
+                                      .evaluate(binder);
             for (int variableIndex = 0; variableIndex < binder.variables().length; variableIndex++) {
                 int variable = variables[variableIndex];
                 binder.put(variable, binder.get(variable) - hyperParameters.trainingRate() * weightUpdateVector.get(variable));

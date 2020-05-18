@@ -1,8 +1,12 @@
 package neuralnerdwork;
 
+import neuralnerdwork.descent.GradientDescentStrategy;
 import neuralnerdwork.descent.SimpleBatchGradientDescent;
+import neuralnerdwork.descent.StochasticGradientDescent;
 import neuralnerdwork.math.ConstantVector;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Arrays;
 import java.util.List;
@@ -40,8 +44,30 @@ public class LinearRegressionTest {
         assertArrayEquals(new double[]{1.0}, network.apply(new double[]{0.0, 1.2}), 0.2);
     }
 
-    @Test
-    void trainingShouldConvergeToLearnCircle() {
+    public static Stream<GradientDescentStrategy> gradientDescentStrategies() {
+        var r = new Random(1337);
+        return Stream.of(
+                new SimpleBatchGradientDescent(
+                        new SimpleBatchGradientDescent.HyperParameters(
+                                1.0,
+                                0.005,
+                                2000
+                        ),
+                        () -> (r.nextDouble() - 0.5) * 2.0),
+                new StochasticGradientDescent(
+                        new StochasticGradientDescent.HyperParameters(
+                                0.5,
+                                0.005,
+                                5000,
+                                100
+                        ),
+                        () -> (r.nextDouble() - 0.5) * 2.0)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("gradientDescentStrategies")
+    void trainingShouldConvergeToLearnCircle(GradientDescentStrategy gradientDescentStrategy) {
 
         final long total = 1000;
         Random r = new Random(11);
@@ -56,10 +82,6 @@ public class LinearRegressionTest {
 
         List<TrainingSample> trainingSet = Stream.concat(positiveExamples.stream(), negativeExamples.stream())
                                                  .collect(toList());
-//        List<TrainingSample> trainingSet = Stream.generate(() -> new Point((r.nextDouble() - 0.5) * 2.0, (r.nextDouble() - 0.5) * 2.0))
-//                                                 .limit(total)
-//                                                 .map(p -> new TrainingSample(p.toVector(), p.inRadius(1.0) ? ONE : ZERO))
-//                                                 .collect(toList());
 
         long positiveExampleCount = trainingSet.stream()
                                                .filter(sample -> sample.output().equals(ONE))
@@ -69,13 +91,7 @@ public class LinearRegressionTest {
 
         NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(
                 new int[]{2, 4, 1},
-                new SimpleBatchGradientDescent(
-                        new SimpleBatchGradientDescent.HyperParameters(
-                                1.0,
-                                0.001,
-                                2000
-                        ),
-                        () -> (r.nextDouble() - 0.5) * 2.0)
+                gradientDescentStrategy
         );
 
         NeuralNetwork network = trainer.train(trainingSet);
@@ -101,7 +117,7 @@ public class LinearRegressionTest {
         System.out.printf("Validation set accuracy: %.2f%%\n", validationSetAccuracy);
 
         assertTrue(trainingSetAccuracy > 95.0);
-        assertTrue(validationSetAccuracy > 95.0);
+        assertTrue(validationSetAccuracy > 90.0);
     }
 
     private Point pointInUnitCircle(Random random) {
