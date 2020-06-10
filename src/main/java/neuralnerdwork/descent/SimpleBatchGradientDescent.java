@@ -1,5 +1,6 @@
 package neuralnerdwork.descent;
 
+import neuralnerdwork.TerminationPredicate;
 import neuralnerdwork.TrainingSample;
 import neuralnerdwork.math.Model;
 import neuralnerdwork.math.ScalarExpression;
@@ -10,13 +11,13 @@ import java.util.List;
 import java.util.function.DoubleSupplier;
 import java.util.function.Function;
 
-public record SimpleBatchGradientDescent(HyperParameters hyperParameters, DoubleSupplier initialWeightSupplier) implements GradientDescentStrategy {
-    public static record HyperParameters(double trainingRate, double convergenceThreshold, long maxIterations) {}
+public record SimpleBatchGradientDescent(double trainingRate, DoubleSupplier initialWeightSupplier) implements GradientDescentStrategy {
 
     @Override
     public Model.ParameterBindings runGradientDescent(List<TrainingSample> trainingSamples,
                                                       Model.ParameterBindings parameterBindings,
-                                                      Function<List<TrainingSample>, ScalarExpression> errorFunction) {
+                                                      Function<List<TrainingSample>, ScalarExpression> errorFunction,
+                                                      TerminationPredicate terminationPredicate) {
         final ScalarExpression error = errorFunction.apply(trainingSamples);
         // use derivative to adjust weights
         VectorExpression lossDerivative = error.computeDerivative(parameterBindings.variables());
@@ -33,15 +34,10 @@ public record SimpleBatchGradientDescent(HyperParameters hyperParameters, Double
             weightUpdateVector = lossDerivative.evaluate(parameterBindings);
             for (int variableIndex = 0; variableIndex < parameterBindings.variables().length; variableIndex++) {
                 int variable = variables[variableIndex];
-                parameterBindings.put(variable, parameterBindings.get(variable) - hyperParameters.trainingRate() * weightUpdateVector.get(variable));
-            }
-            if (iterations % 10 == 0) {
-                System.out.println("Completed iteration " + iterations);
-                System.out.println("  gradient: " + weightUpdateVector);
-                System.out.println("  gradient length: " + weightUpdateVector.lTwoNorm());
+                parameterBindings.put(variable, parameterBindings.get(variable) - trainingRate * weightUpdateVector.get(variable));
             }
             iterations++;
-        } while (weightUpdateVector.lTwoNorm() > hyperParameters.convergenceThreshold() && iterations < hyperParameters.maxIterations());
+        } while (terminationPredicate.shouldContinue(iterations, weightUpdateVector, parameterBindings));
         System.out.println("Terminated after " + iterations + " iterations");
         // training cycle end
         // TODO - Stop when we have converged

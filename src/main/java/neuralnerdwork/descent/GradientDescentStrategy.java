@@ -1,5 +1,6 @@
 package neuralnerdwork.descent;
 
+import neuralnerdwork.TerminationPredicate;
 import neuralnerdwork.TrainingSample;
 import neuralnerdwork.math.Model;
 import neuralnerdwork.math.ScalarExpression;
@@ -23,5 +24,5 @@ public interface GradientDescentStrategy {
      * @return The updated {@link neuralnerdwork.math.Model.ParameterBindings} after running gradient descent to termination.
      * Termination conditions are at the discretion of implementations.
      */
-    Model.ParameterBindings runGradientDescent(List<TrainingSample> trainingSamples, Model.ParameterBindings parameterBindings, Function<List<TrainingSample>, ScalarExpression> errorFunction);
+    Model.ParameterBindings runGradientDescent(List<TrainingSample> trainingSamples, Model.ParameterBindings parameterBindings, Function<List<TrainingSample>, ScalarExpression> errorFunction, TerminationPredicate terminationPredicate);
 }

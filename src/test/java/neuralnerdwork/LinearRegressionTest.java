@@ -21,13 +21,8 @@ public class LinearRegressionTest {
 
         NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(
                 new int[]{2, 1},
-                new SimpleBatchGradientDescent(
-                        new SimpleBatchGradientDescent.HyperParameters(
-                                0.1,
-                                0.001,
-                                1000
-                        ),
-                        () -> (Math.random() - 0.5) * 2.0)
+                new SimpleBatchGradientDescent(0.1, () -> (Math.random() - 0.5) * 2.0),
+                (iterationCount, network) -> iterationCount < 5000
         );
 
         NeuralNetwork network = trainer.train(Arrays.asList(
@@ -45,74 +40,39 @@ public class LinearRegressionTest {
     public static Stream<GradientDescentStrategy> gradientDescentStrategies() {
         var r = new Random(1337);
         return Stream.of(
-                new SimpleBatchGradientDescent(
-                        new SimpleBatchGradientDescent.HyperParameters(
-                                1.0,
-                                0.001,
-                                2000
-                        ),
-                        () -> (r.nextDouble() - 0.5) * 2.0
-                ),
+                new SimpleBatchGradientDescent(1.0, () -> (r.nextDouble() - 0.5) * 2.0),
                 new StochasticGradientDescent(
-                        new StochasticGradientDescent.HyperParameters(
-                                0.001,
-                                5000,
-                                200
-                        ),
+                        200,
                         () -> (r.nextDouble() - 0.5) * 2.0,
                         () -> new FixedLearningRateGradientUpdate(0.5)
                 ),
                 new StochasticGradientDescent(
-                        new StochasticGradientDescent.HyperParameters(
-                                0.001,
-                                5000,
-                                200
-                        ),
+                        200,
                         () -> (r.nextDouble() - 0.5) * 2.0,
                         () -> new AverageGradientUpdate(0.5, 5)
                 ),
                 new StochasticGradientDescent(
-                        new StochasticGradientDescent.HyperParameters(
-                                0.0001,
-                                5000,
-                                200
-                        ),
+                        200,
                         () -> (r.nextDouble() - 0.5) * 2.0,
                         () -> new MomentumGradientUpdate(0.1, 0.9)
                 ),
                 new StochasticGradientDescent(
-                        new StochasticGradientDescent.HyperParameters(
-                                0.0001,
-                                5000,
-                                200
-                        ),
+                        200,
                         () -> (r.nextDouble() - 0.5) * 2.0,
                         () -> new NesterovMomentumGradientUpdate(0.1, 0.9)
                 ),
                 new StochasticGradientDescent(
-                        new StochasticGradientDescent.HyperParameters(
-                                1e-8,
-                                5000,
-                                200
-                        ),
+                        200,
                         () -> (r.nextDouble() - 0.5) * 2.0,
                         () -> new AdagradUpdate(0.1, 1e-8)
                 ),
                 new StochasticGradientDescent(
-                        new StochasticGradientDescent.HyperParameters(
-                                1e-8,
-                                5000,
-                                200
-                        ),
+                        200,
                         () -> (r.nextDouble() - 0.5) * 2.0,
                         () -> new AdagradDeltaUpdate(0.9, 1e-4)
                 ),
                 new StochasticGradientDescent(
-                        new StochasticGradientDescent.HyperParameters(
-                                1e-8,
-                                5000,
-                                200
-                        ),
+                        200,
                         () -> (r.nextDouble() - 0.5) * 2.0,
                         () -> new RmsPropUPdate(0.001, 0.9, 1e-8)
                 )
@@ -145,7 +105,8 @@ public class LinearRegressionTest {
 
         NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(
                 new int[]{2, 4, 2, 1},
-                gradientDescentStrategy
+                gradientDescentStrategy,
+                (iterationCount, network) -> iterationCount < 5000
         );
 
         NeuralNetwork network = trainer.train(trainingSet);
