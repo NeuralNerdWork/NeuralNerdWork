@@ -5,8 +5,6 @@ import neuralnerdwork.math.Model;
 import neuralnerdwork.math.ScalarExpression;
 import neuralnerdwork.math.Vector;
 
-import java.util.Arrays;
-
 public class AdagradUpdate implements WeightUpdateStrategy {
     private final double learningRate;
     private final double epsilon;

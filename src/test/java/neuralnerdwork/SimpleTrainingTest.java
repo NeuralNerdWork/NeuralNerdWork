@@ -1,6 +1,5 @@
 package neuralnerdwork;
 
-import java.io.RandomAccessFile;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
@@ -16,6 +15,7 @@ import java.awt.BasicStroke;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
+import neuralnerdwork.descent.SimpleBatchGradientDescent;
 import neuralnerdwork.math.ConstantVector;
 
 public class SimpleTrainingTest {
@@ -24,8 +24,14 @@ public class SimpleTrainingTest {
 
         NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(
             new int[]{2, 1}, 
-            0.1, 
-            () -> (Math.random()-0.5)*2.0
+            new SimpleBatchGradientDescent(
+                new SimpleBatchGradientDescent.HyperParameters(
+                        0.1,
+                        0.001,
+                        1000
+                ),
+                () -> (Math.random() - 0.5) * 2.0)
+
         );
 
         NeuralNetwork network = trainer.train(Arrays.asList(
@@ -45,8 +51,13 @@ public class SimpleTrainingTest {
 
         NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(
             new int[]{2, 110, 110, 1}, 
-            0.000001, 
-            () -> (Math.random()-0.5)*2.0
+            new SimpleBatchGradientDescent(
+                new SimpleBatchGradientDescent.HyperParameters(
+                        0.1,
+                        0.001,
+                        1000
+                ),
+                () -> (Math.random() - 0.5) * 2.0)
         );
 
         var frame = new JFrame("Thinking");
