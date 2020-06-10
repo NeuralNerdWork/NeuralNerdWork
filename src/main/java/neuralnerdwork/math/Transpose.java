@@ -1,6 +1,11 @@
 package neuralnerdwork.math;
 
-public record Transpose(MatrixExpression matrix) implements MatrixExpression {
+public record Transpose(Matrix matrix) implements Matrix {
+    @Override
+    public double get(int row, int col) {
+        return matrix.get(col, row);
+    }
+
     @Override
     public int rows() {
         return matrix.cols();
@@ -9,37 +14,5 @@ public record Transpose(MatrixExpression matrix) implements MatrixExpression {
     @Override
     public int cols() {
         return matrix.rows();
-    }
-
-    @Override
-    public boolean isZero() {
-        return matrix.isZero();
-    }
-
-    @Override
-    public Matrix evaluate(Model.Binder bindings) {
-        final Matrix evaluated = matrix.evaluate(bindings);
-
-        return new Matrix() {
-            @Override
-            public double get(int row, int col) {
-                return evaluated.get(col, row);
-            }
-
-            @Override
-            public int rows() {
-                return evaluated.cols();
-            }
-
-            @Override
-            public int cols() {
-                return evaluated.rows();
-            }
-        };
-    }
-
-    @Override
-    public MatrixExpression computePartialDerivative(int variable) {
-        return new Transpose(matrix.computePartialDerivative(variable));
     }
 }

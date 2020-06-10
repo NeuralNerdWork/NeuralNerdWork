@@ -12,6 +12,18 @@ public record MatrixProduct(MatrixExpression left, MatrixExpression right) imple
         }
     }
 
+    public MatrixProduct {
+        if (left.cols() != right.rows()) {
+            throw new IllegalArgumentException(
+                    String.format("Cannot multiply matrices of dimensions (%dx%d) and (%dx%d)",
+                                  left.rows(),
+                                  left.cols(),
+                                  right.rows(),
+                                  right.cols())
+            );
+        }
+    }
+
     @Override
     public boolean isZero() {
         return left.isZero() || right.isZero();
@@ -28,15 +40,9 @@ public record MatrixProduct(MatrixExpression left, MatrixExpression right) imple
     }
 
     @Override
-    public Matrix evaluate(Model.Binder bindings) {
+    public Matrix evaluate(Model.ParameterBindings bindings) {
         final Matrix leftMatrix = left.evaluate(bindings);
         final Matrix rightMatrix = right.evaluate(bindings);
-        assert leftMatrix.cols() == rightMatrix.rows() :
-                String.format("Cannot multiply matrices of dimensions (%dx%d) and (%dx%d)",
-                              leftMatrix.rows(),
-                              leftMatrix.cols(),
-                              rightMatrix.rows(),
-                              rightMatrix.cols());
 
         final double[][] values = new double[leftMatrix.rows()][rightMatrix.cols()];
         for (int i = 0; i < leftMatrix.rows(); i++) {
@@ -47,7 +53,7 @@ public record MatrixProduct(MatrixExpression left, MatrixExpression right) imple
             }
         }
 
-        return new ConstantMatrix(values);
+        return new ConstantArrayMatrix(values);
     }
 
     @Override

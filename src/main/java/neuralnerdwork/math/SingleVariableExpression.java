@@ -9,9 +9,9 @@ public record SingleVariableExpression(int variable,
 
     @Override
     public double apply(double input) {
-        final Model.Binder binder = new Model.Binder(variable, 1);
-        binder.put(variable, input);
-        return expression.evaluate(binder);
+        final Model.ParameterBindings parameterBindings = new Model.ParameterBindings(variable, 1);
+        parameterBindings.put(variable, input);
+        return expression.evaluate(parameterBindings);
     }
 
     @Override

@@ -9,14 +9,14 @@ public record ScalarSum(ScalarExpression... expressions) implements ScalarExpres
                                                       .toArray(ScalarExpression[]::new);
 
         if (nonZeroExpressions.length == 0) {
-            return new ScalarConstant(0.0);
+            return new ConstantScalar(0.0);
         } else {
             return new ScalarSum(nonZeroExpressions);
         }
     }
 
     @Override
-    public double evaluate(Model.Binder bindings) {
+    public double evaluate(Model.ParameterBindings bindings) {
         return Arrays.stream(expressions)
                      .mapToDouble(exp -> exp.evaluate(bindings))
                      .sum();

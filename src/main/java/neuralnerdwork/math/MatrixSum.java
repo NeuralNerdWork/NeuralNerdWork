@@ -43,11 +43,11 @@ public record MatrixSum(MatrixExpression... expressions) implements MatrixExpres
 
     @Override
     public int cols() {
-        return expressions[1].cols();
+        return expressions[0].cols();
     }
 
     @Override
-    public Matrix evaluate(Model.Binder bindings) {
+    public Matrix evaluate(Model.ParameterBindings bindings) {
         Matrix[] evaluated = Arrays.stream(expressions)
                                    .map(exp -> exp.evaluate(bindings))
                                    .toArray(Matrix[]::new);

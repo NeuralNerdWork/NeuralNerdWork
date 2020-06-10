@@ -1,6 +1,10 @@
 package neuralnerdwork.math;
 
-public record ScaledMatrix(double value, MatrixExpression matrixExpression) implements MatrixExpression {
+public record ScaledMatrix(ScalarExpression scalarExpression, MatrixExpression matrixExpression) implements MatrixExpression {
+    public ScaledMatrix(double value, MatrixExpression matrixExpression) {
+        this(new ConstantScalar(value), matrixExpression);
+    }
+
     @Override
     public int rows() {
         return matrixExpression.rows();
@@ -13,12 +17,13 @@ public record ScaledMatrix(double value, MatrixExpression matrixExpression) impl
 
     @Override
     public boolean isZero() {
-        return value == 0.0 || matrixExpression.isZero();
+        return scalarExpression.isZero() || matrixExpression.isZero();
     }
 
     @Override
-    public Matrix evaluate(Model.Binder bindings) {
+    public Matrix evaluate(Model.ParameterBindings bindings) {
         final Matrix matrix = matrixExpression.evaluate(bindings);
+        final double value = scalarExpression.evaluate(bindings);
         final double[][] values = new double[matrix.rows()][matrix.cols()];
         for (int row = 0; row < matrix.rows(); row++) {
             for (int col = 0; col < matrix.cols(); col++) {
@@ -26,11 +31,14 @@ public record ScaledMatrix(double value, MatrixExpression matrixExpression) impl
             }
         }
 
-        return new ConstantMatrix(values);
+        return new ConstantArrayMatrix(values);
     }
 
     @Override
     public MatrixExpression computePartialDerivative(int variable) {
-        return new ScaledMatrix(value, matrixExpression.computePartialDerivative(variable));
+        return MatrixSum.sum(
+                new ScaledMatrix(scalarExpression.computePartialDerivative(variable), matrixExpression),
+                new ScaledMatrix(scalarExpression, matrixExpression.computePartialDerivative(variable))
+        );
     }
 }

@@ -31,7 +31,7 @@ public record VectorComponentProduct(VectorExpression left,
     }
 
     @Override
-    public Vector evaluate(Model.Binder bindings) {
+    public Vector evaluate(Model.ParameterBindings bindings) {
         final Vector leftEval = left.evaluate(bindings);
         final Vector rightEval = right.evaluate(bindings);
 
@@ -53,6 +53,23 @@ public record VectorComponentProduct(VectorExpression left,
                 VectorComponentProduct.product(
                         left,
                         right.computePartialDerivative(variable)
+                )
+        );
+    }
+
+    @Override
+    public MatrixExpression computeDerivative(int[] variables) {
+        final MatrixExpression leftDerivative = left.computeDerivative(variables);
+        final MatrixExpression rightDerivative = right.computeDerivative(variables);
+
+        return MatrixSum.sum(
+                MatrixProduct.product(
+                        new DiagonalizedVector(right),
+                        leftDerivative
+                ),
+                MatrixProduct.product(
+                        new DiagonalizedVector(left),
+                        rightDerivative
                 )
         );
     }

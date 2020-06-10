@@ -4,7 +4,7 @@ public record DotProduct(VectorExpression left, VectorExpression right) implemen
     public static ScalarExpression product(VectorExpression left, VectorExpression right) {
         final DotProduct product = new DotProduct(left, right);
         if (product.isZero()) {
-            return new ScalarConstant(0.0);
+            return new ConstantScalar(0.0);
         } else {
             return product;
         }
@@ -16,7 +16,7 @@ public record DotProduct(VectorExpression left, VectorExpression right) implemen
     }
 
     @Override
-    public double evaluate(Model.Binder bindings) {
+    public double evaluate(Model.ParameterBindings bindings) {
         final Vector lVector = left.evaluate(bindings);
         final Vector rVector = right.evaluate(bindings);
 
@@ -34,8 +34,8 @@ public record DotProduct(VectorExpression left, VectorExpression right) implemen
         final MatrixExpression leftDerivative = left.computeDerivative(variables);
         final MatrixExpression rightDerivative = right.computeDerivative(variables);
 
-        return VectorSum.sum(MatrixVectorProduct.product(new Transpose(leftDerivative), right),
-                             MatrixVectorProduct.product(new Transpose(rightDerivative), left));
+        return VectorSum.sum(MatrixVectorProduct.product(new TransposeExpression(leftDerivative), right),
+                             MatrixVectorProduct.product(new TransposeExpression(rightDerivative), left));
     }
 
     @Override

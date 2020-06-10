@@ -38,7 +38,7 @@ public record VectorSum(VectorExpression... expressions) implements VectorExpres
     }
 
     @Override
-    public Vector evaluate(Model.Binder bindings) {
+    public Vector evaluate(Model.ParameterBindings bindings) {
         Vector[] evaluated = Arrays.stream(expressions)
                                    .map(exp -> exp.evaluate(bindings))
                                    .toArray(Vector[]::new);

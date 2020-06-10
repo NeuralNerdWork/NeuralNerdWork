@@ -1,9 +1,11 @@
 package neuralnerdwork.math;
 
+import java.util.Arrays;
+
 public record ParameterVector(int variableStartIndex, int length) implements VectorExpression {
 
     @Override
-    public Vector evaluate(Model.Binder bindings) {
+    public Vector evaluate(Model.ParameterBindings bindings) {
         final double[] values = new double[length];
         for (int i = 0; i < length; i++) {
             values[i] = bindings.get(variableStartIndex + i);
@@ -22,6 +24,15 @@ public record ParameterVector(int variableStartIndex, int length) implements Vec
         } else {
             return new ConstantVector(new double[length]);
         }
+    }
+
+    @Override
+    public MatrixExpression computeDerivative(int[] variables) {
+        return new ColumnMatrix(
+                Arrays.stream(variables)
+                      .mapToObj(this::computePartialDerivative)
+                      .toArray(VectorExpression[]::new)
+        );
     }
 
     @Override

@@ -7,14 +7,14 @@ public record ScalarProduct(ScalarExpression left,
                                            ScalarExpression right) {
         final ScalarProduct product = new ScalarProduct(left, right);
         if (product.isZero()) {
-            return new ScalarConstant(0.0);
+            return new ConstantScalar(0.0);
         } else {
             return product;
         }
     }
 
     @Override
-    public double evaluate(Model.Binder bindings) {
+    public double evaluate(Model.ParameterBindings bindings) {
         return left.evaluate(bindings) * right.evaluate(bindings);
     }
 
@@ -36,6 +36,25 @@ public record ScalarProduct(ScalarExpression left,
                         right
                 ),
                 ScalarProduct.product(
+                        left,
+                        rightDerivative
+                )
+        );
+    }
+
+    @Override
+    public VectorExpression computeDerivative(int[] variables) {
+        final VectorExpression leftDerivative = left.computeDerivative(variables);
+        final VectorExpression rightDerivative = right.computeDerivative(variables);
+
+        // Product rule
+        // (fg)' = f'g + fg'
+        return VectorSum.sum(
+                new ScaledVector(
+                        right,
+                        leftDerivative
+                ),
+                new ScaledVector(
                         left,
                         rightDerivative
                 )

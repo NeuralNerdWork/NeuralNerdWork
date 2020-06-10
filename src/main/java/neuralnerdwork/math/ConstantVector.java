@@ -1,6 +1,7 @@
 package neuralnerdwork.math;
 
 import java.util.Arrays;
+import java.util.Map;
 
 public record ConstantVector(double[] values) implements VectorExpression, Vector {
 
@@ -21,13 +22,18 @@ public record ConstantVector(double[] values) implements VectorExpression, Vecto
     }
 
     @Override
-    public Vector evaluate(Model.Binder bindings) {
+    public Vector evaluate(Model.ParameterBindings bindings) {
         return this;
     }
 
     @Override
     public VectorExpression computePartialDerivative(int variable) {
         return new ConstantVector(new double[values.length]);
+    }
+
+    @Override
+    public MatrixExpression computeDerivative(int[] variables) {
+        return new SparseConstantMatrix(Map.of(), values.length, variables.length);
     }
 
     @Override

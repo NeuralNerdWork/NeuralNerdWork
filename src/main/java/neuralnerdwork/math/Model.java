@@ -1,5 +1,6 @@
 package neuralnerdwork.math;
 
+import java.util.Arrays;
 import java.util.stream.Stream;
 
 public class Model {
@@ -34,16 +35,20 @@ public class Model {
                      .toArray();
     }
 
-    public Binder createBinder() {
-        return new Binder(0, nextParameterIndex);
+    public ParameterBindings createBinder() {
+        return new ParameterBindings(0, nextParameterIndex);
     }
 
-    public static class Binder {
+    public static class ParameterBindings {
         private final int start;
-        private final Double[] values;
-        Binder(int start, int length) {
+        private final double[] values;
+        ParameterBindings(int start, int length) {
             this.start = start;
-            values = new Double[length];
+            values = new double[length];
+        }
+        private ParameterBindings(int start, double[] values) {
+            this.start = start;
+            this.values = values;
         }
 
         public int[] variables() {
@@ -57,7 +62,7 @@ public class Model {
             return values[key - start];
         }
 
-        public Double put(int key, Double value) {
+        public double put(int key, Double value) {
             if (key >= start && key < start + values.length) {
                 final Double prev = values[key - start];
                 values[key - start] = value;
@@ -66,6 +71,10 @@ public class Model {
             } else {
                 throw new IllegalArgumentException("invalid index for key " + key);
             }
+        }
+
+        public ParameterBindings copy() {
+            return new ParameterBindings(start, Arrays.copyOf(values, values.length));
         }
     }
 }

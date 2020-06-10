@@ -21,7 +21,7 @@ public record ScalarComponentsVector(ScalarExpression[] components) implements V
     }
 
     @Override
-    public Vector evaluate(Model.Binder bindings) {
+    public Vector evaluate(Model.ParameterBindings bindings) {
         return new ConstantVector(
                 Arrays.stream(components)
                       .mapToDouble(f -> f.evaluate(bindings))
@@ -35,6 +35,17 @@ public record ScalarComponentsVector(ScalarExpression[] components) implements V
                 Arrays.stream(components)
                       .map(f -> f.computePartialDerivative(variable))
                       .toArray(ScalarExpression[]::new)
+        );
+    }
+
+    @Override
+    public MatrixExpression computeDerivative(int[] variables) {
+        return new TransposeExpression(
+                new ColumnMatrix(
+                        Arrays.stream(components)
+                              .map(f -> f.computeDerivative(variables))
+                              .toArray(VectorExpression[]::new)
+                )
         );
     }
 

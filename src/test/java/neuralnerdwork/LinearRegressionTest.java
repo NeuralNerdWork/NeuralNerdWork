@@ -1,17 +1,19 @@
 package neuralnerdwork;
 
+import neuralnerdwork.descent.*;
 import neuralnerdwork.math.ConstantVector;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class LinearRegressionTest {
     @Test
@@ -19,10 +21,13 @@ public class LinearRegressionTest {
 
         NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(
                 new int[]{2, 1},
-                0.1,
-                0.001,
-                1000,
-                () -> (Math.random() - 0.5) * 2.0
+                new SimpleBatchGradientDescent(
+                        new SimpleBatchGradientDescent.HyperParameters(
+                                0.1,
+                                0.001,
+                                1000
+                        ),
+                        () -> (Math.random() - 0.5) * 2.0)
         );
 
         NeuralNetwork network = trainer.train(Arrays.asList(
@@ -37,8 +42,86 @@ public class LinearRegressionTest {
         assertArrayEquals(new double[]{1.0}, network.apply(new double[]{0.0, 1.2}), 0.2);
     }
 
-    @Test
-    void trainingShouldConvergeToLearnCircle() {
+    public static Stream<GradientDescentStrategy> gradientDescentStrategies() {
+        var r = new Random(1337);
+        return Stream.of(
+                new SimpleBatchGradientDescent(
+                        new SimpleBatchGradientDescent.HyperParameters(
+                                1.0,
+                                0.001,
+                                2000
+                        ),
+                        () -> (r.nextDouble() - 0.5) * 2.0
+                ),
+                new StochasticGradientDescent(
+                        new StochasticGradientDescent.HyperParameters(
+                                0.001,
+                                5000,
+                                200
+                        ),
+                        () -> (r.nextDouble() - 0.5) * 2.0,
+                        () -> new FixedLearningRateGradientUpdate(0.5)
+                ),
+                new StochasticGradientDescent(
+                        new StochasticGradientDescent.HyperParameters(
+                                0.001,
+                                5000,
+                                200
+                        ),
+                        () -> (r.nextDouble() - 0.5) * 2.0,
+                        () -> new AverageGradientUpdate(0.5, 5)
+                ),
+                new StochasticGradientDescent(
+                        new StochasticGradientDescent.HyperParameters(
+                                0.0001,
+                                5000,
+                                200
+                        ),
+                        () -> (r.nextDouble() - 0.5) * 2.0,
+                        () -> new MomentumGradientUpdate(0.1, 0.9)
+                ),
+                new StochasticGradientDescent(
+                        new StochasticGradientDescent.HyperParameters(
+                                0.0001,
+                                5000,
+                                200
+                        ),
+                        () -> (r.nextDouble() - 0.5) * 2.0,
+                        () -> new NesterovMomentumGradientUpdate(0.1, 0.9)
+                ),
+                new StochasticGradientDescent(
+                        new StochasticGradientDescent.HyperParameters(
+                                1e-8,
+                                5000,
+                                200
+                        ),
+                        () -> (r.nextDouble() - 0.5) * 2.0,
+                        () -> new AdagradUpdate(0.1, 1e-8)
+                ),
+                new StochasticGradientDescent(
+                        new StochasticGradientDescent.HyperParameters(
+                                1e-8,
+                                5000,
+                                200
+                        ),
+                        () -> (r.nextDouble() - 0.5) * 2.0,
+                        () -> new AdagradDeltaUpdate(0.9, 1e-4)
+                ),
+                new StochasticGradientDescent(
+                        new StochasticGradientDescent.HyperParameters(
+                                1e-8,
+                                5000,
+                                200
+                        ),
+                        () -> (r.nextDouble() - 0.5) * 2.0,
+                        () -> new RmsPropUPdate(0.001, 0.9, 1e-8)
+                )
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("gradientDescentStrategies")
+    void trainingShouldConvergeToLearnCircle(GradientDescentStrategy gradientDescentStrategy) {
 
         final long total = 1000;
         Random r = new Random(11);
@@ -53,10 +136,6 @@ public class LinearRegressionTest {
 
         List<TrainingSample> trainingSet = Stream.concat(positiveExamples.stream(), negativeExamples.stream())
                                                  .collect(toList());
-//        List<TrainingSample> trainingSet = Stream.generate(() -> new Point((r.nextDouble() - 0.5) * 2.0, (r.nextDouble() - 0.5) * 2.0))
-//                                                 .limit(total)
-//                                                 .map(p -> new TrainingSample(p.toVector(), p.inRadius(1.0) ? ONE : ZERO))
-//                                                 .collect(toList());
 
         long positiveExampleCount = trainingSet.stream()
                                                .filter(sample -> sample.output().equals(ONE))
@@ -65,11 +144,8 @@ public class LinearRegressionTest {
         System.out.println("Positive examples: " + positiveExampleCount);
 
         NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(
-                new int[]{2, 4, 1},
-                1.0,
-                0.001,
-                2000,
-                () -> (r.nextDouble() - 0.5) * 2.0
+                new int[]{2, 4, 2, 1},
+                gradientDescentStrategy
         );
 
         NeuralNetwork network = trainer.train(trainingSet);
@@ -89,9 +165,13 @@ public class LinearRegressionTest {
                                         .filter(eval -> Math.round(Math.abs(eval.output() - eval.sample.output().get(0))) != 0L)
                                         .count();
 
-        System.out.printf("Training set accuracy: %.2f%%\n", 100.0 * (1.0 - trainingSetFailures / (double) trainingSet.size()));
-        System.out.printf("Validation set accuracy: %.2f%%\n", 100.0 * (1.0 - validationFailures / (double) validationSetSize));
+        final double trainingSetAccuracy = 100.0 * (1.0 - trainingSetFailures / (double) trainingSet.size());
+        System.out.printf("Training set accuracy: %.2f%%\n", trainingSetAccuracy);
+        final double validationSetAccuracy = 100.0 * (1.0 - validationFailures / (double) validationSetSize);
+        System.out.printf("Validation set accuracy: %.2f%%\n", validationSetAccuracy);
 
+        assertTrue(trainingSetAccuracy > 95.0);
+        assertTrue(validationSetAccuracy > 90.0);
     }
 
     private Point pointInUnitCircle(Random random) {

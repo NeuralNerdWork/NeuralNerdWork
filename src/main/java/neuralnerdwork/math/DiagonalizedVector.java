@@ -20,7 +20,7 @@ public record DiagonalizedVector(VectorExpression vector) implements MatrixExpre
     }
 
     @Override
-    public Matrix evaluate(Model.Binder bindings) {
+    public Matrix evaluate(Model.ParameterBindings bindings) {
         final Vector vectorValue = vector.evaluate(bindings);
         final Map<SparseConstantMatrix.Index, Double> values = new HashMap<>();
         for (int i = 0; i < vector.length(); i++) {

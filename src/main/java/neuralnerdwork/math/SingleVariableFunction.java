@@ -23,13 +23,24 @@ public interface SingleVariableFunction {
         }
 
         @Override
-        public double evaluate(Model.Binder bindings) {
+        public double evaluate(Model.ParameterBindings bindings) {
             return function.apply(inputExpression.evaluate(bindings));
         }
 
         @Override
         public ScalarExpression computePartialDerivative(int variable) {
             return ScalarProduct.product(function.differentiateByInput().invoke(inputExpression), inputExpression.computePartialDerivative(variable));
+        }
+
+        @Override
+        public VectorExpression computeDerivative(int[] variables) {
+            VectorExpression innerDerivative = inputExpression.computeDerivative(variables);
+            SingleVariableFunction outerDerivative = function.differentiateByInput();
+
+            return new ScaledVector(
+                    outerDerivative.invoke(inputExpression),
+                    innerDerivative
+            );
         }
 
         @Override
