@@ -118,6 +118,11 @@ public class NeuralNetworkTrainer {
         // training cycle end
         // TODO - Stop when we have converged
 
+        // Note from @ball - normally the "convergence test" 
+        // is to keep a small subset of the data as a test 
+        // set and check the error function against that 
+        // test set every n iterations
+
        return input -> {
         var inputVector = new ConstantVector(input);
         var runtimeNetwork = buildNetwork(weightMatrices, inputVector);
