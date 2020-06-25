@@ -1,24 +1,25 @@
 package neuralnerdwork;
 
+import neuralnerdwork.descent.RmsPropUPdate;
+import neuralnerdwork.descent.SimpleBatchGradientDescent;
+import neuralnerdwork.descent.StochasticGradientDescent;
+import neuralnerdwork.math.ConstantVector;
+import neuralnerdwork.viz.JFrameTrainingVisualizer;
+import org.junit.jupiter.api.Test;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Line2D;
+import java.awt.geom.Rectangle2D;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.swing.JFrame;
-
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.BasicStroke;
-
-import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.Test;
-
-import neuralnerdwork.descent.RmsPropUPdate;
-import neuralnerdwork.descent.SimpleBatchGradientDescent;
-import neuralnerdwork.descent.StochasticGradientDescent;
-import neuralnerdwork.math.ConstantVector;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class SimpleTrainingTest {
     @Test
@@ -105,6 +106,67 @@ public class SimpleTrainingTest {
                     g2.setColor(Color.RED);
                 }
                 g2.fillOval((int) (x*500.0) - 4, (int) (y*500.0) - 4, 8, 8);
+                if (predictedInside != actuallyInside) {
+                    return Stream.of("Bad answer for ("+x+","+y+") distance from origin is " + Math.sqrt(x*x + y*y) + "\n");
+                } else {
+                    return Stream.empty();
+                }
+            })
+            .collect(Collectors.toList());
+
+            Thread.sleep(100000);
+
+        assertEquals(List.of(), failures, () -> failures.size() + " incorrect predictions");
+    }
+
+    @Test
+    void trainingForPointsInsideACircleShouldConverge2() throws Exception {
+
+        Random r = new Random(11);
+        var trainingSet = Stream.iterate(1, i -> i < 1000, i -> i+1)
+            .map(i -> {
+                double x = r.nextDouble() * 2.0 - 1.0;
+                double y = r.nextDouble() * 2.0 - 1.0;
+                boolean inside = Math.sqrt(x*x + y*y) <= 0.75;
+                return new TrainingSample(new ConstantVector(new double[]{x, y}), new ConstantVector(new double[]{inside ? 1.0 : 0.0}));
+            })
+            .collect(Collectors.toList());
+
+        JFrameTrainingVisualizer visualizer = new JFrameTrainingVisualizer(
+                trainingSet,
+                new Rectangle2D.Double(-1.0, -1.0, 2.0, 2.0),
+                (sample, prediction) -> {
+                    boolean predictedInside = prediction.get(0) >= 1.0;
+                    //System.out.printf("(%1.3f,%1.3f) inside? %s\n", sample.input().get(0), sample.input().get(1), predictedInside);
+                    if (predictedInside) {
+                        return Color.GREEN;
+                    } else {
+                        return Color.RED;
+                    }
+                });
+        // in/out
+        visualizer.addShape(new Ellipse2D.Double(-0.75, -0.75, 1.5, 1.5));
+        visualizer.addShape(new Line2D.Double(-2.0, 0.0, 2.0, 0.0));
+        visualizer.addShape(new Line2D.Double(0.0, -2.0, 0.0, 2.0));
+
+        NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(
+                new int[]{2, 10, 10, 1},
+                new StochasticGradientDescent(
+                        200,
+                        () -> (Math.random() - 0.5) * 2.0,
+                        () -> new RmsPropUPdate(0.001, 0.9, 1e-8)
+                ),
+                (iterationCount, network) -> iterationCount < 5000,
+                visualizer);
+
+        NeuralNetwork network = trainer.train(trainingSet);
+
+        var failures = Stream.iterate(1, i -> i < 1000, i -> i+1)
+            .flatMap (i -> {
+                double x = r.nextDouble() * 2.0 - 1.0;
+                double y = r.nextDouble() * 2.0 - 1.0;
+                boolean actuallyInside = Math.sqrt(x*x + y*y) <= 0.75;
+                boolean predictedInside = Math.round(network.apply(new double[]{x, y})[0]) >= 1;
                 if (predictedInside != actuallyInside) {
                     return Stream.of("Bad answer for ("+x+","+y+") distance from origin is " + Math.sqrt(x*x + y*y) + "\n");
                 } else {
