@@ -132,7 +132,7 @@ public class NeuralNetworkTrainer {
     private VectorExpression buildNetworkExpression(ArrayList<ParameterMatrix> weightMatrices, ConstantVector inputLayer) {
         //start at first hidden layer; end at output layer (TODO: bias on output layer should be optional)
         var logistic = new LogisticFunction();
-        var relu = new ReluFunction();
+        var relu = new LeakyRelu(0.01);
         final FeedForwardNetwork.Layer[] layers = new FeedForwardNetwork.Layer[layerSizes.length - 1];
         for (int l = 1; l < layerSizes.length; l++) try {
 

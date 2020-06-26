@@ -25,8 +25,11 @@ public record FeedForwardNetwork(ConstantVector input, Layer[] layers) implement
         return network.evaluate(bindings);
     }
 
+
     @Override
     public MatrixExpression computeDerivative(int[] variables) {
+        record LayerEval(double[] activations, double[] activationInputs) {}
+
         // FIXME do something with variables?
         return new MatrixExpression() {
             @Override
@@ -51,7 +54,6 @@ public record FeedForwardNetwork(ConstantVector input, Layer[] layers) implement
                                     partial derivatives to be returned in a layout consistent with a given variable order.
                  */
 
-                record LayerEval(double[] activations, double[] activationInputs) {}
                 final LayerEval[] feedForwardEvaluations = new LayerEval[layers.length];
                 final ConstantVector biasComponent = new ConstantVector(new double[]{1.0});
                 double[] lastOutput = input.toArray();

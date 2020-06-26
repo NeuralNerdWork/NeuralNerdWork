@@ -1,6 +1,9 @@
 package neuralnerdwork;
 
-import neuralnerdwork.descent.RmsPropUPdate;
+import neuralnerdwork.descent.AdagradDeltaUpdate;
+import neuralnerdwork.descent.FixedLearningRateGradientUpdate;
+import neuralnerdwork.descent.NesterovMomentumGradientUpdate;
+import neuralnerdwork.descent.RmsPropUpdate;
 import neuralnerdwork.descent.SimpleBatchGradientDescent;
 import neuralnerdwork.descent.StochasticGradientDescent;
 import neuralnerdwork.math.ConstantVector;
@@ -46,82 +49,6 @@ public class SimpleTrainingTest {
     @Test
     void trainingForPointsInsideACircleShouldConverge() throws Exception {
 
-        NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(
-            new int[]{2, 10, 10, 1}, 
-            new StochasticGradientDescent(
-                200,
-                () -> (Math.random() - 0.5) * 2.0,
-                () -> new RmsPropUPdate(0.001, 0.9, 1e-8)
-        ),
-        (iterationCount, network) -> iterationCount < 5000);
-
-        var frame = new JFrame("Thinking");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        var cp = frame.getContentPane();
-        frame.setBounds(10, 10, 1000, 1000);
-        frame.setVisible(true);
-        var g2 = (Graphics2D) cp.getGraphics();
-        Thread.sleep(100);
-        g2.translate(500, 500);
-        g2.setStroke(new BasicStroke(2f));
-        g2.setColor(Color.BLUE);
-        g2.drawOval(-375, -375, 750, 750);
-
-        frame.setTitle("training");
-
-        Random r = new Random(11); 
-        var trainingSet = Stream.iterate(1, i -> i < 1000, i -> i+1)
-            .map(i -> {
-                double x = r.nextDouble() * 2.0 - 1.0;
-                double y = r.nextDouble() * 2.0 - 1.0;
-                boolean inside = Math.sqrt(x*x + y*y) <= 0.75;
-
-                // if (inside) {
-                //     g2.setColor(Color.MAGENTA);
-                // } else {
-                //     g2.setColor(Color.CYAN);
-                // }
-
-                // g2.fillOval((int) (x*500.0) - 4, (int) (y*500.0) - 4, 8, 8);
-
-
-                return new TrainingSample(new ConstantVector(new double[]{x, y}), new ConstantVector(new double[]{inside ? 1.0 : 0.0}));
-            })
-            .collect(Collectors.toList());
-
-        NeuralNetwork network = trainer.train(trainingSet);
-
-        frame.setTitle("testing");
-        g2.drawOval(-375, -375, 750, 750);
-
-        var failures = Stream.iterate(1, i -> i < 1000, i -> i+1)
-            .flatMap (i -> {
-                double x = r.nextDouble() * 2.0 - 1.0;
-                double y = r.nextDouble() * 2.0 - 1.0;
-                boolean actuallyInside = Math.sqrt(x*x + y*y) <= 0.75;
-                boolean predictedInside = Math.round(network.apply(new double[]{x, y})[0]) >= 1;
-                if (predictedInside) {
-                    g2.setColor(Color.GREEN);
-                } else {
-                    g2.setColor(Color.RED);
-                }
-                g2.fillOval((int) (x*500.0) - 4, (int) (y*500.0) - 4, 8, 8);
-                if (predictedInside != actuallyInside) {
-                    return Stream.of("Bad answer for ("+x+","+y+") distance from origin is " + Math.sqrt(x*x + y*y) + "\n");
-                } else {
-                    return Stream.empty();
-                }
-            })
-            .collect(Collectors.toList());
-
-            Thread.sleep(100000);
-
-        assertEquals(List.of(), failures, () -> failures.size() + " incorrect predictions");
-    }
-
-    @Test
-    void trainingForPointsInsideACircleShouldConverge2() throws Exception {
-
         Random r = new Random(11);
         var trainingSet = Stream.iterate(1, i -> i < 1000, i -> i+1)
             .map(i -> {
@@ -136,7 +63,7 @@ public class SimpleTrainingTest {
                 trainingSet,
                 new Rectangle2D.Double(-1.0, -1.0, 2.0, 2.0),
                 (sample, prediction) -> {
-                    boolean predictedInside = prediction.get(0) >= 1.0;
+                    boolean predictedInside = prediction.get(0) >= 0.5;
                     //System.out.printf("(%1.3f,%1.3f) inside? %s\n", sample.input().get(0), sample.input().get(1), predictedInside);
                     if (predictedInside) {
                         return Color.GREEN;
@@ -154,7 +81,7 @@ public class SimpleTrainingTest {
                 new StochasticGradientDescent(
                         200,
                         () -> (Math.random() - 0.5) * 2.0,
-                        () -> new RmsPropUPdate(0.001, 0.9, 1e-8)
+                        () -> new RmsPropUpdate(0.001, 0.9, 1e-8)
                 ),
                 (iterationCount, network) -> iterationCount < 5000,
                 visualizer);
@@ -175,65 +102,59 @@ public class SimpleTrainingTest {
             })
             .collect(Collectors.toList());
 
-            Thread.sleep(100000);
-
+        System.in.read();
         assertEquals(List.of(), failures, () -> failures.size() + " incorrect predictions");
     }
 
     @Test
     void trainingForPointsInsideARingShouldConverge() throws Exception {
 
-        NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(
-            new int[]{2, 5, 5, 5, 5, 1}, 
-                new StochasticGradientDescent(
-                        200,
-                        () -> (Math.random() - 0.5) * 2.0,
-                        () -> new RmsPropUPdate(0.001, 0.9, 1e-8)
-                ),
-                (iterationCount, network) -> iterationCount < 5000
-        );
-
-        var frame = new JFrame("Thinking");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        var cp = frame.getContentPane();
-        frame.setBounds(10, 10, 1000, 1000);
-        frame.setVisible(true);
-        var g2 = (Graphics2D) cp.getGraphics();
-        Thread.sleep(100);
-        g2.translate(500, 500);
-        g2.setStroke(new BasicStroke(2f));
-        g2.setColor(Color.BLUE);
-        g2.drawOval(-375, -375, 750, 750);
-        g2.drawOval(-125, -125, 250, 250);
-
-        frame.setTitle("training");
-
         Random r = new Random(11); 
         var trainingSet = Stream.iterate(1, i -> i < 1000, i -> i+1)
             .map(i -> {
-                double x = r.nextDouble() * 2.0 - 1.0;
-                double y = r.nextDouble() * 2.0 - 1.0;
+                double x = r.nextGaussian() * 0.5;
+                double y = r.nextGaussian() * 0.5;
                 var distance = Math.sqrt(x*x + y*y);
-                boolean inside = distance <= 0.75 && distance >= 0.25 ;
-
-                if (inside) {
-                    g2.setColor(Color.MAGENTA);
-                } else {
-                    g2.setColor(Color.CYAN);
-                }
-
-                g2.fillOval((int) (x*500.0) - 4, (int) (y*500.0) - 4, 8, 8);
-
+                boolean inside = distance <= 0.75 && distance >= 0.25;
 
                 return new TrainingSample(new ConstantVector(new double[]{x, y}), new ConstantVector(new double[]{inside ? 1.0 : 0.0}));
             })
             .collect(Collectors.toList());
 
-        NeuralNetwork network = trainer.train(trainingSet);
+        JFrameTrainingVisualizer visualizer = new JFrameTrainingVisualizer(
+            trainingSet,
+            new Rectangle2D.Double(-2.0, -2.0, 4.0, 4.0),
+            (sample, prediction) -> {
+                // System.out.printf("(%1.3f,%1.3f) inside? %1.3f\n", sample.input().get(0), sample.input().get(1), prediction.get(0));
+                var greenAmt = (int) Math.round((prediction.get(0)-0.5)* 2.0 * 255);
+                var redAmt = (int) Math.round((0.5 - prediction.get(0))* 2.0 * 255);
 
-        frame.setTitle("testing");
-        g2.drawOval(-375, -375, 750, 750);
-        g2.drawOval(-125, -125, 250, 250);
+                if(prediction.get(0) >= 0.5) {
+                    return new Color(0, greenAmt, 0);
+                } else {
+                    return new Color(redAmt, 0, 0);
+                }
+                
+            });
+        // in/out
+        visualizer.addShape(new Ellipse2D.Double(-0.75, -0.75, 1.5, 1.5));
+        visualizer.addShape(new Ellipse2D.Double(-0.25, -0.25, 0.5, 0.5));
+        visualizer.addShape(new Line2D.Double(-2.0, 0.0, 2.0, 0.0));
+        visualizer.addShape(new Line2D.Double(0.0, -2.0, 0.0, 2.0));
+
+        NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(
+            new int[]{2, 10, 10, 1}, 
+                new StochasticGradientDescent(
+                        100,
+                        () -> (Math.random() - 0.5) * 2,
+                        () -> new RmsPropUpdate(0.001, 0.9, 1e-8)
+                ),
+                (iterationCount, network) -> iterationCount < 5000,
+                visualizer
+        );
+
+
+        NeuralNetwork network = trainer.train(trainingSet);
 
         var failures = Stream.iterate(1, i -> i < 1000, i -> i+1)
             .flatMap (i -> {
@@ -241,12 +162,7 @@ public class SimpleTrainingTest {
                 double y = r.nextDouble() * 2.0 - 1.0;
                 boolean actuallyInside = Math.sqrt(x*x + y*y) <= 0.75;
                 boolean predictedInside = Math.round(network.apply(new double[]{x, y})[0]) >= 1;
-                if (predictedInside) {
-                    g2.setColor(Color.GREEN);
-                } else {
-                    g2.setColor(Color.RED);
-                }
-                g2.fillOval((int) (x*500.0) - 4, (int) (y*500.0) - 4, 8, 8);
+
                 if (predictedInside != actuallyInside) {
                     return Stream.of("Bad answer for ("+x+","+y+") distance from origin is " + Math.sqrt(x*x + y*y) + "\n");
                 } else {
@@ -255,8 +171,7 @@ public class SimpleTrainingTest {
             })
             .collect(Collectors.toList());
 
-            Thread.sleep(100000);
-
+        System.in.read();
         assertEquals(List.of(), failures, () -> failures.size() + " incorrect predictions");
     }
 

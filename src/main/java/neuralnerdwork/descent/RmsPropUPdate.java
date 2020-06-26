@@ -5,7 +5,7 @@ import neuralnerdwork.math.Model;
 import neuralnerdwork.math.ScalarExpression;
 import neuralnerdwork.math.Vector;
 
-public class RmsPropUPdate implements WeightUpdateStrategy {
+public class RmsPropUpdate implements WeightUpdateStrategy {
     private final double learningRate;
     private final double decayRate;
     private final double epsilon;
@@ -15,7 +15,7 @@ public class RmsPropUPdate implements WeightUpdateStrategy {
      */
     private double[] gradientAverage;
 
-    public RmsPropUPdate(double learningRate, double decayRate, double epsilon) {
+    public RmsPropUpdate(double learningRate, double decayRate, double epsilon) {
         this.learningRate = learningRate;
         this.decayRate = decayRate;
         this.epsilon = epsilon;

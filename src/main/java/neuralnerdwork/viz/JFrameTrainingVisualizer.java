@@ -35,9 +35,11 @@ public class JFrameTrainingVisualizer implements IterationObserver, AutoCloseabl
         frame.getContentPane().add(iterationLabel, BorderLayout.NORTH);
         frame.getContentPane().add(plotPanel, BorderLayout.CENTER);
         frame.setLocationByPlatform(true);
-        frame.pack();
-        frame.setVisible(true);
 
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        frame.setLocationRelativeTo(null);
+        frame.setSize(new Dimension(screenSize.height - 50, screenSize.height - 50));
+        frame.setVisible(true);
     }
 
     public void close() {
@@ -46,19 +48,29 @@ public class JFrameTrainingVisualizer implements IterationObserver, AutoCloseabl
 
     @Override
     public void observe(long iterationCount, NeuralNetwork network) {
-        iterationLabel.setText("Iteration " + iterationCount);
-        Map<Paint, PointSet> pointSets = validationPoints.stream()
-                .map(sample -> {
-                    ConstantVector prediction = new ConstantVector(network.apply(sample.input().values()));
-                    return new ClassifiedPoint(predictionTester.apply(sample, prediction),
-                                               sample.input().values());
-                }) // TODO confusion between ConstantVector and double[] here - I always had the wrong one!
-                .collect(Collectors.toMap(
-                        ClassifiedPoint::paint,
-                        cp -> new PointSet(cp.paint(), List.of(cp.point())),
-                        (ps1, ps2) -> new PointSet(ps1.paint(), concat(ps1.points(), ps2.points()))));
+        var mather = new SwingWorker<Void,Void>() {
 
-        plotPanel.updatePointSets(pointSets.values());
+            @Override
+            protected Void doInBackground() throws Exception {
+                System.out.println("Mathy iteration: " + iterationCount);
+                iterationLabel.setText("Iteration " + iterationCount);
+                Map<Paint, PointSet> pointSets = validationPoints.stream()
+                        .map(sample -> {
+                            ConstantVector prediction = new ConstantVector(network.apply(sample.input().values()));
+                            return new ClassifiedPoint(predictionTester.apply(sample, prediction),
+                                                       sample.input().values());
+                        }) // TODO confusion between ConstantVector and double[] here - I always had the wrong one!
+                        .collect(Collectors.toMap(
+                                ClassifiedPoint::paint,
+                                cp -> new PointSet(cp.paint(), List.of(cp.point())),
+                                (ps1, ps2) -> new PointSet(ps1.paint(), concat(ps1.points(), ps2.points()))));
+        
+                plotPanel.updatePointSets(pointSets.values());
+                return null;
+            }
+        };
+
+        mather.execute();
     }
 
     private static <T> List<T> concat(Collection<? extends T> c1, Collection<? extends T> c2) {
