@@ -4,7 +4,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
-import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -13,6 +12,7 @@ import java.util.List;
 import static java.util.Objects.requireNonNull;
 
 public class PlotPanel extends JPanel {
+    private static final long serialVersionUID = 1L;
     private final java.util.List<Shape> shapes = new ArrayList<>();
     private final Rectangle2D dataViewport = new Rectangle2D.Double(-1.0, -1.0, 2.0, 2.0);
     private volatile Collection<PointSet> pointSets = List.of();

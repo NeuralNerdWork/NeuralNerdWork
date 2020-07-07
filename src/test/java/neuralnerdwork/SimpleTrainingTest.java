@@ -1,8 +1,5 @@
 package neuralnerdwork;
 
-import neuralnerdwork.descent.AdagradDeltaUpdate;
-import neuralnerdwork.descent.FixedLearningRateGradientUpdate;
-import neuralnerdwork.descent.NesterovMomentumGradientUpdate;
 import neuralnerdwork.descent.RmsPropUpdate;
 import neuralnerdwork.descent.SimpleBatchGradientDescent;
 import neuralnerdwork.descent.StochasticGradientDescent;
@@ -10,7 +7,6 @@ import neuralnerdwork.math.ConstantVector;
 import neuralnerdwork.viz.JFrameTrainingVisualizer;
 import org.junit.jupiter.api.Test;
 
-import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
@@ -71,7 +67,7 @@ public class SimpleTrainingTest {
                         return Color.RED;
                     }
                 });
-        // in/out
+
         visualizer.addShape(new Ellipse2D.Double(-0.75, -0.75, 1.5, 1.5));
         visualizer.addShape(new Line2D.Double(-2.0, 0.0, 2.0, 0.0));
         visualizer.addShape(new Line2D.Double(0.0, -2.0, 0.0, 2.0));
@@ -134,7 +130,6 @@ public class SimpleTrainingTest {
                 } else {
                     return new Color(redAmt, 0, 0);
                 }
-                
             });
         // in/out
         visualizer.addShape(new Ellipse2D.Double(-0.75, -0.75, 1.5, 1.5));
