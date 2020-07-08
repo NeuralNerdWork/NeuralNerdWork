@@ -11,6 +11,10 @@ import java.time.Instant;
 import java.util.function.Supplier;
 
 public class Util {
+    static boolean compareClassifications(double a, double b) {
+        return Math.signum(a - 0.5) == Math.signum(b - 0.5);
+    }
+
     static <T> T logTiming(String actionName, Supplier<T> action) {
         final Instant start = Instant.now();
         final T retVal = action.get();

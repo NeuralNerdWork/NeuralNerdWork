@@ -21,6 +21,22 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class SimpleTrainingTest {
+// TODO - Weight initialization based on layer input size
+// TODO - Parallelize error for training points
+// TODO - Drop out
+// TODO - L2 Regularization
+
+    static record FailurePercent(int failures, int total) { 
+        FailurePercent merge(FailurePercent other) { 
+            return new FailurePercent(failures() + other.failures(), total() + other.total());
+        }
+        
+        double asPercent() {
+            return ((double) failures) / ((double) total);
+        }
+        
+    }
+
     @Test
     void trainingTwoLayerNetworkShouldConverge() {
 
@@ -55,6 +71,15 @@ public class SimpleTrainingTest {
             })
             .collect(Collectors.toList());
 
+        var verificationSet = Stream.iterate(1, i -> i < 1000, i -> i+1)
+            .map(i -> {
+                double x = r.nextDouble() * 2.0 - 1.0;
+                double y = r.nextDouble() * 2.0 - 1.0;
+                boolean inside = Math.sqrt(x*x + y*y) <= 0.75;
+                return new TrainingSample(new ConstantVector(new double[]{x, y}), new ConstantVector(new double[]{inside ? 1.0 : 0.0}));
+            })
+            .collect(Collectors.toList());
+
         JFrameTrainingVisualizer visualizer = new JFrameTrainingVisualizer(
                 trainingSet,
                 new Rectangle2D.Double(-1.0, -1.0, 2.0, 2.0),
@@ -79,7 +104,18 @@ public class SimpleTrainingTest {
                         () -> (Math.random() - 0.5) * 2.0,
                         () -> new RmsPropUpdate(0.001, 0.9, 1e-8)
                 ),
-                (iterationCount, network) -> iterationCount < 5000,
+                (iterationCount, network) -> {
+                    var fails = verificationSet.stream()
+                    .map (i -> {
+                        return Util.compareClassifications(network.apply(i.input()).get(0), i.output().get(0));
+                    })
+                    .map(b -> new FailurePercent(b ? 0 : 1,  1))
+                    .reduce(new FailurePercent(0, 0), FailurePercent::merge);
+                    
+                    System.out.println("Percentage of verification set passing: " + fails.asPercent());
+
+                    return fails.asPercent() > 0.02;
+                },
                 visualizer);
 
         NeuralNetwork network = trainer.train(trainingSet);
@@ -117,6 +153,17 @@ public class SimpleTrainingTest {
             })
             .collect(Collectors.toList());
 
+        var verificationSet = Stream.iterate(1, i -> i < 1000, i -> i+1)
+            .map(i -> {
+                double x = r.nextGaussian() * 0.5;
+                double y = r.nextGaussian() * 0.5;
+                var distance = Math.sqrt(x*x + y*y);
+                boolean inside = distance <= 0.75 && distance >= 0.25;
+
+                return new TrainingSample(new ConstantVector(new double[]{x, y}), new ConstantVector(new double[]{inside ? 1.0 : 0.0}));
+            })
+            .collect(Collectors.toList());
+
         JFrameTrainingVisualizer visualizer = new JFrameTrainingVisualizer(
             trainingSet,
             new Rectangle2D.Double(-2.0, -2.0, 4.0, 4.0),
@@ -138,13 +185,24 @@ public class SimpleTrainingTest {
         visualizer.addShape(new Line2D.Double(0.0, -2.0, 0.0, 2.0));
 
         NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(
-            new int[]{2, 10, 10, 1}, 
+            new int[]{2, 20, 20, 1}, 
                 new StochasticGradientDescent(
                         100,
                         () -> (Math.random() - 0.5) * 2,
                         () -> new RmsPropUpdate(0.001, 0.9, 1e-8)
                 ),
-                (iterationCount, network) -> iterationCount < 5000,
+                (iterationCount, network) -> {
+                    var fails = verificationSet.stream()
+                    .map (i -> {
+                        return Util.compareClassifications(network.apply(i.input()).get(0), i.output().get(0));
+                    })
+                    .map(b -> new FailurePercent(b ? 0 : 1,  1))
+                    .reduce(new FailurePercent(0, 0), FailurePercent::merge);
+                    
+                    System.out.println("Percentage of verification set passing: " + fails.asPercent());
+
+                    return fails.asPercent() > 0.02;
+                },
                 visualizer
         );
 
