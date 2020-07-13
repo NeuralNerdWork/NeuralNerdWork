@@ -35,8 +35,16 @@ public record ParameterVector(int variableStartIndex, int length) implements Vec
         );
     }
 
+    public boolean containsVariable(int variable) {
+        return variable >= variableStartIndex && variable < (variableStartIndex + length);
+    }
+
     @Override
     public boolean isZero() {
         return false;
+    }
+
+    public int indexFor(int variable) {
+        return variable - variableStartIndex;
     }
 }

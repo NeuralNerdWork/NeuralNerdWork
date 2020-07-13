@@ -114,7 +114,7 @@ public class SimpleTrainingTest {
                     
                     System.out.println("Percentage of verification set passing: " + fails.asPercent());
 
-                    return fails.asPercent() > 0.02;
+                    return fails.asPercent() > 0.05;
                 },
                 visualizer);
 
@@ -200,7 +200,7 @@ public class SimpleTrainingTest {
                     
                     System.out.println("Percentage of verification set passing: " + fails.asPercent());
 
-                    return fails.asPercent() > 0.02;
+                    return fails.asPercent() > 0.05;
                 },
                 visualizer
         );

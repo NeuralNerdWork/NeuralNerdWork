@@ -7,6 +7,7 @@ import net.jqwik.api.constraints.Size;
 import neuralnerdwork.math.*;
 
 import java.util.Arrays;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -110,8 +111,9 @@ public class GradientDescentTest {
 
         final FeedForwardNetwork.Layer[] layers = new FeedForwardNetwork.Layer[singleDescentStepWithBackpropDerivativeShouldReduceError_layers];
         for (int i = 0; i < numLayers; i++) {
-            ParameterMatrix weights = builder.createParameterMatrix(rows, cols + 1);
-            layers[i] = new FeedForwardNetwork.Layer(weights, logistic);
+            ParameterMatrix weights = builder.createParameterMatrix(rows, cols);
+            ParameterVector bias = i < numLayers - 1 ? builder.createParameterVector(rows) : null;
+            layers[i] = new FeedForwardNetwork.Layer(weights, Optional.ofNullable(bias), logistic);
         }
 
         final FeedForwardNetwork.FeedForwardExpression networkFunction = new FeedForwardNetwork(layers).expression(trainingInput);
@@ -168,22 +170,27 @@ public class GradientDescentTest {
         final LogisticFunction logistic = new LogisticFunction();
 
         final FeedForwardNetwork.Layer[] layers = new FeedForwardNetwork.Layer[backpropShouldBeSameAsRegularGradient_layers];
-        final ConstantVector biasComponent = new ConstantVector(new double[]{1.0});
-        VectorExpression genericNetworkBuilder = new VectorConcat(trainingInput, biasComponent);
+        VectorExpression genericNetworkBuilder = trainingInput;
         for (int i = 0; i < numLayers; i++) {
-            ParameterMatrix weights = builder.createParameterMatrix(rows, cols + 1);
-            layers[i] = new FeedForwardNetwork.Layer(weights, logistic);
+            ParameterMatrix weights = builder.createParameterMatrix(rows, cols);
+            ParameterVector bias = i < numLayers - 1 ? builder.createParameterVector(rows) : null;
+            layers[i] = new FeedForwardNetwork.Layer(weights, Optional.ofNullable(bias), logistic);
             genericNetworkBuilder =
                     new VectorizedSingleVariableFunction(
                             logistic,
-                            new MatrixVectorProduct(
-                                    weights,
-                                    genericNetworkBuilder
-                            )
+                            bias != null ?
+                                    VectorSum.sum(
+                                            MatrixVectorProduct.product(
+                                                    weights,
+                                                    genericNetworkBuilder
+                                            ),
+                                            bias
+                                    ) :
+                                    MatrixVectorProduct.product(
+                                            weights,
+                                            genericNetworkBuilder
+                                    )
                     );
-            if (i != numLayers - 1) {
-                genericNetworkBuilder = new VectorConcat(genericNetworkBuilder, biasComponent);
-            }
         }
 
         final VectorExpression genericNetwork = genericNetworkBuilder;
@@ -206,12 +213,30 @@ public class GradientDescentTest {
         assertEquals(genericResult.rows(), specializedResult.rows());
         assertEquals(genericResult.cols(), specializedResult.cols());
 
+        double[][] difference = new double[genericResult.rows()][genericResult.cols()];
         for (int row = 0; row < genericResult.rows(); row++) {
             for (int col = 0; col < genericResult.cols(); col++) {
-                assertEquals(genericResult.get(row, col), specializedResult.get(row, col), delta,
-                             () -> String.format("Generic result:\n%s\n\nSpecialized result:\n%s\n",
-                                                 Arrays.deepToString(genericResult.toArray()),
-                                                 Arrays.deepToString(specializedResult.toArray())));
+                difference[row][col] = genericResult.get(row, col) - specializedResult.get(row, col);
+            }
+        }
+        for (int row = 0; row < genericResult.rows(); row++) {
+            for (int col = 0; col < genericResult.cols(); col++) {
+                assertEquals(0.0, difference[row][col], delta,
+                             () -> {
+                                 var sb = new StringBuilder("Differences:\n");
+
+                                 for (int r = 0; r < genericResult.rows(); r++) {
+                                     sb.append("[");
+                                     for (int c = 0; c < genericResult.cols(); c++) {
+                                        sb.append(difference[r][c]);
+                                        sb.append(", ");
+                                     }
+                                     sb.delete(sb.length() - 2, sb.length());
+                                     sb.append("]\n");
+                                 }
+
+                                 return sb.toString();
+                             });
             }
         }
     }

@@ -4,10 +4,10 @@ import neuralnerdwork.descent.GradientDescentStrategy;
 import neuralnerdwork.math.*;
 import neuralnerdwork.math.Model.ParameterBindings;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
+import java.util.Optional;
 
 public class NeuralNetworkTrainer {
     private final int[] layerSizes;
@@ -74,12 +74,14 @@ public class NeuralNetworkTrainer {
         var modelBuilder = new Model();
         //start at first hidden layer; end at output layer (TODO: bias on output layer should be optional)
         // build weight matrices to reuse in layers
-        var weightMatrices = new ArrayList<ParameterMatrix>();
+        var layers = new FeedForwardNetwork.Layer[layerSizes.length - 1];
+        LeakyRelu activation = new LeakyRelu(0.01);
         for (int l = 1; l < layerSizes.length; l++) {
-            // columns: input size including bias
+            // columns: input size
             // rows: output size
-            ParameterMatrix layerLWeights = modelBuilder.createParameterMatrix(layerSizes[l], layerSizes[l-1] + 1);
-            weightMatrices.add(layerLWeights);
+            ParameterMatrix layerLWeights = modelBuilder.createParameterMatrix(layerSizes[l], layerSizes[l-1]);
+            ParameterVector bias = l < layerSizes.length - 1 ? modelBuilder.createParameterVector(layerSizes[l]) : null;
+            layers[l - 1] = new FeedForwardNetwork.Layer(layerLWeights, Optional.ofNullable(bias), activation);
         }
 
         // training cycle end
@@ -92,10 +94,11 @@ public class NeuralNetworkTrainer {
 
         ParameterBindings initialParameterBindings = modelBuilder.createBinder();
         // initialize weights
-        for (ParameterMatrix m : weightMatrices) {
+        for (var layer : layers) {
+            var m = layer.weights();
             m.variables().forEach(v -> initialParameterBindings.put(v, initialWeightSupplier.apply(m.cols(), m.rows())));
         }
-        var feedforwardDefinition = buildNetworkExpression(weightMatrices);
+        var feedforwardDefinition = new FeedForwardNetwork(layers);
 
         Model.ParameterBindings parameterBindings = gradientDescentStrategy.runGradientDescent(
                 samples,
@@ -122,36 +125,12 @@ public class NeuralNetworkTrainer {
                     return new ScalarConstantMultiple(1.0 / (double) ts.size(), ScalarSum.sum(squaredErrors));
                 },
                 (iterationCount, lastUpdateVector, currentParameters) -> {
-                    NeuralNetwork network = buildNetwork(weightMatrices, currentParameters);
+                    NeuralNetwork network = new NeuralNetwork(feedforwardDefinition, currentParameters);
                     iterationObserver.observe(iterationCount, network);
                     return validationStrategy.hasConverged(iterationCount, network);
                 });
 
-        return buildNetwork(weightMatrices, parameterBindings);
-    }
-
-    private NeuralNetwork buildNetwork(ArrayList<ParameterMatrix> weightMatrices, Model.ParameterBindings parameterBindings) {
-        return new NeuralNetwork(buildNetworkExpression(weightMatrices), parameterBindings);
-    } 
-
-    private FeedForwardNetwork buildNetworkExpression(ArrayList<ParameterMatrix> weightMatrices) {
-        //start at first hidden layer; end at output layer (TODO: bias on output layer should be optional)
-        var logistic = new LogisticFunction();
-        var relu = new LeakyRelu(0.01);
-        final FeedForwardNetwork.Layer[] layers = new FeedForwardNetwork.Layer[layerSizes.length - 1];
-        for (int l = 1; l < layerSizes.length; l++) try {
-
-            // columns: input size including bias
-            // rows: output size
-            var weightMatrix = weightMatrices.get(l - 1);
-            // TODO: move out of loop
-            var activation = (l == layerSizes.length - 1) ? logistic : relu;
-            layers[l-1] = new FeedForwardNetwork.Layer(weightMatrix, activation);
-        } catch(Exception e) {
-            throw new RuntimeException("Exception building layer " + l, e);
-        }
-        
-        return new FeedForwardNetwork(layers);
+        return new NeuralNetwork(feedforwardDefinition, parameterBindings);
     }
 
     private static ScalarExpression squaredError(TrainingSample sample, VectorExpression network) {
