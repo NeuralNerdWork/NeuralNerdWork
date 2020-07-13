@@ -18,10 +18,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class LinearRegressionTest {
     @Test
     void testBasicLinearRegressionTraining() {
+        var r = new Random(1337);
 
         NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(
                 new int[]{2, 1},
-                new SimpleBatchGradientDescent(0.1, () -> (Math.random() - 0.5) * 2.0),
+                (row, col) -> (r.nextDouble() - 0.5) * 2.0,
+                new SimpleBatchGradientDescent(0.1),
                 (iterationCount, network) -> iterationCount < 5000
         );
 
@@ -38,42 +40,34 @@ public class LinearRegressionTest {
     }
 
     public static Stream<GradientDescentStrategy> gradientDescentStrategies() {
-        var r = new Random(1337);
         return Stream.of(
-                new SimpleBatchGradientDescent(1.0, () -> (r.nextDouble() - 0.5) * 2.0),
+                new SimpleBatchGradientDescent(1.0),
                 new StochasticGradientDescent(
                         200,
-                        () -> (r.nextDouble() - 0.5) * 2.0,
                         () -> new FixedLearningRateGradientUpdate(0.5)
                 ),
                 new StochasticGradientDescent(
                         200,
-                        () -> (r.nextDouble() - 0.5) * 2.0,
                         () -> new AverageGradientUpdate(0.5, 5)
                 ),
                 new StochasticGradientDescent(
                         200,
-                        () -> (r.nextDouble() - 0.5) * 2.0,
                         () -> new MomentumGradientUpdate(0.1, 0.9)
                 ),
                 new StochasticGradientDescent(
                         200,
-                        () -> (r.nextDouble() - 0.5) * 2.0,
                         () -> new NesterovMomentumGradientUpdate(0.1, 0.9)
                 ),
                 new StochasticGradientDescent(
                         200,
-                        () -> (r.nextDouble() - 0.5) * 2.0,
                         () -> new AdagradUpdate(0.1, 1e-8)
                 ),
                 new StochasticGradientDescent(
                         200,
-                        () -> (r.nextDouble() - 0.5) * 2.0,
                         () -> new AdagradDeltaUpdate(0.9, 1e-4)
                 ),
                 new StochasticGradientDescent(
                         200,
-                        () -> (r.nextDouble() - 0.5) * 2.0,
                         () -> new RmsPropUpdate(0.001, 0.9, 1e-8)
                 )
         );
@@ -105,6 +99,7 @@ public class LinearRegressionTest {
 
         NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(
                 new int[]{2, 4, 2, 1},
+                (row, col) -> (r.nextDouble() - 0.5) * 2.0,
                 gradientDescentStrategy,
                 (iterationCount, network) -> iterationCount < 5000
         );

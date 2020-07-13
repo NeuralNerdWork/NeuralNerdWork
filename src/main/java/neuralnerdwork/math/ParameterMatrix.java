@@ -1,6 +1,7 @@
 package neuralnerdwork.math;
 
 import java.util.Map;
+import java.util.stream.IntStream;
 
 public record ParameterMatrix(int variableStartIndex, int rows, int cols) implements MatrixExpression {
     @Override
@@ -31,6 +32,10 @@ public record ParameterMatrix(int variableStartIndex, int rows, int cols) implem
             return new SparseConstantMatrix(Map.of(new SparseConstantMatrix.Index(row, col), 1.0), rows, cols);
         }
         return new SparseConstantMatrix(Map.of(), rows, cols);
+    }
+
+    public IntStream variables() {
+        return IntStream.iterate(variableStartIndex, i -> i < variableStartIndex + rows * cols, i -> i + 1);
     }
 
     public int variableIndexFor(int row, int col) {

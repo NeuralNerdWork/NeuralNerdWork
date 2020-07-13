@@ -114,7 +114,7 @@ public class GradientDescentTest {
             layers[i] = new FeedForwardNetwork.Layer(weights, logistic);
         }
 
-        final FeedForwardNetwork networkFunction = new FeedForwardNetwork(trainingInput, layers);
+        final FeedForwardNetwork.FeedForwardExpression networkFunction = new FeedForwardNetwork(layers).expression(trainingInput);
 
         final ConstantVector trainingOutput = new ConstantVector(outputValues);
         final VectorExpression error = VectorSum.sum(networkFunction, new ScaledVector(-1.0, trainingOutput));
@@ -187,7 +187,7 @@ public class GradientDescentTest {
         }
 
         final VectorExpression genericNetwork = genericNetworkBuilder;
-        final FeedForwardNetwork specializedImplementation = new FeedForwardNetwork(trainingInput, layers);
+        final FeedForwardNetwork.FeedForwardExpression specializedImplementation = new FeedForwardNetwork(layers).expression(trainingInput);
 
         final Model.ParameterBindings parameterBindings = builder.createBinder();
         final int[] vars = parameterBindings.variables();

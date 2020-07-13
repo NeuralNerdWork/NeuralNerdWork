@@ -42,7 +42,8 @@ public class SimpleTrainingTest {
 
         NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(
             new int[]{2, 1}, 
-            new SimpleBatchGradientDescent(0.1, () -> (Math.random() - 0.5) * 2.0),
+            (r, c) -> (Math.random() - 0.5) * 2.0,
+            new SimpleBatchGradientDescent(0.1),
             (iterationCount, network) -> iterationCount < 5000
         );
 
@@ -99,9 +100,9 @@ public class SimpleTrainingTest {
 
         NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(
                 new int[]{2, 10, 10, 1},
+                (row, col) -> (Math.random() - 0.5) * 2.0,
                 new StochasticGradientDescent(
                         200,
-                        () -> (Math.random() - 0.5) * 2.0,
                         () -> new RmsPropUpdate(0.001, 0.9, 1e-8)
                 ),
                 (iterationCount, network) -> {
@@ -186,9 +187,9 @@ public class SimpleTrainingTest {
 
         NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(
             new int[]{2, 20, 20, 1}, 
+                (row, col) -> (Math.random() - 0.5) * 2,
                 new StochasticGradientDescent(
                         100,
-                        () -> (Math.random() - 0.5) * 2,
                         () -> new RmsPropUpdate(0.001, 0.9, 1e-8)
                 ),
                 (iterationCount, network) -> {

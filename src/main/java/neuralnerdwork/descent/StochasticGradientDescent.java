@@ -10,12 +10,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
-import java.util.function.DoubleSupplier;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 public record StochasticGradientDescent(int batchSize,
-                                        DoubleSupplier initialWeightSupplier,
                                         Supplier<WeightUpdateStrategy> updateStrategySupplier) implements GradientDescentStrategy {
 
     @Override
@@ -26,10 +24,6 @@ public record StochasticGradientDescent(int batchSize,
         // Make a copy that we can shuffle
         trainingSamples = new ArrayList<>(trainingSamples);
         final int[] variables = parameterBindings.variables();
-        // initialize weights
-        for (int variable : variables) {
-            parameterBindings.put(variable, initialWeightSupplier.getAsDouble());
-        }
 
         // Repeat this until converged
         Vector weightUpdateVector;

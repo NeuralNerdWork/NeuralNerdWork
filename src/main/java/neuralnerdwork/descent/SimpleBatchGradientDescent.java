@@ -8,10 +8,9 @@ import neuralnerdwork.math.Vector;
 import neuralnerdwork.math.VectorExpression;
 
 import java.util.List;
-import java.util.function.DoubleSupplier;
 import java.util.function.Function;
 
-public record SimpleBatchGradientDescent(double trainingRate, DoubleSupplier initialWeightSupplier) implements GradientDescentStrategy {
+public record SimpleBatchGradientDescent(double trainingRate) implements GradientDescentStrategy {
 
     @Override
     public Model.ParameterBindings runGradientDescent(List<TrainingSample> trainingSamples,
@@ -22,10 +21,6 @@ public record SimpleBatchGradientDescent(double trainingRate, DoubleSupplier ini
         // use derivative to adjust weights
         VectorExpression lossDerivative = error.computeDerivative(parameterBindings.variables());
         final int[] variables = parameterBindings.variables();
-        // initialize weights
-        for (int variable : variables) {
-            parameterBindings.put(variable, initialWeightSupplier.getAsDouble());
-        }
 
         // Repeat this until converged
         Vector weightUpdateVector;

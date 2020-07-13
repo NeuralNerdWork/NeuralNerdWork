@@ -2,26 +2,27 @@ package neuralnerdwork;
 
 import neuralnerdwork.descent.GradientDescentStrategy;
 import neuralnerdwork.math.*;
+import neuralnerdwork.math.Model.ParameterBindings;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.BiFunction;
 
 public class NeuralNetworkTrainer {
     private final int[] layerSizes;
     private final GradientDescentStrategy gradientDescentStrategy;
     private final ValidationStrategy validationStrategy;
     private final IterationObserver iterationObserver;
-
-
+    private final BiFunction<Integer, Integer, Double> initialWeightSupplier;
 
     /**
      * @param layerSizes the number of neurons in each layer. Layer 0 is the input layer; layer (layerSizes.length-1) is the output layer.
      * Must have length at least 2.
      * @param gradientDescentStrategy runs a variation of gradient descent given an error expression.
      */
-    public NeuralNetworkTrainer(int[] layerSizes, GradientDescentStrategy gradientDescentStrategy, ValidationStrategy validationStrategy) {
-        this(layerSizes, gradientDescentStrategy, validationStrategy, (a, b) -> {});
+    public NeuralNetworkTrainer(int[] layerSizes, BiFunction<Integer, Integer, Double> initialWeightSupplier, GradientDescentStrategy gradientDescentStrategy, ValidationStrategy validationStrategy) {
+        this(layerSizes, initialWeightSupplier, gradientDescentStrategy, validationStrategy, (a, b) -> {});
     }
 
     /**
@@ -29,7 +30,7 @@ public class NeuralNetworkTrainer {
      * Must have length at least 2.
      * @param gradientDescentStrategy runs a variation of gradient descent given an error expression.
      */
-    public NeuralNetworkTrainer(int[] layerSizes, GradientDescentStrategy gradientDescentStrategy, ValidationStrategy validationStrategy, IterationObserver iterationObserver) {
+    public NeuralNetworkTrainer(int[] layerSizes, BiFunction<Integer, Integer, Double> initialWeightSupplier, GradientDescentStrategy gradientDescentStrategy, ValidationStrategy validationStrategy, IterationObserver iterationObserver) {
         if (layerSizes.length < 2) {
             throw new IllegalArgumentException("layerSizes must be at least 2 (input+output)");
         }
@@ -37,6 +38,7 @@ public class NeuralNetworkTrainer {
         this.gradientDescentStrategy = gradientDescentStrategy;
         this.validationStrategy = validationStrategy;
         this.iterationObserver = iterationObserver;
+        this.initialWeightSupplier = initialWeightSupplier;
     }
 
     /*
@@ -87,9 +89,17 @@ public class NeuralNetworkTrainer {
         // is to keep a small subset of the data as a test 
         // set and check the error function against that 
         // test set every n iterations
+
+        ParameterBindings initialParameterBindings = modelBuilder.createBinder();
+        // initialize weights
+        for (ParameterMatrix m : weightMatrices) {
+            m.variables().forEach(v -> initialParameterBindings.put(v, initialWeightSupplier.apply(m.cols(), m.rows())));
+        }
+        var feedforwardDefinition = buildNetworkExpression(weightMatrices);
+
         Model.ParameterBindings parameterBindings = gradientDescentStrategy.runGradientDescent(
                 samples,
-                modelBuilder.createBinder(),
+                initialParameterBindings,
                 ts -> {
                     final ScalarExpression[] squaredErrors = new ScalarExpression[ts.size()];
                     for (int i = 0; i < ts.size(); i++) {
@@ -102,7 +112,7 @@ public class NeuralNetworkTrainer {
                             throw new IllegalArgumentException("Sample " + i + " has wrong size (got " + sample.output().length() + "; expected " + layerSizes[layerSizes.length - 1] + ")");
                         }
 
-                        VectorExpression network = buildNetworkExpression(weightMatrices, inputLayer);
+                        VectorExpression network = feedforwardDefinition.expression(inputLayer);
 
                         // find (squared) error amount
                         squaredErrors[i] = squaredError(sample, network);
@@ -121,15 +131,10 @@ public class NeuralNetworkTrainer {
     }
 
     private NeuralNetwork buildNetwork(ArrayList<ParameterMatrix> weightMatrices, Model.ParameterBindings parameterBindings) {
-        return input -> {
-            var inputVector = new ConstantVector(input);
-            var runtimeNetwork = buildNetworkExpression(weightMatrices, inputVector);
-
-            return runtimeNetwork.evaluate(parameterBindings).toArray();
-        };
+        return new NeuralNetwork(buildNetworkExpression(weightMatrices), parameterBindings);
     } 
 
-    private VectorExpression buildNetworkExpression(ArrayList<ParameterMatrix> weightMatrices, ConstantVector inputLayer) {
+    private FeedForwardNetwork buildNetworkExpression(ArrayList<ParameterMatrix> weightMatrices) {
         //start at first hidden layer; end at output layer (TODO: bias on output layer should be optional)
         var logistic = new LogisticFunction();
         var relu = new LeakyRelu(0.01);
@@ -146,7 +151,7 @@ public class NeuralNetworkTrainer {
             throw new RuntimeException("Exception building layer " + l, e);
         }
         
-        return new FeedForwardNetwork(inputLayer, layers);
+        return new FeedForwardNetwork(layers);
     }
 
     private static ScalarExpression squaredError(TrainingSample sample, VectorExpression network) {
