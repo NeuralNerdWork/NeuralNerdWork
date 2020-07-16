@@ -228,7 +228,8 @@ public class GradientDescentTest {
                                  for (int r = 0; r < genericResult.rows(); r++) {
                                      sb.append("[");
                                      for (int c = 0; c < genericResult.cols(); c++) {
-                                        sb.append(difference[r][c]);
+                                         double rawDiff = difference[r][c];
+                                         sb.append(rawDiff > delta ? rawDiff : 0.0);
                                         sb.append(", ");
                                      }
                                      sb.delete(sb.length() - 2, sb.length());

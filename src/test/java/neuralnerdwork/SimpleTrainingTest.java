@@ -99,7 +99,7 @@ public class SimpleTrainingTest {
 
         NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(
                 new int[]{2, 10, 10, 1},
-                (row, col) -> (Math.random() - 0.5) * 2.0,
+                (row, col) -> (r.nextDouble() - 0.5) * 2.0,
                 new StochasticGradientDescent(
                         200,
                         () -> new RmsPropUpdate(0.001, 0.9, 1e-8)
@@ -185,7 +185,7 @@ public class SimpleTrainingTest {
 
         NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(
             new int[]{2, 20, 20, 1}, 
-                (row, col) -> (Math.random() - 0.5) * 2,
+                (row, col) -> (r.nextDouble() - 0.5) * 2,
                 new StochasticGradientDescent(
                         100,
                         () -> new RmsPropUpdate(0.001, 0.9, 1e-8)
