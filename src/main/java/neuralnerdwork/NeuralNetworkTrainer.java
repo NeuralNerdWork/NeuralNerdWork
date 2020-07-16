@@ -1,5 +1,7 @@
 package neuralnerdwork;
 
+import neuralnerdwork.backprop.FeedForwardNetwork;
+import neuralnerdwork.backprop.FullyConnectedLayer;
 import neuralnerdwork.descent.GradientDescentStrategy;
 import neuralnerdwork.math.*;
 import neuralnerdwork.math.Model.ParameterBindings;
@@ -74,14 +76,14 @@ public class NeuralNetworkTrainer {
         var modelBuilder = new Model();
         //start at first hidden layer; end at output layer (TODO: bias on output layer should be optional)
         // build weight matrices to reuse in layers
-        var layers = new FeedForwardNetwork.Layer[layerSizes.length - 1];
+        var layers = new FullyConnectedLayer[layerSizes.length - 1];
         LeakyRelu activation = new LeakyRelu(0.01);
         for (int l = 1; l < layerSizes.length; l++) {
             // columns: input size
             // rows: output size
             ParameterMatrix layerLWeights = modelBuilder.createParameterMatrix(layerSizes[l], layerSizes[l-1]);
             ParameterVector bias = l < layerSizes.length - 1 ? modelBuilder.createParameterVector(layerSizes[l]) : null;
-            layers[l - 1] = new FeedForwardNetwork.Layer(layerLWeights, Optional.ofNullable(bias), activation);
+            layers[l - 1] = new FullyConnectedLayer(layerLWeights, Optional.ofNullable(bias), activation);
         }
 
         // training cycle end

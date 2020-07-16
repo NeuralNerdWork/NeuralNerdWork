@@ -3,7 +3,7 @@ package neuralnerdwork.math;
 import java.util.Iterator;
 import java.util.Map;
 
-public record SparseConstantMatrix(Map<Index, Double> values, int rows, int cols) implements MatrixExpression, Matrix {
+public record SparseConstantMatrix(Map<Index, Double> values, int rows, int cols) implements Matrix {
     @Override
     public Matrix evaluate(Model.ParameterBindings bindings) {
         return this;

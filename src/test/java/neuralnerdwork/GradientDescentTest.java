@@ -4,6 +4,7 @@ import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.ShrinkingMode;
 import net.jqwik.api.constraints.Size;
+import neuralnerdwork.backprop.FullyConnectedLayer;
 import neuralnerdwork.math.*;
 
 import java.util.Arrays;
@@ -109,11 +110,11 @@ public class GradientDescentTest {
 
         final LogisticFunction logistic = new LogisticFunction();
 
-        final FeedForwardNetwork.Layer[] layers = new FeedForwardNetwork.Layer[singleDescentStepWithBackpropDerivativeShouldReduceError_layers];
+        final FullyConnectedLayer[] layers = new FullyConnectedLayer[singleDescentStepWithBackpropDerivativeShouldReduceError_layers];
         for (int i = 0; i < numLayers; i++) {
             ParameterMatrix weights = builder.createParameterMatrix(rows, cols);
             ParameterVector bias = i < numLayers - 1 ? builder.createParameterVector(rows) : null;
-            layers[i] = new FeedForwardNetwork.Layer(weights, Optional.ofNullable(bias), logistic);
+            layers[i] = new FullyConnectedLayer(weights, Optional.ofNullable(bias), logistic);
         }
 
         final FeedForwardNetwork.FeedForwardExpression networkFunction = new FeedForwardNetwork(layers).expression(trainingInput);
@@ -169,12 +170,12 @@ public class GradientDescentTest {
 
         final LogisticFunction logistic = new LogisticFunction();
 
-        final FeedForwardNetwork.Layer[] layers = new FeedForwardNetwork.Layer[backpropShouldBeSameAsRegularGradient_layers];
+        final FullyConnectedLayer[] layers = new FullyConnectedLayer[backpropShouldBeSameAsRegularGradient_layers];
         VectorExpression genericNetworkBuilder = trainingInput;
         for (int i = 0; i < numLayers; i++) {
             ParameterMatrix weights = builder.createParameterMatrix(rows, cols);
             ParameterVector bias = i < numLayers - 1 ? builder.createParameterVector(rows) : null;
-            layers[i] = new FeedForwardNetwork.Layer(weights, Optional.ofNullable(bias), logistic);
+            layers[i] = new FullyConnectedLayer(weights, Optional.ofNullable(bias), logistic);
             genericNetworkBuilder =
                     new VectorizedSingleVariableFunction(
                             logistic,
@@ -208,7 +209,7 @@ public class GradientDescentTest {
         final Matrix genericResult = Util.logTiming("Evaluated generic derivative", () -> genericDerivative.evaluate(parameterBindings));
         final Matrix specializedResult = Util.logTiming("Evaluated specialized derivative", () -> specializedDerivative.evaluate(parameterBindings));
 
-        final double delta = 0.0000001;
+        final double delta = 1e-8;
 
         assertEquals(genericResult.rows(), specializedResult.rows());
         assertEquals(genericResult.cols(), specializedResult.cols());
@@ -229,8 +230,8 @@ public class GradientDescentTest {
                                      sb.append("[");
                                      for (int c = 0; c < genericResult.cols(); c++) {
                                          double rawDiff = difference[r][c];
-                                         sb.append(rawDiff > delta ? rawDiff : 0.0);
-                                        sb.append(", ");
+                                         sb.append(rawDiff);
+                                         sb.append(", ");
                                      }
                                      sb.delete(sb.length() - 2, sb.length());
                                      sb.append("]\n");

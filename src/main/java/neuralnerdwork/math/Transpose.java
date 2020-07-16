@@ -15,4 +15,9 @@ public record Transpose(Matrix matrix) implements Matrix {
     public int cols() {
         return matrix.rows();
     }
+
+    @Override
+    public boolean isZero() {
+        return matrix.isZero();
+    }
 }

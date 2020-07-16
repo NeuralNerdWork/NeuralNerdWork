@@ -1,7 +1,7 @@
 package neuralnerdwork;
 
 import neuralnerdwork.math.ConstantVector;
-import neuralnerdwork.math.FeedForwardNetwork;
+import neuralnerdwork.backprop.FeedForwardNetwork;
 import neuralnerdwork.math.Model;
 import neuralnerdwork.math.Vector;
 

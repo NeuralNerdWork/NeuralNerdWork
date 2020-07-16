@@ -1,6 +1,6 @@
 package neuralnerdwork.math;
 
-public interface Vector {
+public interface Vector extends VectorExpression {
     double get(int index);
     int length();
     
