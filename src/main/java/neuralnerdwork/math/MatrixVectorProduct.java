@@ -37,9 +37,19 @@ public record MatrixVectorProduct(MatrixExpression left, VectorExpression right)
         final Vector rightValue = this.right.evaluate(bindings);
 
         final double[] values = new double[leftValue.rows()];
-        for (int row = 0; row < leftValue.rows(); row++) {
+        if (leftValue instanceof SparseConstantMatrix scm) {
+            for (var e : scm.entries()) {
+                final SparseConstantMatrix.Index index = e.getKey();
+                final double value = e.getValue();
+                values[index.row()] += rightValue.get(index.col()) * value;
+            }
+        } else {
             for (int col = 0; col < leftValue.cols(); col++) {
-                values[row] += leftValue.get(row, col) * rightValue.get(col);
+                if (rightValue.get(col) != 0.0) {
+                    for (int row = 0; row < leftValue.rows(); row++) {
+                        values[row] += leftValue.get(row, col) * rightValue.get(col);
+                    }
+                }
             }
         }
 
@@ -68,20 +78,26 @@ public record MatrixVectorProduct(MatrixExpression left, VectorExpression right)
     public VectorExpression computePartialDerivative(int variable) {
         // Uses product rule
         // (Fg)' = F'g + Fg'
-        // TODO optimize for constant case
 
         final MatrixExpression leftDerivative = left.computePartialDerivative(variable);
-        final VectorExpression rightDerivative = right.computePartialDerivative(variable);
+        if (right instanceof ConstantVector) {
+            return MatrixVectorProduct.product(
+                    leftDerivative,
+                    right
+            );
+        } else {
+            final VectorExpression rightDerivative = right.computePartialDerivative(variable);
 
-        return VectorSum.sum(
-                MatrixVectorProduct.product(
-                        leftDerivative,
-                        right
-                ),
-                MatrixVectorProduct.product(
-                        left,
-                        rightDerivative
-                )
-        );
+            return VectorSum.sum(
+                    MatrixVectorProduct.product(
+                            leftDerivative,
+                            right
+                    ),
+                    MatrixVectorProduct.product(
+                            left,
+                            rightDerivative
+                    )
+            );
+        }
     }
 }

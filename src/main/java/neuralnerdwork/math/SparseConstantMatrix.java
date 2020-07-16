@@ -1,5 +1,6 @@
 package neuralnerdwork.math;
 
+import java.util.Iterator;
 import java.util.Map;
 
 public record SparseConstantMatrix(Map<Index, Double> values, int rows, int cols) implements MatrixExpression, Matrix {
@@ -24,6 +25,10 @@ public record SparseConstantMatrix(Map<Index, Double> values, int rows, int cols
     @Override
     public double get(int row, int col) {
         return values.getOrDefault(new Index(row, col), 0.0);
+    }
+
+    public Iterable<Map.Entry<Index, Double>> entries() {
+        return values.entrySet();
     }
 
     public static record Index(int row, int col) {}
