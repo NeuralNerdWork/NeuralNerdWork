@@ -39,7 +39,7 @@ public record TransposeExpression(MatrixExpression matrix) implements MatrixExpr
     }
 
     @Override
-    public MatrixExpression computePartialDerivative(int variable) {
-        return new TransposeExpression(matrix.computePartialDerivative(variable));
+    public Matrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
+        return new TransposeExpression(matrix.computePartialDerivative(bindings, variable)).evaluate(bindings);
     }
 }

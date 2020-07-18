@@ -15,7 +15,7 @@ public record ParameterVector(int variableStartIndex, int length) implements Vec
     }
 
     @Override
-    public VectorExpression computePartialDerivative(int variable) {
+    public Vector computePartialDerivative(Model.ParameterBindings bindings, int variable) {
         if (variable >= variableStartIndex && variable < variableStartIndex + length) {
             final double[] values = new double[length];
             values[variable - variableStartIndex] = 1.0;
@@ -27,12 +27,12 @@ public record ParameterVector(int variableStartIndex, int length) implements Vec
     }
 
     @Override
-    public MatrixExpression computeDerivative(int[] variables) {
+    public Matrix computeDerivative(Model.ParameterBindings bindings, int[] variables) {
         return new ColumnMatrix(
                 Arrays.stream(variables)
-                      .mapToObj(this::computePartialDerivative)
+                      .mapToObj(variable -> computePartialDerivative(bindings, variable))
                       .toArray(VectorExpression[]::new)
-        );
+        ).evaluate(bindings);
     }
 
     public boolean containsVariable(int variable) {

@@ -31,7 +31,7 @@ public record DiagonalizedVector(VectorExpression vector) implements MatrixExpre
     }
 
     @Override
-    public MatrixExpression computePartialDerivative(int variable) {
-        return new DiagonalizedVector(vector.computePartialDerivative(variable));
+    public Matrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
+        return new DiagonalizedVector(vector.computePartialDerivative(bindings, variable)).evaluate(bindings);
     }
 }

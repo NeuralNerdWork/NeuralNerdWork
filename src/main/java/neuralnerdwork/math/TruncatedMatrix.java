@@ -44,7 +44,7 @@ public record TruncatedMatrix(MatrixExpression expression, int rows, int cols) i
     }
 
     @Override
-    public MatrixExpression computePartialDerivative(int variable) {
-        return new TruncatedMatrix(computePartialDerivative(variable), rows, cols);
+    public Matrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
+        return new TruncatedMatrix(expression.computePartialDerivative(bindings, variable), rows, cols).evaluate(bindings);
     }
 }

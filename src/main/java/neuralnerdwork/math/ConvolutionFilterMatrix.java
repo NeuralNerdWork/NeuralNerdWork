@@ -59,7 +59,7 @@ public record ConvolutionFilterMatrix(ParameterMatrix filter, int inputHeight, i
     }
 
     @Override
-    public MatrixExpression computePartialDerivative(int variable) {
+    public Matrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
         if (filter.containsVariable(variable)) {
             int filterRow = filter.rowIndexFor(variable);
             int filterCol = filter.colIndexFor(variable);

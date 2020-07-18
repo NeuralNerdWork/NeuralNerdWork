@@ -27,12 +27,12 @@ public record ConstantVector(double[] values) implements VectorExpression, Vecto
     }
 
     @Override
-    public VectorExpression computePartialDerivative(int variable) {
+    public Vector computePartialDerivative(Model.ParameterBindings bindings, int variable) {
         return new ConstantVector(new double[values.length]);
     }
 
     @Override
-    public MatrixExpression computeDerivative(int[] variables) {
+    public Matrix computeDerivative(Model.ParameterBindings bindings, int[] variables) {
         return new SparseConstantMatrix(Map.of(), values.length, variables.length);
     }
 

@@ -9,21 +9,21 @@ public record ScalarParameter(int variable) implements ScalarExpression {
     }
 
     @Override
-    public ScalarExpression computePartialDerivative(int variable) {
+    public double computePartialDerivative(Model.ParameterBindings bindings, int variable) {
         if (this.variable == variable) {
-            return new ConstantScalar(1.0);
+            return 1.0;
         } else {
-            return new ConstantScalar(0.0);
+            return 0.0;
         }
     }
 
     @Override
-    public VectorExpression computeDerivative(int[] variables) {
+    public Vector computeDerivative(Model.ParameterBindings bindings, int[] variables) {
         return new ScalarComponentsVector(
                 Arrays.stream(variables)
-                      .mapToObj(this::computePartialDerivative)
+                      .mapToObj(variable -> new ConstantScalar(computePartialDerivative(bindings, variable)))
                       .toArray(ScalarExpression[]::new)
-        );
+        ).evaluate(bindings);
     }
 
     @Override

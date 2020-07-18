@@ -19,14 +19,13 @@ public record SimpleBatchGradientDescent(double trainingRate) implements Gradien
                                                       TerminationPredicate terminationPredicate) {
         final ScalarExpression error = errorFunction.apply(trainingSamples);
         // use derivative to adjust weights
-        VectorExpression lossDerivative = error.computeDerivative(parameterBindings.variables());
         final int[] variables = parameterBindings.variables();
 
         // Repeat this until converged
         Vector weightUpdateVector;
         long iterations = 0;
         do {
-            weightUpdateVector = lossDerivative.evaluate(parameterBindings);
+            weightUpdateVector = error.computeDerivative(parameterBindings, parameterBindings.variables());
             for (int variableIndex = 0; variableIndex < parameterBindings.variables().length; variableIndex++) {
                 int variable = variables[variableIndex];
                 parameterBindings.put(variable, parameterBindings.get(variable) - trainingRate * weightUpdateVector.get(variable));

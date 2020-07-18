@@ -1,6 +1,7 @@
 package neuralnerdwork.math;
 
 import java.util.Arrays;
+import java.util.function.ObjIntConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -54,18 +55,18 @@ public record VectorSum(VectorExpression... expressions) implements VectorExpres
     }
 
     @Override
-    public MatrixExpression computeDerivative(int[] variables) {
+    public Matrix computeDerivative(Model.ParameterBindings bindings, int[] variables) {
         return MatrixSum.sum(Arrays.stream(expressions)
-                                   .map(exp -> exp.computeDerivative(variables))
-                                   .toArray(MatrixExpression[]::new));
+                                   .map(exp -> exp.computeDerivative(bindings, variables))
+                                   .toArray(MatrixExpression[]::new)).evaluate(bindings);
     }
 
     @Override
-    public VectorExpression computePartialDerivative(int variable) {
+    public Vector computePartialDerivative(Model.ParameterBindings bindings, int variable) {
         return VectorSum.sum(
                 Arrays.stream(expressions)
-                      .map(exp -> exp.computePartialDerivative(variable))
+                      .map(exp -> exp.computePartialDerivative(bindings, variable))
                       .toArray(VectorExpression[]::new)
-        );
+        ).evaluate(bindings);
     }
 }

@@ -20,7 +20,7 @@ public record SparseConstantMatrix(Map<Index, Double> values, int rows, int cols
     }
 
     @Override
-    public MatrixExpression computePartialDerivative(int variable) {
+    public Matrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
         return new SparseConstantMatrix(Map.of(), rows, cols);
     }
 

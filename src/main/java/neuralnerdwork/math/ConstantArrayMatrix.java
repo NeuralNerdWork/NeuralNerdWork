@@ -36,7 +36,7 @@ public record ConstantArrayMatrix(double[][] values, int cols) implements Matrix
     }
 
     @Override
-    public MatrixExpression computePartialDerivative(int variable) {
+    public Matrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
         return new SparseConstantMatrix(Map.of(), rows(), cols());
     }
 

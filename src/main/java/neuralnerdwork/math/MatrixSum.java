@@ -73,11 +73,11 @@ public record MatrixSum(MatrixExpression... expressions) implements MatrixExpres
     }
 
     @Override
-    public MatrixExpression computePartialDerivative(int variable) {
+    public Matrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
         return MatrixSum.sum(
                 Arrays.stream(expressions)
-                      .map(exp -> exp.computePartialDerivative(variable))
+                      .map(exp -> exp.computePartialDerivative(bindings, variable))
                       .toArray(MatrixExpression[]::new)
-        );
+        ).evaluate(bindings);
     }
 }

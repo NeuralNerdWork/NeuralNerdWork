@@ -24,7 +24,7 @@ public record ParameterMatrix(int variableStartIndex, int rows, int cols) implem
     }
 
     @Override
-    public MatrixExpression computePartialDerivative(int variable) {
+    public Matrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
         final int length = rows * cols;
         if (variable >= variableStartIndex && variable < variableStartIndex + length) {
             final int row = (variable - variableStartIndex) / cols;

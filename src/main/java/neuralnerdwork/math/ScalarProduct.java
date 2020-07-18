@@ -24,28 +24,28 @@ public record ScalarProduct(ScalarExpression left,
     }
 
     @Override
-    public ScalarExpression computePartialDerivative(int variable) {
-        final ScalarExpression leftDerivative = left.computePartialDerivative(variable);
-        final ScalarExpression rightDerivative = right.computePartialDerivative(variable);
+    public double computePartialDerivative(Model.ParameterBindings bindings, int variable) {
+        final double leftDerivative = left.computePartialDerivative(bindings, variable);
+        final double rightDerivative = right.computePartialDerivative(bindings, variable);
 
         // Product rule
         // (fg)' = f'g + fg'
         return ScalarSum.sum(
                 ScalarProduct.product(
-                        leftDerivative,
+                        new ConstantScalar(leftDerivative),
                         right
                 ),
                 ScalarProduct.product(
                         left,
-                        rightDerivative
+                        new ConstantScalar(rightDerivative)
                 )
-        );
+        ).evaluate(bindings);
     }
 
     @Override
-    public VectorExpression computeDerivative(int[] variables) {
-        final VectorExpression leftDerivative = left.computeDerivative(variables);
-        final VectorExpression rightDerivative = right.computeDerivative(variables);
+    public Vector computeDerivative(Model.ParameterBindings bindings, int[] variables) {
+        final VectorExpression leftDerivative = left.computeDerivative(bindings, variables);
+        final VectorExpression rightDerivative = right.computeDerivative(bindings, variables);
 
         // Product rule
         // (fg)' = f'g + fg'
@@ -58,6 +58,6 @@ public record ScalarProduct(ScalarExpression left,
                         left,
                         rightDerivative
                 )
-        );
+        ).evaluate(bindings);
     }
 }

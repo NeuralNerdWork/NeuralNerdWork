@@ -28,19 +28,22 @@ public interface SingleVariableFunction {
         }
 
         @Override
-        public ScalarExpression computePartialDerivative(int variable) {
-            return ScalarProduct.product(function.differentiateByInput().invoke(inputExpression), inputExpression.computePartialDerivative(variable));
+        public double computePartialDerivative(Model.ParameterBindings bindings, int variable) {
+            return ScalarProduct
+                    .product(function.differentiateByInput().invoke(inputExpression), new ConstantScalar(inputExpression
+                                                                                                                 .computePartialDerivative(bindings, variable)))
+                    .evaluate(bindings);
         }
 
         @Override
-        public VectorExpression computeDerivative(int[] variables) {
-            VectorExpression innerDerivative = inputExpression.computeDerivative(variables);
+        public Vector computeDerivative(Model.ParameterBindings bindings, int[] variables) {
+            VectorExpression innerDerivative = inputExpression.computeDerivative(bindings, variables);
             SingleVariableFunction outerDerivative = function.differentiateByInput();
 
             return new ScaledVector(
                     outerDerivative.invoke(inputExpression),
                     innerDerivative
-            );
+            ).evaluate(bindings);
         }
 
         @Override

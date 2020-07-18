@@ -58,18 +58,19 @@ public record MaxPoolVector(VectorExpression input,
     }
 
     @Override
-    public VectorExpression computePartialDerivative(int variable) {
+    public Vector computePartialDerivative(Model.ParameterBindings bindings, int variable) {
         // Need to refactor derivative to involve parameter bindings
-        throw new UnsupportedOperationException("Can't implement yet");
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    @Override
+    public Matrix computeDerivative(Model.ParameterBindings bindings, int[] variables) {
+        // Need to refactor derivative to involve parameter bindings
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
     public boolean isZero() {
         return false;
-    }
-
-    @Override
-    public MatrixExpression computeDerivative(int[] variables) {
-        return null;
     }
 }

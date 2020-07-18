@@ -11,8 +11,7 @@ import neuralnerdwork.math.*;
 import java.util.Arrays;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class GradientDescentTest {
 
@@ -68,11 +67,13 @@ public class GradientDescentTest {
         final ScalarExpression squaredError = new DotProduct(new ConstantVector(ones),
                 new VectorizedSingleVariableFunction(new SquaredSingleVariableFunction(), error));
 
-        final VectorExpression lossDerivative = Util.logTiming("Computed derivative function", () -> squaredError.computeDerivative(
-                Arrays.copyOfRange(builder.variables(), trainingInput.length(), builder.size())
-        ));
-
         final Model.ParameterBindings parameterBindings = builder.createBinder();
+        final VectorExpression lossDerivative = Util
+                .logTiming("Computed derivative function", () -> squaredError.computeDerivative(parameterBindings,
+                                                                                                Arrays.copyOfRange(builder.variables(), trainingInput
+                                                                                                        .length(), builder.size())
+                ));
+
         final int[] vars = parameterBindings.variables();
         for (int i = 0; i < vars.length; i++) {
             parameterBindings.put(vars[i], values[i]);
@@ -128,11 +129,13 @@ public class GradientDescentTest {
         final ScalarExpression squaredError = new DotProduct(new ConstantVector(ones),
                                                              new VectorizedSingleVariableFunction(new SquaredSingleVariableFunction(), error));
 
-        final VectorExpression lossDerivative = Util.logTiming("Computed derivative function", () -> squaredError.computeDerivative(
-                Arrays.copyOfRange(builder.variables(), trainingInput.length(), builder.size())
-        ));
-
         final Model.ParameterBindings parameterBindings = builder.createBinder();
+        final VectorExpression lossDerivative = Util
+                .logTiming("Computed derivative function", () -> squaredError.computeDerivative(parameterBindings,
+                                                                                                Arrays.copyOfRange(builder.variables(), trainingInput
+                                                                                                        .length(), builder.size())
+                ));
+
         final int[] vars = parameterBindings.variables();
         for (int i = 0; i < vars.length; i++) {
             parameterBindings.put(vars[i], values[i]);
@@ -160,8 +163,7 @@ public class GradientDescentTest {
             * backpropShouldBeSameAsRegularGradient_layers
             + backpropShouldBeSameAsRegularGradient_cols;
     @Property(tries = 3, shrinking = ShrinkingMode.OFF)
-    void backpropShouldBeSameAsRegularGradient(@ForAll @Size(value = backpropShouldBeSameAsRegularGradient_parameters) @Weight double[] values,
-                           @ForAll @TrainingOutput @Size(backpropShouldBeSameAsRegularGradient_rows) double[] outputValues) {
+    void backpropShouldBeSameAsRegularGradient(@ForAll @Size(value = backpropShouldBeSameAsRegularGradient_parameters) @Weight double[] values) {
         final int rows = backpropShouldBeSameAsRegularGradient_rows;
         final int cols = backpropShouldBeSameAsRegularGradient_cols;
         final int numLayers = backpropShouldBeSameAsRegularGradient_layers;
@@ -204,11 +206,11 @@ public class GradientDescentTest {
             parameterBindings.put(vars[i], values[i]);
         }
 
-        final MatrixExpression genericDerivative = genericNetwork.computeDerivative(parameterBindings.variables());
-        final MatrixExpression specializedDerivative = specializedImplementation.computeDerivative(parameterBindings.variables());
-
-        final Matrix genericResult = Util.logTiming("Evaluated generic derivative", () -> genericDerivative.evaluate(parameterBindings));
-        final Matrix specializedResult = Util.logTiming("Evaluated specialized derivative", () -> specializedDerivative.evaluate(parameterBindings));
+        final Matrix genericResult = Util.logTiming("Evaluated generic derivative", () -> genericNetwork
+                .computeDerivative(parameterBindings, parameterBindings.variables()));
+        final Matrix specializedResult = Util
+                .logTiming("Evaluated specialized derivative", () -> specializedImplementation
+                        .computeDerivative(parameterBindings, parameterBindings.variables()));
 
         final double delta = 1e-8;
 
@@ -242,5 +244,84 @@ public class GradientDescentTest {
                              });
             }
         }
+    }
+
+    private static final int backpropSquaredErrorShoudlBeSameAsRegularGradientSquaredError_rows = 2;
+    private static final int backpropSquaredErrorShoudlBeSameAsRegularGradientSquaredError_cols = 2;
+    private static final int backpropSquaredErrorShoudlBeSameAsRegularGradientSquaredError_layers = 10;
+    private static final int backpropSquaredErrorShoudlBeSameAsRegularGradientSquaredError_parameters =
+            backpropSquaredErrorShoudlBeSameAsRegularGradientSquaredError_rows
+                    * (backpropSquaredErrorShoudlBeSameAsRegularGradientSquaredError_cols + 1)
+                    * backpropSquaredErrorShoudlBeSameAsRegularGradientSquaredError_layers
+                    + backpropSquaredErrorShoudlBeSameAsRegularGradientSquaredError_cols;
+    @Property(tries = 3, shrinking = ShrinkingMode.OFF)
+    void backpropSquaredErrorShoudlBeSameAsRegularGradientSquaredError(@ForAll @Size(value = backpropSquaredErrorShoudlBeSameAsRegularGradientSquaredError_parameters) @Weight double[] values,
+                                                                       @ForAll @Size(value = backpropSquaredErrorShoudlBeSameAsRegularGradientSquaredError_cols) @TrainingInput double[] inputs,
+                                                                       @ForAll @Size(value = backpropSquaredErrorShoudlBeSameAsRegularGradientSquaredError_cols) @TrainingOutput double[] outputs) {
+        final int rows = backpropSquaredErrorShoudlBeSameAsRegularGradientSquaredError_rows;
+        final int cols = backpropSquaredErrorShoudlBeSameAsRegularGradientSquaredError_cols;
+        final int numLayers = backpropSquaredErrorShoudlBeSameAsRegularGradientSquaredError_layers;
+
+        final Model builder = new Model();
+        final ConstantVector trainingInput = new ConstantVector(Arrays.copyOf(values, cols));
+
+        final LogisticFunction logistic = new LogisticFunction();
+
+        final FullyConnectedLayer[] layers = new FullyConnectedLayer[backpropSquaredErrorShoudlBeSameAsRegularGradientSquaredError_layers];
+        VectorExpression genericNetworkBuilder = trainingInput;
+        for (int i = 0; i < numLayers; i++) {
+            ParameterMatrix weights = builder.createParameterMatrix(rows, cols);
+            ParameterVector bias = i < numLayers - 1 ? builder.createParameterVector(rows) : null;
+            layers[i] = new FullyConnectedLayer(weights, Optional.ofNullable(bias), logistic);
+            genericNetworkBuilder =
+                    new VectorizedSingleVariableFunction(
+                            logistic,
+                            bias != null ?
+                                    VectorSum.sum(
+                                            MatrixVectorProduct.product(
+                                                    weights,
+                                                    genericNetworkBuilder
+                                            ),
+                                            bias
+                                    ) :
+                                    MatrixVectorProduct.product(
+                                            weights,
+                                            genericNetworkBuilder
+                                    )
+                    );
+        }
+
+        final VectorExpression genericNetwork = genericNetworkBuilder;
+        final FeedForwardNetwork.FeedForwardExpression specializedImplementation = new FeedForwardNetwork(layers).expression(trainingInput);
+
+        final Model.ParameterBindings parameterBindings = builder.createBinder();
+        final int[] vars = parameterBindings.variables();
+        for (int i = 0; i < vars.length; i++) {
+            parameterBindings.put(vars[i], values[i]);
+        }
+
+        TrainingSample sample = new TrainingSample(new ConstantVector(inputs), new ConstantVector(outputs));
+        ScalarExpression genericError = squaredError(sample, genericNetwork);
+        ScalarExpression backpropError = squaredError(sample, specializedImplementation);
+        final Vector genericResult = Util.logTiming("Evaluated generic derivative", () -> genericError
+                .computeDerivative(parameterBindings, parameterBindings.variables()));
+        final Vector specializedResult = Util
+                .logTiming("Evaluated specialized derivative", () -> backpropError
+                        .computeDerivative(parameterBindings, parameterBindings.variables()));
+
+        final double delta = 1e-8;
+
+        assertEquals(genericResult.length(), specializedResult.length());
+        assertArrayEquals(genericResult.toArray(), specializedResult.toArray(), delta);
+    }
+
+    private static ScalarExpression squaredError(TrainingSample sample, VectorExpression network) {
+        // difference between network output and expected output
+        final VectorExpression inputError = VectorSum.sum(network, new ScaledVector(-1.0, sample.output()));
+
+        final double[] ones = new double[sample.output().length()];
+        Arrays.fill(ones, 1.0);
+        return new DotProduct(new ConstantVector(ones),
+                              new VectorizedSingleVariableFunction(new SquaredSingleVariableFunction(), inputError));
     }
 }

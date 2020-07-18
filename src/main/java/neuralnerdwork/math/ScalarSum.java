@@ -23,21 +23,21 @@ public record ScalarSum(ScalarExpression... expressions) implements ScalarExpres
     }
 
     @Override
-    public ScalarExpression computePartialDerivative(int variable) {
+    public double computePartialDerivative(Model.ParameterBindings bindings, int variable) {
         return ScalarSum.sum(
                 Arrays.stream(expressions)
-                      .map(exp -> exp.computePartialDerivative(variable))
+                      .map(exp -> new ConstantScalar(exp.computePartialDerivative(bindings, variable)))
                       .toArray(ScalarExpression[]::new)
-        );
+        ).evaluate(bindings);
     }
 
     @Override
-    public VectorExpression computeDerivative(int[] variables) {
+    public Vector computeDerivative(Model.ParameterBindings bindings, int[] variables) {
         return VectorSum.sum(
                 Arrays.stream(expressions)
-                      .map(exp -> exp.computeDerivative(variables))
+                      .map(exp -> exp.computeDerivative(bindings, variables))
                       .toArray(VectorExpression[]::new)
-        );
+        ).evaluate(bindings);
     }
 
     @Override

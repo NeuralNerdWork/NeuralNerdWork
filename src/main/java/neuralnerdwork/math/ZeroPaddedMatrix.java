@@ -44,7 +44,7 @@ public record ZeroPaddedMatrix(MatrixExpression expression, int extraRows, int e
     }
 
     @Override
-    public MatrixExpression computePartialDerivative(int variable) {
+    public Matrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
         throw new RuntimeException("Not yet implemented!");
     }
 }

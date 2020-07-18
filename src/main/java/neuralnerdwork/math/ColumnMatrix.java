@@ -50,7 +50,7 @@ public record ColumnMatrix(VectorExpression[] columns) implements MatrixExpressi
     }
 
     @Override
-    public MatrixExpression computePartialDerivative(int variable) {
+    public Matrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
         throw new UnsupportedOperationException("Not yet implemented!");
     }
 

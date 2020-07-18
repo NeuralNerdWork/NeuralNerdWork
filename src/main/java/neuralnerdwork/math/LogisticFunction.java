@@ -8,6 +8,10 @@ public class LogisticFunction implements SingleVariableFunction {
 
     @Override
     public double apply(double input) {
+        return logistic(input);
+    }
+
+    private static double logistic(double input) {
         final double exp = Math.exp(-input);
         if (Double.isInfinite(exp)) {
             return 0;
@@ -18,10 +22,22 @@ public class LogisticFunction implements SingleVariableFunction {
 
     @Override
     public SingleVariableFunction differentiateByInput() {
-        final int variable = 0;
-        final ScalarParameter param = new ScalarParameter(variable);
-        final ScalarExpression derivativeExpression = ScalarProduct.product(this.invoke(param), this.invoke(new ScalarConstantMultiple(-1.0, param)));
+        return new SingleVariableFunction() {
+            @Override
+            public String getFunctionName() {
+                return "logistic derivative";
+            }
 
-        return new SingleVariableExpression(variable, derivativeExpression);
+            @Override
+            public double apply(double input) {
+                double logistic = logistic(input);
+                return logistic * (1 - logistic);
+            }
+
+            @Override
+            public SingleVariableFunction differentiateByInput() {
+                throw new UnsupportedOperationException("Not implemented");
+            }
+        };
     }
 }

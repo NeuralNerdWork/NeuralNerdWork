@@ -23,23 +23,23 @@ public record ScaledVector(ScalarExpression scalarExpression, VectorExpression v
     }
 
     @Override
-    public MatrixExpression computeDerivative(int[] variables) {
+    public Matrix computeDerivative(Model.ParameterBindings bindings, int[] variables) {
         return MatrixSum.sum(
-            new ScaledMatrix(scalarExpression, vectorExpression.computeDerivative(variables)),
+            new ScaledMatrix(scalarExpression, vectorExpression.computeDerivative(bindings, variables)),
             MatrixProduct.product(
                     new ColumnMatrix(vectorExpression),
                     // TODO Make RowMatrix
-                    new TransposeExpression(new ColumnMatrix(scalarExpression.computeDerivative(variables)))
+                    new TransposeExpression(new ColumnMatrix(scalarExpression.computeDerivative(bindings, variables)))
             )
-        );
+        ).evaluate(bindings);
     }
 
     @Override
-    public VectorExpression computePartialDerivative(int variable) {
+    public Vector computePartialDerivative(Model.ParameterBindings bindings, int variable) {
         return VectorSum.sum(
-                new ScaledVector(scalarExpression, vectorExpression.computePartialDerivative(variable)),
-                new ScaledVector(scalarExpression.computePartialDerivative(variable), vectorExpression)
-        );
+                new ScaledVector(scalarExpression, vectorExpression.computePartialDerivative(bindings, variable)),
+                new ScaledVector(scalarExpression.computePartialDerivative(bindings, variable), vectorExpression)
+        ).evaluate(bindings);
     }
 
     @Override

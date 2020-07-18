@@ -8,10 +8,11 @@ public interface ScalarExpression {
     double evaluate(Model.ParameterBindings bindings);
 
     /**
+     * @param bindings A mapping of variable indices to values, used for substitution in this expression.
      * @param variable The index of a variable by which this expression should be differentiated.
-     * @return An expression that is the partial derivative of this one, with respect to the given variable.
+     * @return A scalar value that is the partial derivative of this one, with respect to the given variable at the given bindings.
      */
-    ScalarExpression computePartialDerivative(int variable);
+    double computePartialDerivative(Model.ParameterBindings bindings, int variable);
 
     /**
      * @return If this method returns true, the given expression is guaranteed to {@link #evaluate(Model.ParameterBindings) evaluate}
@@ -20,8 +21,9 @@ public interface ScalarExpression {
     boolean isZero();
 
     /**
+     * @param bindings A mapping of variable indices to values, used for substitution in this expression.
      * @param variables An ordered list of variables by which to differentiate this expression.
-     * @return The gradient vector expression for this scalar expression, with respect to the given variables (and order).
+     * @return The gradient vector for this scalar expression, with respect to the given variables (and order) at the given bindings.
      */
-    VectorExpression computeDerivative(int[] variables);
+    Vector computeDerivative(Model.ParameterBindings bindings, int[] variables);
 }

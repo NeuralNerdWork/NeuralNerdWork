@@ -30,22 +30,22 @@ public record DotProduct(VectorExpression left, VectorExpression right) implemen
     }
 
     @Override
-    public VectorExpression computeDerivative(int[] variables) {
-        final MatrixExpression leftDerivative = left.computeDerivative(variables);
-        final MatrixExpression rightDerivative = right.computeDerivative(variables);
+    public Vector computeDerivative(Model.ParameterBindings bindings, int[] variables) {
+        final MatrixExpression leftDerivative = left.computeDerivative(bindings, variables);
+        final MatrixExpression rightDerivative = right.computeDerivative(bindings, variables);
 
         return VectorSum.sum(MatrixVectorProduct.product(new TransposeExpression(leftDerivative), right),
-                             MatrixVectorProduct.product(new TransposeExpression(rightDerivative), left));
+                             MatrixVectorProduct.product(new TransposeExpression(rightDerivative), left)).evaluate(bindings);
     }
 
     @Override
-    public ScalarExpression computePartialDerivative(int variable) {
-        final VectorExpression leftDerivative = left.computePartialDerivative(variable);
-        final VectorExpression rightDerivative = right.computePartialDerivative(variable);
+    public double computePartialDerivative(Model.ParameterBindings bindings, int variable) {
+        final Vector leftDerivative = left.computePartialDerivative(bindings, variable);
+        final Vector rightDerivative = right.computePartialDerivative(bindings, variable);
 
         return ScalarSum.sum(
                 DotProduct.product(leftDerivative, right),
                 DotProduct.product(left, rightDerivative)
-        );
+        ).evaluate(bindings);
     }
 }

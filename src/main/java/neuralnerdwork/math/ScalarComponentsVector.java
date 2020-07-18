@@ -30,23 +30,23 @@ public record ScalarComponentsVector(ScalarExpression[] components) implements V
     }
 
     @Override
-    public VectorExpression computePartialDerivative(int variable) {
+    public Vector computePartialDerivative(Model.ParameterBindings bindings, int variable) {
         return new ScalarComponentsVector(
                 Arrays.stream(components)
-                      .map(f -> f.computePartialDerivative(variable))
+                      .map(f -> f.computePartialDerivative(bindings, variable))
                       .toArray(ScalarExpression[]::new)
-        );
+        ).evaluate(bindings);
     }
 
     @Override
-    public MatrixExpression computeDerivative(int[] variables) {
+    public Matrix computeDerivative(Model.ParameterBindings bindings, int[] variables) {
         return new TransposeExpression(
                 new ColumnMatrix(
                         Arrays.stream(components)
-                              .map(f -> f.computeDerivative(variables))
+                              .map(f -> f.computeDerivative(bindings, variables))
                               .toArray(VectorExpression[]::new)
                 )
-        );
+        ).evaluate(bindings);
     }
 
     @Override

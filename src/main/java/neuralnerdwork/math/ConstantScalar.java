@@ -7,12 +7,12 @@ public record ConstantScalar(double value) implements ScalarExpression {
     }
 
     @Override
-    public ScalarExpression computePartialDerivative(int variable) {
-        return new ConstantScalar(0.0);
+    public double computePartialDerivative(Model.ParameterBindings bindings, int variable) {
+        return 0.0;
     }
 
     @Override
-    public VectorExpression computeDerivative(int[] variables) {
+    public Vector computeDerivative(Model.ParameterBindings bindings, int[] variables) {
         return new ConstantVector(new double[variables.length]);
     }
 

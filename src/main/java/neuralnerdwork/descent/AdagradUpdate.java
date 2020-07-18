@@ -18,7 +18,7 @@ public class AdagradUpdate implements WeightUpdateStrategy {
     @Override
     public Vector updateVector(ScalarExpression error, Model.ParameterBindings parameterBindings) {
         final int[] variables = parameterBindings.variables();
-        final Vector rawGradient = error.computeDerivative(variables)
+        final Vector rawGradient = error.computeDerivative(parameterBindings, variables)
                                         .evaluate(parameterBindings);
         if (sumsOfSquares == null) {
             sumsOfSquares = new double[variables.length];

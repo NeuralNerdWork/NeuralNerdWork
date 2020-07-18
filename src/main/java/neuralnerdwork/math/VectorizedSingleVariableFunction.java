@@ -24,7 +24,7 @@ public record VectorizedSingleVariableFunction(SingleVariableFunction function, 
     }
 
     @Override
-    public MatrixExpression computeDerivative(int[] variables) {
+    public Matrix computeDerivative(Model.ParameterBindings bindings, int[] variables) {
         final MatrixExpression outerDerivative = new DiagonalizedVector(
                 new VectorizedSingleVariableFunction(
                         function.differentiateByInput(),
@@ -32,16 +32,17 @@ public record VectorizedSingleVariableFunction(SingleVariableFunction function, 
                 )
         );
 
-        return MatrixProduct.product(outerDerivative, vectorExpression.computeDerivative(variables));
+        return MatrixProduct.product(outerDerivative, vectorExpression.computeDerivative(bindings, variables))
+                            .evaluate(bindings);
     }
 
     @Override
-    public VectorExpression computePartialDerivative(int variable) {
-        final VectorExpression innerDerivative = this.vectorExpression.computePartialDerivative(variable);
+    public Vector computePartialDerivative(Model.ParameterBindings bindings, int variable) {
+        final VectorExpression innerDerivative = this.vectorExpression.computePartialDerivative(bindings, variable);
 
         return VectorComponentProduct.product(
                 new VectorizedSingleVariableFunction(function.differentiateByInput(),
                                                      vectorExpression),
-                innerDerivative);
+                innerDerivative).evaluate(bindings);
     }
 }

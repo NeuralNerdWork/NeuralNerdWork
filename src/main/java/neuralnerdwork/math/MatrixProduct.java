@@ -57,15 +57,15 @@ public record MatrixProduct(MatrixExpression left, MatrixExpression right) imple
     }
 
     @Override
-    public MatrixExpression computePartialDerivative(int variable) {
+    public Matrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
         // This uses product rule
         // (FG)' = F'G + FG'
-        final MatrixExpression leftDerivative = left.computePartialDerivative(variable);
-        final MatrixExpression rightDerivative = right.computePartialDerivative(variable);
+        final MatrixExpression leftDerivative = left.computePartialDerivative(bindings, variable);
+        final MatrixExpression rightDerivative = right.computePartialDerivative(bindings, variable);
 
         return MatrixSum.sum(
                 MatrixProduct.product(leftDerivative, right),
                 MatrixProduct.product(left, rightDerivative)
-        );
+        ).evaluate(bindings);
     }
 }

@@ -57,36 +57,36 @@ public record MatrixVectorProduct(MatrixExpression left, VectorExpression right)
     }
 
     @Override
-    public MatrixExpression computeDerivative(int[] variables) {
+    public Matrix computeDerivative(Model.ParameterBindings bindings, int[] variables) {
         final VectorExpression[] leftColumns =
                 Arrays.stream(variables)
-                      .mapToObj(left::computePartialDerivative)
+                      .mapToObj(variable -> left.computePartialDerivative(bindings, variable))
                       .map(derivativeMatrix -> MatrixVectorProduct.product(derivativeMatrix, right))
                       .toArray(VectorExpression[]::new);
 
-        final MatrixExpression rightDerivative = right.computeDerivative(variables);
+        final Matrix rightDerivative = right.computeDerivative(bindings, variables);
         final MatrixExpression rightOfSum = MatrixProduct.product(left, rightDerivative);
         final ColumnMatrix columnMatrix = new ColumnMatrix(leftColumns);
 
         return MatrixSum.sum(
                 columnMatrix,
                 rightOfSum
-        );
+        ).evaluate(bindings);
     }
 
     @Override
-    public VectorExpression computePartialDerivative(int variable) {
+    public Vector computePartialDerivative(Model.ParameterBindings bindings, int variable) {
         // Uses product rule
         // (Fg)' = F'g + Fg'
 
-        final MatrixExpression leftDerivative = left.computePartialDerivative(variable);
+        final MatrixExpression leftDerivative = left.computePartialDerivative(bindings, variable);
         if (right instanceof ConstantVector) {
             return MatrixVectorProduct.product(
                     leftDerivative,
                     right
-            );
+            ).evaluate(bindings);
         } else {
-            final VectorExpression rightDerivative = right.computePartialDerivative(variable);
+            final Vector rightDerivative = right.computePartialDerivative(bindings, variable);
 
             return VectorSum.sum(
                     MatrixVectorProduct.product(
@@ -97,7 +97,7 @@ public record MatrixVectorProduct(MatrixExpression left, VectorExpression right)
                             left,
                             rightDerivative
                     )
-            );
+            ).evaluate(bindings);
         }
     }
 }

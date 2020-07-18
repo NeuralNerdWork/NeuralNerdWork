@@ -24,8 +24,9 @@ public interface MatrixExpression {
     Matrix evaluate(Model.ParameterBindings bindings);
 
     /**
+     * @param bindings A mapping of variable indices to values, used for substitution in this expression.
      * @param variable The index of a variable by which this expression should be differentiated.
-     * @return An expression that is the partial derivative of this one, with respect to the given variable.
+     * @return A matrix that is the partial derivative of this one, with respect to the given variable at the given binding value.
      */
-    MatrixExpression computePartialDerivative(int variable);
+    Matrix computePartialDerivative(Model.ParameterBindings bindings, int variable);
 }

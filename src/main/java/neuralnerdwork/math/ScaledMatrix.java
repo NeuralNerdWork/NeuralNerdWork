@@ -35,10 +35,10 @@ public record ScaledMatrix(ScalarExpression scalarExpression, MatrixExpression m
     }
 
     @Override
-    public MatrixExpression computePartialDerivative(int variable) {
+    public Matrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
         return MatrixSum.sum(
-                new ScaledMatrix(scalarExpression.computePartialDerivative(variable), matrixExpression),
-                new ScaledMatrix(scalarExpression, matrixExpression.computePartialDerivative(variable))
-        );
+                new ScaledMatrix(scalarExpression.computePartialDerivative(bindings, variable), matrixExpression),
+                new ScaledMatrix(scalarExpression, matrixExpression.computePartialDerivative(bindings, variable))
+        ).evaluate(bindings);
     }
 }

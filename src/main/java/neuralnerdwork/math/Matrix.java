@@ -37,7 +37,7 @@ public interface Matrix extends MatrixExpression {
     }
 
     @Override
-    default MatrixExpression computePartialDerivative(int variable) {
+    default Matrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
         return new SparseConstantMatrix(Map.of(), rows(), cols());
     }
 }

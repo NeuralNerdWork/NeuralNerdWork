@@ -7,16 +7,18 @@ public record ScalarConstantMultiple(double constant, ScalarExpression expressio
     }
 
     @Override
-    public ScalarExpression computePartialDerivative(int variable) {
-        return ScalarProduct.product(new ConstantScalar(constant), expression.computePartialDerivative(variable));
+    public double computePartialDerivative(Model.ParameterBindings bindings, int variable) {
+        return ScalarProduct
+                .product(new ConstantScalar(constant), new ConstantScalar(expression.computePartialDerivative(bindings, variable)))
+                .evaluate(bindings);
     }
 
     @Override
-    public VectorExpression computeDerivative(int[] variables) {
+    public Vector computeDerivative(Model.ParameterBindings bindings, int[] variables) {
         return new ScaledVector(
                 constant,
-                expression.computeDerivative(variables)
-        );
+                expression.computeDerivative(bindings, variables)
+        ).evaluate(bindings);
     }
 
     @Override

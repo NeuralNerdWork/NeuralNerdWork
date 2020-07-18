@@ -22,19 +22,19 @@ public record VectorConcat(VectorExpression left, VectorExpression right) implem
     }
 
     @Override
-    public MatrixExpression computeDerivative(int[] variables) {
-        final MatrixExpression leftDerivative = left.computeDerivative(variables);
-        final MatrixExpression rightDerivative = right.computeDerivative(variables);
+    public Matrix computeDerivative(Model.ParameterBindings bindings, int[] variables) {
+        final MatrixExpression leftDerivative = left.computeDerivative(bindings, variables);
+        final MatrixExpression rightDerivative = right.computeDerivative(bindings, variables);
 
-        return new MatrixRowConcat(leftDerivative, rightDerivative);
+        return new MatrixRowConcat(leftDerivative, rightDerivative).evaluate(bindings);
     }
 
     @Override
-    public VectorExpression computePartialDerivative(int variable) {
-        final VectorExpression leftPartial = left.computePartialDerivative(variable);
-        final VectorExpression rightPartial = right.computePartialDerivative(variable);
+    public Vector computePartialDerivative(Model.ParameterBindings bindings, int variable) {
+        final VectorExpression leftPartial = left.computePartialDerivative(bindings, variable);
+        final VectorExpression rightPartial = right.computePartialDerivative(bindings, variable);
 
-        return new VectorConcat(leftPartial, rightPartial);
+        return new VectorConcat(leftPartial, rightPartial).evaluate(bindings);
     }
 
     @Override

@@ -44,10 +44,10 @@ public record MatrixRowConcat(MatrixExpression top,
     }
 
     @Override
-    public MatrixExpression computePartialDerivative(int variable) {
-        final MatrixExpression leftDerivative = top.computePartialDerivative(variable);
-        final MatrixExpression rightDerivative = bottom.computePartialDerivative(variable);
+    public Matrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
+        final MatrixExpression top = this.top.computePartialDerivative(bindings, variable);
+        final MatrixExpression bottom = this.bottom.computePartialDerivative(bindings, variable);
 
-        return new MatrixRowConcat(leftDerivative, rightDerivative);
+        return new MatrixRowConcat(top, bottom).evaluate(bindings);
     }
 }

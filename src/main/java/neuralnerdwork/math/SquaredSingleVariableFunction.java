@@ -3,7 +3,7 @@ package neuralnerdwork.math;
 public class SquaredSingleVariableFunction implements SingleVariableFunction {
     @Override
     public String getFunctionName() {
-        return "sqaured";
+        return "squared";
     }
 
     @Override
@@ -13,9 +13,21 @@ public class SquaredSingleVariableFunction implements SingleVariableFunction {
 
     @Override
     public SingleVariableFunction differentiateByInput() {
-        final int var = 0;
-        final ScalarExpression expression = new ScalarConstantMultiple(2.0, new ScalarParameter(var));
+        return new SingleVariableFunction() {
+            @Override
+            public String getFunctionName() {
+                return "squared derivative";
+            }
 
-        return new SingleVariableExpression(var, expression);
+            @Override
+            public double apply(double input) {
+                return 2.0 * input;
+            }
+
+            @Override
+            public SingleVariableFunction differentiateByInput() {
+                throw new UnsupportedOperationException("Not implemented");
+            }
+        };
     }
 }
