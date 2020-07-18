@@ -68,7 +68,7 @@ public class GradientDescentTest {
                 new VectorizedSingleVariableFunction(new SquaredSingleVariableFunction(), error));
 
         final Model.ParameterBindings parameterBindings = builder.createBinder();
-        final VectorExpression lossDerivative = Util
+        final Vector lossDerivative = Util
                 .logTiming("Computed derivative function", () -> squaredError.computeDerivative(parameterBindings,
                                                                                                 Arrays.copyOfRange(builder.variables(), trainingInput
                                                                                                         .length(), builder.size())
@@ -81,11 +81,11 @@ public class GradientDescentTest {
         System.out.println();
         final double originalError = Util.logTiming("Invoked undifferentiated error", () -> squaredError.evaluate(parameterBindings));
         Util.logFunctionStructure(lossDerivative);
-        final Vector updatedWeights = Util.logTiming("Applied derivative function", () -> lossDerivative.evaluate(parameterBindings));
         final double learningRate = 0.01;
-        for (int i = 0; i < updatedWeights.length(); i++) {
+        for (int i = 0; i < lossDerivative.length(); i++) {
             final int weightVariableIndex = trainingInput.length() + i;
-            parameterBindings.put(weightVariableIndex, parameterBindings.get(weightVariableIndex) - learningRate * updatedWeights.get(i));
+            parameterBindings.put(weightVariableIndex, parameterBindings.get(weightVariableIndex) - learningRate * lossDerivative
+                    .get(i));
         }
         final double updated = squaredError.evaluate(parameterBindings);
         assertTrue(updated <= originalError, String.format("Expected error to decrease, but observed (original, updated) = (%f, %f)", originalError, updated));
@@ -130,7 +130,7 @@ public class GradientDescentTest {
                                                              new VectorizedSingleVariableFunction(new SquaredSingleVariableFunction(), error));
 
         final Model.ParameterBindings parameterBindings = builder.createBinder();
-        final VectorExpression lossDerivative = Util
+        final Vector lossDerivative = Util
                 .logTiming("Computed derivative function", () -> squaredError.computeDerivative(parameterBindings,
                                                                                                 Arrays.copyOfRange(builder.variables(), trainingInput
                                                                                                         .length(), builder.size())
@@ -143,11 +143,11 @@ public class GradientDescentTest {
         System.out.println();
         final double originalError = Util.logTiming("Invoked undifferentiated error", () -> squaredError.evaluate(parameterBindings));
         Util.logFunctionStructure(lossDerivative);
-        final Vector updatedWeights = Util.logTiming("Applied derivative function", () -> lossDerivative.evaluate(parameterBindings));
         final double learningRate = 0.01;
-        for (int i = 0; i < updatedWeights.length(); i++) {
+        for (int i = 0; i < lossDerivative.length(); i++) {
             final int weightVariableIndex = trainingInput.length() + i;
-            parameterBindings.put(weightVariableIndex, parameterBindings.get(weightVariableIndex) - learningRate * updatedWeights.get(i));
+            parameterBindings.put(weightVariableIndex, parameterBindings.get(weightVariableIndex) - learningRate * lossDerivative
+                    .get(i));
         }
         final double updated = squaredError.evaluate(parameterBindings);
         assertTrue(updated <= originalError, String.format("Expected error to decrease, but observed (original, updated) = (%f, %f)", originalError, updated));

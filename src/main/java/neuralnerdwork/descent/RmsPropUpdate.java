@@ -24,8 +24,7 @@ public class RmsPropUpdate implements WeightUpdateStrategy {
     @Override
     public Vector updateVector(ScalarExpression error, Model.ParameterBindings parameterBindings) {
         final int[] variables = parameterBindings.variables();
-        final Vector rawGradient = error.computeDerivative(parameterBindings, variables)
-                                        .evaluate(parameterBindings);
+        final Vector rawGradient = error.computeDerivative(parameterBindings, variables);
         if (gradientAverage == null) {
             gradientAverage = new double[variables.length];
         }

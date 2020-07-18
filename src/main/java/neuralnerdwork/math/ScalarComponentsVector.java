@@ -33,7 +33,7 @@ public record ScalarComponentsVector(ScalarExpression[] components) implements V
     public Vector computePartialDerivative(Model.ParameterBindings bindings, int variable) {
         return new ScalarComponentsVector(
                 Arrays.stream(components)
-                      .map(f -> f.computePartialDerivative(bindings, variable))
+                      .map(f -> new ConstantScalar(f.computePartialDerivative(bindings, variable)))
                       .toArray(ScalarExpression[]::new)
         ).evaluate(bindings);
     }

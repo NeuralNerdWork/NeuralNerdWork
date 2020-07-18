@@ -354,8 +354,7 @@ public class MathTest {
         }
 
         Vector derivativeResult = new MatrixVectorProduct(convolutionMatrix, inputVector)
-                .computePartialDerivative(parameterBindings, filter.variableIndexFor(0, 0))
-                .evaluate(parameterBindings);
+                .computePartialDerivative(parameterBindings, filter.variableIndexFor(0, 0));
 
         double[] expected = {
                 values[4],
