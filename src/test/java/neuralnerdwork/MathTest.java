@@ -310,6 +310,40 @@ public class MathTest {
         assertNonZero(lossDerivative);
     }
 
+    @Property(shrinking = ShrinkingMode.OFF)
+    void convolutionFilterMatrixShouldGiveConvolutionFilterResultWhenMultipled(@ForAll @Weight @Size(value = 2*2 + 3*3) double[] values) {
+        // https://www.wolframalpha.com/input/?i=derivative+of+%7B%7Ba%2Cb%7D%2C%7Bc%2Cd%7D%7D%7B%7Be%2Cf%7D%2C%7Bg%2Ch%7D%7D%7B%7B1%7D%2C%7B-1%7D%7D+by+f
+        final Model builder = new Model();
+        final ParameterMatrix filter = builder.createParameterMatrix(2, 2);
+        final ConvolutionFilterMatrix convolutionMatrix = new ConvolutionFilterMatrix(filter, 3, 3);
+        final Vector inputVector = new ConstantVector(Arrays.copyOfRange(values, 4, values.length));
+
+        final Model.ParameterBindings parameterBindings = builder.createBinder();
+        final int[] vars = parameterBindings.variables();
+        for (int i = 0; i < vars.length; i++) {
+            parameterBindings.put(vars[i], values[i]);
+        }
+
+        Vector convolutionResult = new MatrixVectorProduct(convolutionMatrix, inputVector).evaluate(parameterBindings);
+
+        double[] expected = {
+                values[0] * values[4] + values[1] * values[5] + values[2] * values[7] + values[3] * values[8],
+                values[0] * values[5] + values[1] * values[6] + values[2] * values[8] + values[3] * values[9],
+                values[0] * values[7] + values[1] * values[8] + values[2] * values[10] + values[3] * values[11],
+                values[0] * values[8] + values[1] * values[9] + values[2] * values[11] + values[3] * values[12],
+        };
+
+        assertArrayEquals(expected,
+                          convolutionResult.toArray(),
+                          0.0001,
+                          () -> {
+                              return "Expected: " + Arrays.toString(expected) + "\nObserved: " + Arrays
+                                      .toString(convolutionResult.toArray()) +
+                                      "\nValues: " + Arrays.toString(values) +
+                                      "\nConvolution Matrix: " + convolutionMatrix.evaluate(parameterBindings) + "\n";
+                          });
+    }
+
 
     private void assertNonZero(Object expression) {
         assertNonZero(expression, new ArrayList<>(List.of(expression.getClass().getSimpleName() + " root")));

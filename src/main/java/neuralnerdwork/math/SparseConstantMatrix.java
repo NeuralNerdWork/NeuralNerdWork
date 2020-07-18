@@ -1,9 +1,19 @@
 package neuralnerdwork.math;
 
-import java.util.Iterator;
 import java.util.Map;
 
 public record SparseConstantMatrix(Map<Index, Double> values, int rows, int cols) implements Matrix {
+
+    public SparseConstantMatrix {
+        values.keySet()
+              .stream()
+              .filter(index -> index.row() >= rows || index.col() >= cols)
+              .forEach(index -> {
+                  throw new IllegalArgumentException(String.format("Invalid index (%d,%d) for (%dx%d) matrix", index
+                          .row(), index.col(), rows, cols));
+              });
+    }
+
     @Override
     public Matrix evaluate(Model.ParameterBindings bindings) {
         return this;
