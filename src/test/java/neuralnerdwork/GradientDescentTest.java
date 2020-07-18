@@ -4,6 +4,7 @@ import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.ShrinkingMode;
 import net.jqwik.api.constraints.Size;
+import neuralnerdwork.backprop.FeedForwardNetwork;
 import neuralnerdwork.backprop.FullyConnectedLayer;
 import neuralnerdwork.math.*;
 
