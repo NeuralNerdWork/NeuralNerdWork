@@ -378,6 +378,28 @@ public class MathTest {
                           });
     }
 
+    @Example
+    void maxPoolOnSimpleVectorShouldGiveCorrectResult() {
+        double[][] inputValues = new double[][] {
+                {2.0, 0.4, 0.1, 1.0},
+                {1.0, 1.0, 0.5, 0.2},
+                {8.0, 0.1, 2.0, 3.0},
+                {0.8, 1.0, 1.0, 0.0}
+        };
+
+        double[] flatValues = new double[16];
+        for (int r = 0; r < 4; r++) {
+            for (int c = 0; c < 4; c++) {
+                flatValues[4*r + c] = inputValues[r][c];
+            }
+        }
+
+        MaxPoolVector maxPool = new MaxPoolVector(new ConstantVector(flatValues), 4, 4, 2, 2);
+        Vector result = maxPool.evaluate(null);
+
+        assertArrayEquals(new double[] { 2.0, 1.0, 8.0, 3.0 }, result.toArray(), 1e8);
+    }
+
 
     private void assertNonZero(Object expression) {
         assertNonZero(expression, new ArrayList<>(List.of(expression.getClass().getSimpleName() + " root")));
