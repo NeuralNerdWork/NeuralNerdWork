@@ -312,7 +312,6 @@ public class MathTest {
 
     @Property(shrinking = ShrinkingMode.OFF)
     void convolutionFilterMatrixShouldGiveConvolutionFilterResultWhenMultipled(@ForAll @Weight @Size(value = 2*2 + 3*3) double[] values) {
-        // https://www.wolframalpha.com/input/?i=derivative+of+%7B%7Ba%2Cb%7D%2C%7Bc%2Cd%7D%7D%7B%7Be%2Cf%7D%2C%7Bg%2Ch%7D%7D%7B%7B1%7D%2C%7B-1%7D%7D+by+f
         final Model builder = new Model();
         final ParameterMatrix filter = builder.createParameterMatrix(2, 2);
         final ConvolutionFilterMatrix convolutionMatrix = new ConvolutionFilterMatrix(filter, 3, 3);
@@ -339,6 +338,41 @@ public class MathTest {
                           () -> {
                               return "Expected: " + Arrays.toString(expected) + "\nObserved: " + Arrays
                                       .toString(convolutionResult.toArray()) +
+                                      "\nValues: " + Arrays.toString(values) +
+                                      "\nConvolution Matrix: " + convolutionMatrix.evaluate(parameterBindings) + "\n";
+                          });
+    }
+
+    @Property(shrinking = ShrinkingMode.OFF)
+    void convolutionFilterMatrixShouldHaveCorrectDerivative(@ForAll @Weight @Size(value = 2*2 + 3*3) double[] values) {
+        final Model builder = new Model();
+        final ParameterMatrix filter = builder.createParameterMatrix(2, 2);
+        final ConvolutionFilterMatrix convolutionMatrix = new ConvolutionFilterMatrix(filter, 3, 3);
+        final Vector inputVector = new ConstantVector(Arrays.copyOfRange(values, 4, values.length));
+
+        final Model.ParameterBindings parameterBindings = builder.createBinder();
+        final int[] vars = parameterBindings.variables();
+        for (int i = 0; i < vars.length; i++) {
+            parameterBindings.put(vars[i], values[i]);
+        }
+
+        Vector derivativeResult = new MatrixVectorProduct(convolutionMatrix, inputVector)
+                .computePartialDerivative(filter.variableIndexFor(0, 0))
+                .evaluate(parameterBindings);
+
+        double[] expected = {
+                values[4],
+                values[5],
+                values[7],
+                values[8]
+        };
+
+        assertArrayEquals(expected,
+                          derivativeResult.toArray(),
+                          0.0001,
+                          () -> {
+                              return "Expected: " + Arrays.toString(expected) + "\nObserved: " + Arrays
+                                      .toString(derivativeResult.toArray()) +
                                       "\nValues: " + Arrays.toString(values) +
                                       "\nConvolution Matrix: " + convolutionMatrix.evaluate(parameterBindings) + "\n";
                           });
