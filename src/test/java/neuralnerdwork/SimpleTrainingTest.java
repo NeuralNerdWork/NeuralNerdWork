@@ -5,6 +5,7 @@ import neuralnerdwork.descent.SimpleBatchGradientDescent;
 import neuralnerdwork.descent.StochasticGradientDescent;
 import neuralnerdwork.math.ConstantVector;
 import neuralnerdwork.viz.JFrameTrainingVisualizer;
+import neuralnerdwork.weight.VariableWeightInitializer;
 import org.junit.jupiter.api.Test;
 
 import java.awt.*;
@@ -12,11 +13,12 @@ import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static neuralnerdwork.NeuralNetwork.fullyConnectedClassificationNetwork;
+import static neuralnerdwork.weight.VariableWeightInitializer.dumbRandomWeightInitializer;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SimpleTrainingTest {
@@ -39,12 +41,8 @@ public class SimpleTrainingTest {
     @Test
     void trainingTwoLayerNetworkShouldConverge() {
 
-        NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(
-            new int[]{2, 1}, 
-            (r, c) -> (Math.random() - 0.5) * 2.0,
-            new SimpleBatchGradientDescent(0.1),
-            (iterationCount, network) -> iterationCount < 5000
-        );
+        Random r = new Random(11);
+        NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(fullyConnectedClassificationNetwork(dumbRandomWeightInitializer(r), 2, 1), new SimpleBatchGradientDescent(0.1), (iterationCount, network) -> iterationCount < 5000);
 
         NeuralNetwork network = trainer.train(Arrays.asList(
             new TrainingSample(new ConstantVector(new double[]{0.0, 0.1}), new ConstantVector(new double[]{0.0})),
@@ -97,26 +95,21 @@ public class SimpleTrainingTest {
         visualizer.addShape(new Line2D.Double(-2.0, 0.0, 2.0, 0.0));
         visualizer.addShape(new Line2D.Double(0.0, -2.0, 0.0, 2.0));
 
-        NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(
-                new int[]{2, 10, 10, 1},
-                (row, col) -> (r.nextDouble() - 0.5) * 2.0,
-                new StochasticGradientDescent(
-                        200,
-                        () -> new RmsPropUpdate(0.001, 0.9, 1e-8)
-                ),
-                (iterationCount, network) -> {
-                    var fails = verificationSet.stream()
-                    .map (i -> {
-                        return Util.compareClassifications(network.apply(i.input()).get(0), i.output().get(0));
-                    })
-                    .map(b -> new FailurePercent(b ? 0 : 1,  1))
-                    .reduce(new FailurePercent(0, 0), FailurePercent::merge);
-                    
-                    System.out.println("Percentage of verification set passing: " + fails.asPercent());
+        NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(fullyConnectedClassificationNetwork(dumbRandomWeightInitializer(r), 2, 10, 10, 1), new StochasticGradientDescent(
+                                200,
+                                () -> new RmsPropUpdate(0.001, 0.9, 1e-8)
+                        ), (iterationCount, network) -> {
+                            var fails = verificationSet.stream()
+                            .map (i -> {
+                                return Util.compareClassifications(network.apply(i.input()).get(0), i.output().get(0));
+                            })
+                            .map(b -> new FailurePercent(b ? 0 : 1,  1))
+                            .reduce(new FailurePercent(0, 0), FailurePercent::merge);
 
-                    return fails.asPercent() > 0.05;
-                },
-                visualizer);
+                            System.out.println("Percentage of verification set passing: " + fails.asPercent());
+
+                            return fails.asPercent() > 0.05;
+                        }, visualizer);
 
         NeuralNetwork network = trainer.train(trainingSet);
 
@@ -183,27 +176,21 @@ public class SimpleTrainingTest {
         visualizer.addShape(new Line2D.Double(-2.0, 0.0, 2.0, 0.0));
         visualizer.addShape(new Line2D.Double(0.0, -2.0, 0.0, 2.0));
 
-        NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(
-            new int[]{2, 20, 20, 1}, 
-                (row, col) -> (r.nextDouble() - 0.5) * 2,
-                new StochasticGradientDescent(
-                        100,
-                        () -> new RmsPropUpdate(0.001, 0.9, 1e-8)
-                ),
-                (iterationCount, network) -> {
-                    var fails = verificationSet.stream()
-                    .map (i -> {
-                        return Util.compareClassifications(network.apply(i.input()).get(0), i.output().get(0));
-                    })
-                    .map(b -> new FailurePercent(b ? 0 : 1,  1))
-                    .reduce(new FailurePercent(0, 0), FailurePercent::merge);
-                    
-                    System.out.println("Percentage of verification set passing: " + fails.asPercent());
+        NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(fullyConnectedClassificationNetwork(dumbRandomWeightInitializer(r), 2, 20, 20, 1), new StochasticGradientDescent(
+                                100,
+                                () -> new RmsPropUpdate(0.001, 0.9, 1e-8)
+                        ), (iterationCount, network) -> {
+                            var fails = verificationSet.stream()
+                            .map (i -> {
+                                return Util.compareClassifications(network.apply(i.input()).get(0), i.output().get(0));
+                            })
+                            .map(b -> new FailurePercent(b ? 0 : 1,  1))
+                            .reduce(new FailurePercent(0, 0), FailurePercent::merge);
 
-                    return fails.asPercent() > 0.05;
-                },
-                visualizer
-        );
+                            System.out.println("Percentage of verification set passing: " + fails.asPercent());
+
+                            return fails.asPercent() > 0.05;
+                        }, visualizer);
 
 
         NeuralNetwork network = trainer.train(trainingSet);

@@ -3,6 +3,7 @@ package neuralnerdwork.backprop;
 import neuralnerdwork.math.*;
 
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 public record FullyConnectedLayer(ParameterMatrix weights, Optional<ParameterVector>bias, SingleVariableFunction activation) implements Layer<FullyConnectedLayer.PerceptronCache> {
     public record PerceptronCache(Vector activation, Vector activationInputs, Matrix activationDerivativeWithRespectToWeightedSum) {
@@ -16,6 +17,18 @@ public record FullyConnectedLayer(ParameterMatrix weights, Optional<ParameterVec
     @Override
     public int outputLength() {
         return weights.rows();
+    }
+
+    @Override
+    public int inputLength() {
+        return weights.cols();
+    }
+
+    @Override
+    public IntStream variables() {
+        return IntStream.concat(weights.variables(),
+                                bias.map(ParameterVector::variables)
+                                    .orElseGet(IntStream::empty));
     }
 
     @Override

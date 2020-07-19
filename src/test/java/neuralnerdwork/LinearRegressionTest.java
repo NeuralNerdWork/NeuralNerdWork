@@ -14,6 +14,8 @@ import java.util.Random;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
+import static neuralnerdwork.NeuralNetwork.fullyConnectedClassificationNetwork;
+import static neuralnerdwork.weight.VariableWeightInitializer.dumbRandomWeightInitializer;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -29,12 +31,7 @@ public class LinearRegressionTest {
     void testBasicLinearRegressionTraining() {
         var r = new Random(1337);
 
-        NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(
-                new int[]{2, 1},
-                (row, col) -> (r.nextDouble() - 0.5) * 2.0,
-                new SimpleBatchGradientDescent(0.1),
-                (iterationCount, network) -> iterationCount < 5000
-        );
+        NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(fullyConnectedClassificationNetwork(dumbRandomWeightInitializer(r), 2, 1), new SimpleBatchGradientDescent(0.1), (iterationCount, network) -> iterationCount < 5000);
 
         NeuralNetwork network = trainer.train(Arrays.asList(
                 new TrainingSample(new ConstantVector(new double[]{0.0, 0.1}), new ConstantVector(new double[]{0.0})),
@@ -118,23 +115,18 @@ public class LinearRegressionTest {
             }
         }
 
-        NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(
-                new int[]{2, 10, 10, 1},
-                (row, col) -> (rand.nextDouble() - 0.5) * 2.0,
-                gradientDescentStrategy,
-                (iterationCount, network) -> iterationCount < 5000
-                        && validationSet.stream()
-                                        .map(sample -> {
-                                            Vector observed = network.apply(sample.input());
-                                            boolean match = Util
-                                                    .compareClassifications(observed.get(0), sample.output()
-                                                                                                   .get(0));
-                                            return new Result(match ? 1 : 0, 1);
-                                        })
-                                        .reduce(new Result(0, 0), (r1, r2) -> new Result(r1.success() + r2
-                                                .success(), r1.total() + r2.total()))
-                                        .successRate() < 0.9
-        );
+        NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(fullyConnectedClassificationNetwork(dumbRandomWeightInitializer(rand), 2, 10, 10, 1), gradientDescentStrategy, (iterationCount, network) -> iterationCount < 5000
+                                && validationSet.stream()
+                                                .map(sample -> {
+                                                    Vector observed = network.apply(sample.input());
+                                                    boolean match = Util
+                                                            .compareClassifications(observed.get(0), sample.output()
+                                                                                                           .get(0));
+                                                    return new Result(match ? 1 : 0, 1);
+                                                })
+                                                .reduce(new Result(0, 0), (r1, r2) -> new Result(r1.success() + r2
+                                                        .success(), r1.total() + r2.total()))
+                                                .successRate() < 0.9);
 
         NeuralNetwork network = trainer.train(trainingSet);
 

@@ -43,6 +43,14 @@ public record FeedForwardNetwork(Layer<?>[]layers) {
         }
     }
 
+    public int inputLength() {
+        return layers[0].inputLength();
+    }
+
+    public int outputLength() {
+        return layers[layers.length - 1].outputLength();
+    }
+
     public FeedForwardExpression expression(ConstantVector input) {
         return new FeedForwardExpression(layers, input);
     }

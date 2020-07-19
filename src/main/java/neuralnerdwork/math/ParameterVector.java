@@ -1,6 +1,7 @@
 package neuralnerdwork.math;
 
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 public record ParameterVector(int variableStartIndex, int length) implements VectorExpression {
 
@@ -50,5 +51,10 @@ public record ParameterVector(int variableStartIndex, int length) implements Vec
 
     public int variableFor(int index) {
         return variableStartIndex + index;
+    }
+
+    public IntStream variables() {
+        return IntStream.iterate(variableStartIndex, n -> n + 1)
+                        .limit(length);
     }
 }

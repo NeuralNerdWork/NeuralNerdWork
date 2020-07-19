@@ -4,6 +4,8 @@ import neuralnerdwork.math.Matrix;
 import neuralnerdwork.math.Model;
 import neuralnerdwork.math.Vector;
 
+import java.util.stream.IntStream;
+
 /**
  * A layer of a neural network. All methods should be referentially transparent.
  *
@@ -28,6 +30,16 @@ public interface Layer<C> {
      * @return The length of the vector output by this layer.
      */
     int outputLength();
+
+    /**
+     * @return The length of the input vector to this layer.
+     */
+    int inputLength();
+
+    /**
+     * @return The exhaustive set of variables in this layer.
+     */
+    IntStream variables();
 
     /**
      * Used for back-propogating derivative to lower layers.
