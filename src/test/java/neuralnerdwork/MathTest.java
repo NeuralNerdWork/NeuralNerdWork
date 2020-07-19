@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static java.lang.String.format;
+import static neuralnerdwork.math.VectorSum.sum;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class MathTest {
@@ -237,7 +238,7 @@ public class MathTest {
                                                                                     weightedInputs);
 
         final ConstantVector trainingOutput = new ConstantVector(new double[] { 1.0, 0.0 });
-        final VectorSum error = new VectorSum(layerFunction, new ScaledVector(-1.0, trainingOutput));
+        final VectorExpression error = sum(layerFunction, new ScaledVector(-1.0, trainingOutput));
         // TODO should make a square combinator; this will differentiate error twice
         final DotProduct squaredError = new DotProduct(error, error);
 
@@ -293,7 +294,7 @@ public class MathTest {
         }
 
         final ConstantVector trainingOutput = new ConstantVector(outputValues);
-        final VectorSum error = new VectorSum(networkFunction, new ScaledVector(-1.0, trainingOutput));
+        final VectorExpression error = sum(networkFunction, new ScaledVector(-1.0, trainingOutput));
 
         final double[] ones = new double[rows];
         Arrays.fill(ones, 1.0);
@@ -374,26 +375,97 @@ public class MathTest {
 
     @Example
     void maxPoolOnSimpleVectorShouldGiveCorrectResult() {
-        double[][] inputValues = new double[][] {
-                {2.0, 0.4, 0.1, 1.0},
-                {1.0, 1.0, 0.5, 0.2},
-                {8.0, 0.1, 2.0, 3.0},
-                {0.8, 1.0, 1.0, 0.0}
-        };
+        double[] flatValues = new double[]{
+                2.0, 0.4,   0.1, 1.0,
+                1.0, 1.0,   0.5, 0.2,
 
-        double[] flatValues = new double[16];
-        for (int r = 0; r < 4; r++) {
-            for (int c = 0; c < 4; c++) {
-                flatValues[4*r + c] = inputValues[r][c];
-            }
-        }
+                8.0, 0.1,   2.0, 3.0,
+                0.8, 1.0,   1.0, 0.0
+        };
 
         MaxPoolVector maxPool = new MaxPoolVector(new ConstantVector(flatValues), 4, 4, 2, 2);
         Vector result = maxPool.evaluate(null);
 
-        assertArrayEquals(new double[] { 2.0, 1.0, 8.0, 3.0 }, result.toArray(), 1e8);
+        assertArrayEquals(new double[] { 2.0, 1.0, 8.0, 3.0 }, result.toArray(), 1e-8);
     }
 
+    @Example
+    void maxPoolPartialDerivativeGivesCorrectResult() {
+        Model model = new Model();
+        ParameterVector paramVector = model.createParameterVector(16);
+        double[] flatValues = new double[]{
+                2.0, 0.4,   0.1, 1.0,
+                1.0, 1.0,   0.5, 0.2,
+
+                8.0, 0.1,   2.0, 3.0,
+                0.8, 1.0,   1.0, 0.0
+        };
+        Model.ParameterBindings binder = model.createBinder();
+        for (int variable : binder.variables()) {
+            binder.put(variable, 0.01);
+        }
+
+        VectorExpression maxPoolInput = new MatrixVectorProduct(
+                new DiagonalizedVector(new ConstantVector(flatValues)),
+                paramVector
+        );
+
+        MaxPoolVector maxPool = new MaxPoolVector(maxPoolInput, 4, 4, 2, 2);
+        Vector result = maxPool.computePartialDerivative(binder, paramVector.variableFor(0));
+
+        assertArrayEquals(new double[] { 2.0, 0.0, 0.0, 0.0 }, result.toArray(), 1e-8);
+    }
+
+    @Example
+    void maxPoolDerivativeGivesCorrectResult() {
+        Model model = new Model();
+        ParameterVector paramVector = model.createParameterVector(16);
+        double[] flatValues = new double[]{
+                2.0, 0.4,   0.1, 1.0,
+                1.0, 1.0,   0.5, 0.2,
+
+                8.0, 0.1,   2.0, 3.0,
+                0.8, 1.0,   1.0, 0.0
+        };
+        Model.ParameterBindings binder = model.createBinder();
+        for (int variable : binder.variables()) {
+            binder.put(variable, 0.01);
+        }
+
+        VectorExpression maxPoolInput = new MatrixVectorProduct(
+                new DiagonalizedVector(new ConstantVector(flatValues)),
+                paramVector
+        );
+
+        MaxPoolVector maxPool = new MaxPoolVector(maxPoolInput, 4, 4, 2, 2);
+        Matrix result = maxPool.computeDerivative(binder, binder.variables());
+
+        double[][] resultArray = result.toArray();
+        assertArrayEquals(new double[]{
+                2.0, 0.0, 0.0, 0.0,
+                0.0, 0.0, 0.0, 0.0,
+                0.0, 0.0, 0.0, 0.0,
+                0.0, 0.0, 0.0, 0.0,
+        }, resultArray[0], 1e-8, "Problem on row 0:\n" + Arrays.deepToString(resultArray));
+        assertArrayEquals(new double[]{
+                0.0, 0.0, 0.0, 1.0,
+                0.0, 0.0, 0.0, 0.0,
+                0.0, 0.0, 0.0, 0.0,
+                0.0, 0.0, 0.0, 0.0,
+        }, resultArray[1], 1e-8, "Problem on row 1:\n" + Arrays.deepToString(resultArray));
+        assertArrayEquals(new double[]{
+                0.0, 0.0, 0.0, 0.0,
+                0.0, 0.0, 0.0, 0.0,
+                8.0, 0.0, 0.0, 0.0,
+                0.0, 0.0, 0.0, 0.0,
+        }, resultArray[2], 1e-8, "Problem on row 2:\n" + Arrays.deepToString(resultArray));
+        assertArrayEquals(new double[]{
+                0.0, 0.0, 0.0, 0.0,
+                0.0, 0.0, 0.0, 0.0,
+                0.0, 0.0, 0.0, 3.0,
+                0.0, 0.0, 0.0, 0.0,
+        }, resultArray[3], 1e-8, "Problem on row 3:\n" + Arrays.deepToString(resultArray));
+    }
 
     private void assertNonZero(Object expression) {
         assertNonZero(expression, new ArrayList<>(List.of(expression.getClass().getSimpleName() + " root")));

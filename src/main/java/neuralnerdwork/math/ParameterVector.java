@@ -47,4 +47,8 @@ public record ParameterVector(int variableStartIndex, int length) implements Vec
     public int indexFor(int variable) {
         return variable - variableStartIndex;
     }
+
+    public int variableFor(int index) {
+        return variableStartIndex + index;
+    }
 }
