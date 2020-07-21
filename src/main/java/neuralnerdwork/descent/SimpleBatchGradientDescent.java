@@ -5,7 +5,6 @@ import neuralnerdwork.TrainingSample;
 import neuralnerdwork.math.Model;
 import neuralnerdwork.math.ScalarExpression;
 import neuralnerdwork.math.Vector;
-import neuralnerdwork.math.VectorExpression;
 
 import java.util.List;
 import java.util.function.Function;

@@ -1,7 +1,6 @@
 package neuralnerdwork.math;
 
 import java.util.Arrays;
-import java.util.function.ObjIntConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 

@@ -3,7 +3,7 @@ package neuralnerdwork.math;
 import java.util.Arrays;
 import java.util.Map;
 
-public record ConstantVector(double[] values) implements VectorExpression, Vector {
+public record ConstantVector(double[] values) implements Vector {
 
     @Override
     public double get(int index) {
