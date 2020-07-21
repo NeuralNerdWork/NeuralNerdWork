@@ -5,7 +5,6 @@ import neuralnerdwork.descent.SimpleBatchGradientDescent;
 import neuralnerdwork.descent.StochasticGradientDescent;
 import neuralnerdwork.math.ConstantVector;
 import neuralnerdwork.viz.JFrameTrainingVisualizer;
-import neuralnerdwork.weight.VariableWeightInitializer;
 import org.junit.jupiter.api.Test;
 
 import java.awt.*;
