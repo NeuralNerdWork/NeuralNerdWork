@@ -6,7 +6,7 @@ import neuralnerdwork.math.*;
 import neuralnerdwork.backprop.FeedForwardNetwork;
 
 import java.util.Optional;
-import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public record NeuralNetwork(FeedForwardNetwork runtimeNetwork, Model.ParameterBindings parameterBindings) {
 
@@ -19,7 +19,7 @@ public record NeuralNetwork(FeedForwardNetwork runtimeNetwork, Model.ParameterBi
         return new ConstantVector(apply(input.toArray()));
     }
 
-    public static NeuralNetwork fullyConnectedClassificationNetwork(BiFunction<Integer, Integer, Double> initialWeightSupplier, int... layerSizes) {
+    public static NeuralNetwork fullyConnectedClassificationNetwork(Function<Layer<?>, Double> initialWeightSupplier, int... layerSizes) {
         /*
           (inp)               (out)
            l0   l1   l2   l3  l4
@@ -53,7 +53,11 @@ public record NeuralNetwork(FeedForwardNetwork runtimeNetwork, Model.ParameterBi
             // rows: output size
             ParameterMatrix layerLWeights = modelBuilder.createParameterMatrix(layerSizes[l], layerSizes[l-1]);
             ParameterVector bias = l < layerSizes.length - 1 ? modelBuilder.createParameterVector(layerSizes[l]) : null;
-            layers[l - 1] = new FullyConnectedLayer(layerLWeights, Optional.ofNullable(bias), activation);
+            if(l == layerSizes.length - 1){
+                layers[l - 1] = new FullyConnectedLayer(layerLWeights, Optional.ofNullable(bias), new LogisticFunction());
+            } else {
+                layers[l - 1] = new FullyConnectedLayer(layerLWeights, Optional.ofNullable(bias), activation);
+            }
         }
 
         Model.ParameterBindings initialParameterBindings = initializeParameters(initialWeightSupplier, modelBuilder, layers);
@@ -62,11 +66,11 @@ public record NeuralNetwork(FeedForwardNetwork runtimeNetwork, Model.ParameterBi
         return new NeuralNetwork(feedforwardDefinition, initialParameterBindings);
     }
 
-    private static Model.ParameterBindings initializeParameters(BiFunction<Integer, Integer, Double> initialWeightSupplier, Model modelBuilder, Layer<?>[] layers) {
+    private static Model.ParameterBindings initializeParameters(Function<Layer<?>, Double> initialWeightSupplier, Model modelBuilder, Layer<?>[] layers) {
         Model.ParameterBindings initialParameterBindings = modelBuilder.createBinder();
         // initialize weights
         for (var layer : layers) {
-            layer.variables().forEach(v -> initialParameterBindings.put(v, initialWeightSupplier.apply(layer.inputLength(), layer.outputLength())));
+            layer.variables().forEach(v -> initialParameterBindings.put(v, initialWeightSupplier.apply(layer)));
         }
         return initialParameterBindings;
     }

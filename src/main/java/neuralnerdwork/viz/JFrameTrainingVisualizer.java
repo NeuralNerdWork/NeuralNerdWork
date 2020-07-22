@@ -54,7 +54,9 @@ public class JFrameTrainingVisualizer implements IterationObserver, AutoCloseabl
             protected Void doInBackground() throws Exception {
                 System.out.println("Mathy iteration: " + iterationCount);
                 iterationLabel.setText("Iteration " + iterationCount);
-                Map<Paint, PointSet> pointSets = validationPoints.stream()
+                Map<Paint, PointSet> pointSets = null;
+                try {
+                    pointSets = validationPoints.stream()
                         .map(sample -> {
                             ConstantVector prediction = new ConstantVector(network.apply(sample.input().values()));
                             return new ClassifiedPoint(predictionTester.apply(sample, prediction),
@@ -64,7 +66,11 @@ public class JFrameTrainingVisualizer implements IterationObserver, AutoCloseabl
                                 ClassifiedPoint::paint,
                                 cp -> new PointSet(cp.paint(), List.of(cp.point())),
                                 (ps1, ps2) -> new PointSet(ps1.paint(), concat(ps1.points(), ps2.points()))));
-        
+                    }catch(Exception e) {
+                        e.printStackTrace();
+                        throw e;
+                    }
+                
                 plotPanel.updatePointSets(pointSets.values());
                 return null;
             }

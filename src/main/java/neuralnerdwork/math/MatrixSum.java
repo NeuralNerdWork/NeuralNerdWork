@@ -10,7 +10,7 @@ public record MatrixSum(MatrixExpression... expressions) implements MatrixExpres
                                                       .filter(exp -> !exp.isZero())
                                                       .toArray(MatrixExpression[]::new);
         if (nonZeroExpressions.length == 0) {
-            return new SparseConstantMatrix(Map.of(), expressions[0].rows(), expressions[1].cols());
+            return new SparseConstantMatrix(Map.of(), expressions[0].rows(), expressions[0].cols());
         } else {
             return new MatrixSum(nonZeroExpressions);
         }

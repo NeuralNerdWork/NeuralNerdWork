@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 import static neuralnerdwork.NeuralNetwork.fullyConnectedClassificationNetwork;
-import static neuralnerdwork.weight.VariableWeightInitializer.dumbRandomWeightInitializer;
+import static neuralnerdwork.weight.VariableWeightInitializer.smartRandomWeightInitializer;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -31,7 +31,7 @@ public class LinearRegressionTest {
     void testBasicLinearRegressionTraining() {
         var r = new Random(1337);
 
-        NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(fullyConnectedClassificationNetwork(dumbRandomWeightInitializer(r), 2, 1), new SimpleBatchGradientDescent(0.1), (iterationCount, network) -> iterationCount < 5000);
+        NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(fullyConnectedClassificationNetwork(smartRandomWeightInitializer(r), 2, 1), new SimpleBatchGradientDescent(0.1), (iterationCount, network) -> iterationCount < 5000);
 
         NeuralNetwork network = trainer.train(Arrays.asList(
                 new TrainingSample(new ConstantVector(new double[]{0.0, 0.1}), new ConstantVector(new double[]{0.0})),
@@ -115,7 +115,7 @@ public class LinearRegressionTest {
             }
         }
 
-        NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(fullyConnectedClassificationNetwork(dumbRandomWeightInitializer(rand), 2, 10, 10, 1), gradientDescentStrategy, (iterationCount, network) -> iterationCount < 5000
+        NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(fullyConnectedClassificationNetwork(smartRandomWeightInitializer(rand), 2, 10, 10, 1), gradientDescentStrategy, (iterationCount, network) -> iterationCount < 5000
                                 && validationSet.stream()
                                                 .map(sample -> {
                                                     Vector observed = network.apply(sample.input());

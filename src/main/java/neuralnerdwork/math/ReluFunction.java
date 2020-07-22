@@ -1,6 +1,10 @@
 package neuralnerdwork.math;
 
-public class ReluFunction implements SingleVariableFunction {
+import java.util.Random;
+
+import neuralnerdwork.backprop.Layer;
+
+public class ReluFunction implements ActivationFunction {
     @Override
     public String getFunctionName() {
         return "relu";
@@ -35,5 +39,11 @@ public class ReluFunction implements SingleVariableFunction {
         public SingleVariableFunction differentiateByInput() {
             throw new UnsupportedOperationException("Not yet implemented!");
         }
+    }
+
+    @Override
+    public double generateInitialWeight(Random r, Layer<?> layer) {
+        double bound = Math.sqrt(2) * Math.sqrt(6.0 / (layer.inputLength() + layer.outputLength()));
+        return (r.nextDouble() - 0.5) * (bound * 2);
     }
 }

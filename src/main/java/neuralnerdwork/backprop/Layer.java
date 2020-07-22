@@ -1,5 +1,6 @@
 package neuralnerdwork.backprop;
 
+import neuralnerdwork.math.ActivationFunction;
 import neuralnerdwork.math.Matrix;
 import neuralnerdwork.math.Model;
 import neuralnerdwork.math.Vector;
@@ -12,6 +13,9 @@ import java.util.stream.IntStream;
  * @param <C> A cache object for reusing intermediate results across multiple method calls.
  */
 public interface Layer<C> {
+
+    ActivationFunction activation();
+
     /**
      * Tuple for returning computation result and updated cache object.
      *

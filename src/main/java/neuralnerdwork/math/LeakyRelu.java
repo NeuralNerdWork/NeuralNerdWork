@@ -1,6 +1,10 @@
 package neuralnerdwork.math;
 
-public class LeakyRelu implements SingleVariableFunction {
+import java.util.Random;
+
+import neuralnerdwork.backprop.Layer;
+
+public class LeakyRelu implements ActivationFunction {
 
     private final double alpha;
 
@@ -10,7 +14,7 @@ public class LeakyRelu implements SingleVariableFunction {
 
     @Override
     public String getFunctionName() {
-        return "relu";
+        return "leaky relu";
     }
 
     @Override
@@ -46,5 +50,13 @@ public class LeakyRelu implements SingleVariableFunction {
         public SingleVariableFunction differentiateByInput() {
             throw new UnsupportedOperationException("Not yet implemented!");
         }
+    }
+
+    @Override
+    public double generateInitialWeight(Random r, Layer<?> layer) {
+        double bound = Math.sqrt(2) * Math.sqrt(6.0 / (layer.inputLength() + layer.outputLength()));
+        double nextDouble = r.nextDouble();
+        double weight = (nextDouble - 0.5) * (bound * 2);
+        return weight;
     }
 }

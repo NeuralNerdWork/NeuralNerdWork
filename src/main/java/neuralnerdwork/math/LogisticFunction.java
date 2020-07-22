@@ -1,6 +1,10 @@
 package neuralnerdwork.math;
 
-public class LogisticFunction implements SingleVariableFunction {
+import java.util.Random;
+
+import neuralnerdwork.backprop.Layer;
+
+public class LogisticFunction implements ActivationFunction {
     @Override
     public String getFunctionName() {
         return "logistic";
@@ -39,5 +43,11 @@ public class LogisticFunction implements SingleVariableFunction {
                 throw new UnsupportedOperationException("Not implemented");
             }
         };
+    }
+
+    @Override
+    public double generateInitialWeight(Random r, Layer<?> layer) {
+        double bound = Math.sqrt(6.0 / (layer.inputLength() + layer.outputLength()));
+        return (r.nextDouble() - 0.5) * (bound * 2);
     }
 }

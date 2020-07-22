@@ -17,11 +17,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static neuralnerdwork.NeuralNetwork.fullyConnectedClassificationNetwork;
+import static neuralnerdwork.weight.VariableWeightInitializer.smartRandomWeightInitializer;
 import static neuralnerdwork.weight.VariableWeightInitializer.dumbRandomWeightInitializer;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SimpleTrainingTest {
-// TODO - Weight initialization based on layer input size
 // TODO - Parallelize error for training points
 // TODO - Drop out
 // TODO - L2 Regularization
@@ -41,7 +41,7 @@ public class SimpleTrainingTest {
     void trainingTwoLayerNetworkShouldConverge() {
 
         Random r = new Random(11);
-        NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(fullyConnectedClassificationNetwork(dumbRandomWeightInitializer(r), 2, 1), new SimpleBatchGradientDescent(0.1), (iterationCount, network) -> iterationCount < 5000);
+        NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(fullyConnectedClassificationNetwork(smartRandomWeightInitializer(r), 2, 1), new SimpleBatchGradientDescent(0.1), (iterationCount, network) -> iterationCount < 5000);
 
         NeuralNetwork network = trainer.train(Arrays.asList(
             new TrainingSample(new ConstantVector(new double[]{0.0, 0.1}), new ConstantVector(new double[]{0.0})),
@@ -82,7 +82,6 @@ public class SimpleTrainingTest {
                 new Rectangle2D.Double(-1.0, -1.0, 2.0, 2.0),
                 (sample, prediction) -> {
                     boolean predictedInside = prediction.get(0) >= 0.5;
-                    //System.out.printf("(%1.3f,%1.3f) inside? %s\n", sample.input().get(0), sample.input().get(1), predictedInside);
                     if (predictedInside) {
                         return Color.GREEN;
                     } else {
@@ -94,7 +93,7 @@ public class SimpleTrainingTest {
         visualizer.addShape(new Line2D.Double(-2.0, 0.0, 2.0, 0.0));
         visualizer.addShape(new Line2D.Double(0.0, -2.0, 0.0, 2.0));
 
-        NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(fullyConnectedClassificationNetwork(dumbRandomWeightInitializer(r), 2, 10, 10, 1), new StochasticGradientDescent(
+        NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(fullyConnectedClassificationNetwork(smartRandomWeightInitializer(r), 2, 10, 10, 1), new StochasticGradientDescent(
                                 200,
                                 () -> new RmsPropUpdate(0.001, 0.9, 1e-8)
                         ), (iterationCount, network) -> {
@@ -105,7 +104,7 @@ public class SimpleTrainingTest {
                             .map(b -> new FailurePercent(b ? 0 : 1,  1))
                             .reduce(new FailurePercent(0, 0), FailurePercent::merge);
 
-                            System.out.println("Percentage of verification set passing: " + fails.asPercent());
+                            System.out.println("Percentage of verification set failing: " + fails.asPercent());
 
                             return fails.asPercent() > 0.05;
                         }, visualizer);
@@ -132,7 +131,7 @@ public class SimpleTrainingTest {
     @Test
     void trainingForPointsInsideARingShouldConverge() throws Exception {
 
-        Random r = new Random(11); 
+        Random r = new Random(12); 
         var trainingSet = Stream.iterate(1, i -> i < 1000, i -> i+1)
             .map(i -> {
                 double x = r.nextGaussian() * 0.5;
@@ -160,9 +159,9 @@ public class SimpleTrainingTest {
             new Rectangle2D.Double(-2.0, -2.0, 4.0, 4.0),
             (sample, prediction) -> {
                 // System.out.printf("(%1.3f,%1.3f) inside? %1.3f\n", sample.input().get(0), sample.input().get(1), prediction.get(0));
-                var greenAmt = (int) Math.round((prediction.get(0)-0.5)* 2.0 * 255);
-                var redAmt = (int) Math.round((0.5 - prediction.get(0))* 2.0 * 255);
-
+                var greenAmt = (int) Math.floor((prediction.get(0)-0.5) * 2.0 * 127) + 127;
+                var redAmt = (int) Math.floor((0.5 - prediction.get(0)) * 2.0 * 127) + 127;
+                
                 if(prediction.get(0) >= 0.5) {
                     return new Color(0, greenAmt, 0);
                 } else {
@@ -175,7 +174,7 @@ public class SimpleTrainingTest {
         visualizer.addShape(new Line2D.Double(-2.0, 0.0, 2.0, 0.0));
         visualizer.addShape(new Line2D.Double(0.0, -2.0, 0.0, 2.0));
 
-        NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(fullyConnectedClassificationNetwork(dumbRandomWeightInitializer(r), 2, 20, 20, 1), new StochasticGradientDescent(
+        NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(fullyConnectedClassificationNetwork(smartRandomWeightInitializer(r), 2, 20, 20, 1), new StochasticGradientDescent(
                                 100,
                                 () -> new RmsPropUpdate(0.001, 0.9, 1e-8)
                         ), (iterationCount, network) -> {
@@ -186,7 +185,7 @@ public class SimpleTrainingTest {
                             .map(b -> new FailurePercent(b ? 0 : 1,  1))
                             .reduce(new FailurePercent(0, 0), FailurePercent::merge);
 
-                            System.out.println("Percentage of verification set passing: " + fails.asPercent());
+                            System.out.println("Percentage of verification set failing: " + fails.asPercent());
 
                             return fails.asPercent() > 0.05;
                         }, visualizer);

@@ -5,7 +5,7 @@ import neuralnerdwork.math.*;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
-public record FullyConnectedLayer(ParameterMatrix weights, Optional<ParameterVector>bias, SingleVariableFunction activation) implements Layer<FullyConnectedLayer.PerceptronCache> {
+public record FullyConnectedLayer(ParameterMatrix weights, Optional<ParameterVector>bias, ActivationFunction activation) implements Layer<FullyConnectedLayer.PerceptronCache> {
     public record PerceptronCache(Vector activation, Vector activationInputs, Matrix activationDerivativeWithRespectToWeightedSum) {
     }
 
