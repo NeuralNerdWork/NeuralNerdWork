@@ -1,9 +1,9 @@
 package neuralnerdwork.backprop;
 
 import neuralnerdwork.math.ActivationFunction;
-import neuralnerdwork.math.Matrix;
 import neuralnerdwork.math.Model;
 import neuralnerdwork.math.Vector;
+import org.ejml.data.DMatrix;
 
 import java.util.stream.IntStream;
 
@@ -54,7 +54,7 @@ public interface Layer<C> {
      * @param bindings Bindings of parameters in entire network. Never null.
      * @return The derivative of this layer with respect to the input of this layer.
      */
-    Result<Matrix, C> derivativeWithRespectToLayerInput(Vector layerInput, C cache, Model.ParameterBindings bindings);
+    Result<DMatrix, C> derivativeWithRespectToLayerInput(Vector layerInput, C cache, Model.ParameterBindings bindings);
 
     /**
      * Used for back-propogating derivative to lower layers.

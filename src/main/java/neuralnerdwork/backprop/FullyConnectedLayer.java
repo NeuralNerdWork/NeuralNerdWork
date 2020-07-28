@@ -1,12 +1,15 @@
 package neuralnerdwork.backprop;
 
 import neuralnerdwork.math.*;
+import org.ejml.data.DMatrix;
 
 import java.util.Optional;
 import java.util.stream.IntStream;
 
-public record FullyConnectedLayer(ParameterMatrix weights, Optional<ParameterVector>bias, ActivationFunction activation) implements Layer<FullyConnectedLayer.PerceptronCache> {
-    public record PerceptronCache(Vector activation, Vector activationInputs, Matrix activationDerivativeWithRespectToWeightedSum) {
+import static neuralnerdwork.math.VectorSum.sum;
+
+public record FullyConnectedLayer(ParameterMatrix weights, Optional<ParameterVector> bias, ActivationFunction activation) implements Layer<FullyConnectedLayer.PerceptronCache> {
+    public record PerceptronCache(Vector activation, Vector activationInputs, DMatrix activationDerivativeWithRespectToWeightedSum) {
     }
 
     @Override
@@ -53,11 +56,11 @@ public record FullyConnectedLayer(ParameterMatrix weights, Optional<ParameterVec
 
         Vector activationInputs = getActivationInputs(layerInput, cache, bindings);
 
-        Matrix activationDerivativeWithRespectWeightedSum =
+        DMatrix activationDerivativeWithRespectWeightedSum =
                 getActivationDerivativeWithRespectToWeightedSum(cache, bindings, activationDerivative, activationInputs);
 
         Vector output = new MatrixVectorProduct(
-                activationDerivativeWithRespectWeightedSum,
+                new DMatrixExpression(activationDerivativeWithRespectWeightedSum),
                 weightedSumDerivative
         ).evaluate(bindings);
 
@@ -70,13 +73,13 @@ public record FullyConnectedLayer(ParameterMatrix weights, Optional<ParameterVec
                         calculateWeightedSums(layerInput, bindings);
     }
 
-    private Matrix getActivationDerivativeWithRespectToWeightedSum(PerceptronCache cache, Model.ParameterBindings bindings, SingleVariableFunction activationDerivative, Vector activationInputs) {
+    private DMatrix getActivationDerivativeWithRespectToWeightedSum(PerceptronCache cache, Model.ParameterBindings bindings, SingleVariableFunction activationDerivative, Vector activationInputs) {
         return (cache.activationDerivativeWithRespectToWeightedSum() != null) ?
                 cache.activationDerivativeWithRespectToWeightedSum() :
                 calculateActivationDerivativeWithRespectToWeightedSum(bindings, activationDerivative, activationInputs);
     }
 
-    private Matrix calculateActivationDerivativeWithRespectToWeightedSum(Model.ParameterBindings bindings, SingleVariableFunction activationDerivative, Vector activationInputs) {
+    private DMatrix calculateActivationDerivativeWithRespectToWeightedSum(Model.ParameterBindings bindings, SingleVariableFunction activationDerivative, Vector activationInputs) {
         /*
          If you have vectors x and y, then
            x dot y == D(x) * y
@@ -97,15 +100,15 @@ public record FullyConnectedLayer(ParameterMatrix weights, Optional<ParameterVec
     }
 
     @Override
-    public Result<Matrix, PerceptronCache> derivativeWithRespectToLayerInput(Vector layerInput, PerceptronCache cache, Model.ParameterBindings bindings) {
+    public Result<DMatrix, PerceptronCache> derivativeWithRespectToLayerInput(Vector layerInput, PerceptronCache cache, Model.ParameterBindings bindings) {
         SingleVariableFunction activationDerivative = activation.differentiateByInput();
 
         Vector activationInputs = getActivationInputs(layerInput, cache, bindings);
-        Matrix activationDerivativeWithRespectToWeightedSum =
+        DMatrix activationDerivativeWithRespectToWeightedSum =
                 getActivationDerivativeWithRespectToWeightedSum(cache, bindings, activationDerivative, activationInputs);
 
-        Matrix output = new MatrixProduct(
-                activationDerivativeWithRespectToWeightedSum,
+        DMatrix output = new MatrixProduct(
+                new DMatrixExpression(activationDerivativeWithRespectToWeightedSum),
                 weights
         ).evaluate(bindings);
 
@@ -126,13 +129,13 @@ public record FullyConnectedLayer(ParameterMatrix weights, Optional<ParameterVec
 
     private Vector calculateWeightedSums(Vector layerInput, Model.ParameterBindings bindings) {
         return bias.map(b ->
-                         (VectorExpression) new VectorSum(
-                                 new MatrixVectorProduct(
-                                         weights,
-                                         layerInput
-                                 ),
-                                 b
-                         )
+                                sum(
+                                        new MatrixVectorProduct(
+                                                weights,
+                                                layerInput
+                                        ),
+                                        b
+                                )
         ).orElseGet(() ->
                             new MatrixVectorProduct(
                                     weights,

@@ -1,9 +1,9 @@
 package neuralnerdwork;
 
+import neuralnerdwork.backprop.FeedForwardNetwork;
 import neuralnerdwork.backprop.FullyConnectedLayer;
 import neuralnerdwork.backprop.Layer;
 import neuralnerdwork.math.*;
-import neuralnerdwork.backprop.FeedForwardNetwork;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -20,6 +20,11 @@ public record NeuralNetwork(FeedForwardNetwork runtimeNetwork, Model.ParameterBi
     }
 
     public static NeuralNetwork fullyConnectedClassificationNetwork(Function<Layer<?>, Double> initialWeightSupplier, int... layerSizes) {
+        var modelBuilder = new Model();
+        return fullyConnectedClassificationNetwork(initialWeightSupplier, modelBuilder, layerSizes);
+    }
+
+    public static NeuralNetwork fullyConnectedClassificationNetwork(Function<Layer<?>, Double> initialWeightSupplier, Model modelBuilder, int... layerSizes) {
         /*
           (inp)               (out)
            l0   l1   l2   l3  l4
@@ -39,11 +44,10 @@ public record NeuralNetwork(FeedForwardNetwork runtimeNetwork, Model.ParameterBi
             l1 weights: 4x6 matrix (each row is the 6 weight multipliers of l0 including the bias term)
 
         */
+        // build random-weighted network of the requested shape
         if (layerSizes.length < 2) {
             throw new IllegalArgumentException("layerSizes must be at least 2 (input+output)");
         }
-        // build random-weighted network of the requested shape
-        var modelBuilder = new Model();
         //start at first hidden layer; end at output layer (TODO: bias on output layer should be optional)
         // build weight matrices to reuse in layers
         var layers = new Layer[layerSizes.length - 1];
@@ -52,7 +56,7 @@ public record NeuralNetwork(FeedForwardNetwork runtimeNetwork, Model.ParameterBi
             // columns: input size
             // rows: output size
             ParameterMatrix layerLWeights = modelBuilder.createParameterMatrix(layerSizes[l], layerSizes[l-1]);
-            ParameterVector bias = l < layerSizes.length - 1 ? modelBuilder.createParameterVector(layerSizes[l]) : null;
+            ParameterVector bias = modelBuilder.createParameterVector(layerSizes[l]);
             if(l == layerSizes.length - 1){
                 layers[l - 1] = new FullyConnectedLayer(layerLWeights, Optional.ofNullable(bias), new LogisticFunction());
             } else {

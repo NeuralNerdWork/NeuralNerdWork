@@ -19,7 +19,7 @@ public class MomentumGradientUpdate implements WeightUpdateStrategy {
 
     @Override
     public Vector updateVector(ScalarExpression error, Model.ParameterBindings parameterBindings) {
-        final Vector rawGradient = error.computeDerivative(parameterBindings, parameterBindings.variables());
+        final Vector rawGradient = error.computeDerivative(parameterBindings);
         if (momentum == null) {
             momentum = new ConstantVector(
                     Arrays.stream(rawGradient.toArray())

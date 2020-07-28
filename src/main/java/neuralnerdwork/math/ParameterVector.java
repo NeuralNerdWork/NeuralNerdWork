@@ -1,7 +1,9 @@
 package neuralnerdwork.math;
 
-import java.util.Arrays;
+import org.ejml.data.DMatrix;
+
 import java.util.stream.IntStream;
+import java.util.stream.StreamSupport;
 
 public record ParameterVector(int variableStartIndex, int length) implements VectorExpression {
 
@@ -28,11 +30,11 @@ public record ParameterVector(int variableStartIndex, int length) implements Vec
     }
 
     @Override
-    public Matrix computeDerivative(Model.ParameterBindings bindings, int[] variables) {
+    public DMatrix computeDerivative(Model.ParameterBindings bindings) {
         return new ColumnMatrix(
-                Arrays.stream(variables)
-                      .mapToObj(variable -> computePartialDerivative(bindings, variable))
-                      .toArray(VectorExpression[]::new)
+                StreamSupport.stream(bindings.variables().spliterator(), false)
+                             .map(variable -> computePartialDerivative(bindings, variable))
+                             .toArray(VectorExpression[]::new)
         ).evaluate(bindings);
     }
 

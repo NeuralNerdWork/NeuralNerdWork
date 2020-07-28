@@ -1,5 +1,11 @@
 package neuralnerdwork.math;
 
+import org.ejml.data.DMatrix;
+import org.ejml.data.DMatrixRMaj;
+import org.ejml.data.DMatrixSparseCSC;
+import org.ejml.dense.row.CommonOps_DDRM;
+import org.ejml.sparse.csc.CommonOps_DSCC;
+
 public record ScaledMatrix(ScalarExpression scalarExpression, MatrixExpression matrixExpression) implements MatrixExpression {
     public ScaledMatrix(double value, MatrixExpression matrixExpression) {
         this(new ConstantScalar(value), matrixExpression);
@@ -21,24 +27,29 @@ public record ScaledMatrix(ScalarExpression scalarExpression, MatrixExpression m
     }
 
     @Override
-    public Matrix evaluate(Model.ParameterBindings bindings) {
-        final Matrix matrix = matrixExpression.evaluate(bindings);
+    public DMatrix evaluate(Model.ParameterBindings bindings) {
+        final DMatrix matrix = matrixExpression.evaluate(bindings);
         final double value = scalarExpression.evaluate(bindings);
-        final double[][] values = new double[matrix.rows()][matrix.cols()];
-        for (int row = 0; row < matrix.rows(); row++) {
-            for (int col = 0; col < matrix.cols(); col++) {
-                values[row][col] = value * matrix.get(row, col);
-            }
-        }
 
-        return new ConstantArrayMatrix(values);
+        if (matrix instanceof DMatrixRMaj m) {
+            CommonOps_DDRM.scale(value, m);
+
+            return m;
+        } else if (matrix instanceof DMatrixSparseCSC m) {
+            DMatrixSparseCSC retVal = m.createLike();
+            CommonOps_DSCC.scale(value, m, retVal);
+
+            return retVal;
+        } else {
+            throw new UnsupportedOperationException("Can't scale matrix type " + matrix.getClass());
+        }
     }
 
     @Override
-    public Matrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
+    public DMatrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
         return MatrixSum.sum(
                 new ScaledMatrix(scalarExpression.computePartialDerivative(bindings, variable), matrixExpression),
-                new ScaledMatrix(scalarExpression, matrixExpression.computePartialDerivative(bindings, variable))
+                new ScaledMatrix(scalarExpression, new DMatrixExpression(matrixExpression.computePartialDerivative(bindings, variable)))
         ).evaluate(bindings);
     }
 }

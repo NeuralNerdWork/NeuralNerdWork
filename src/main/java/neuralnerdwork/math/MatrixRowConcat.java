@@ -1,5 +1,8 @@
 package neuralnerdwork.math;
 
+import org.ejml.data.DMatrix;
+import org.ejml.data.DMatrixRMaj;
+
 public record MatrixRowConcat(MatrixExpression top,
                               MatrixExpression bottom) implements MatrixExpression {
     public MatrixRowConcat {
@@ -24,30 +27,30 @@ public record MatrixRowConcat(MatrixExpression top,
     }
 
     @Override
-    public Matrix evaluate(Model.ParameterBindings bindings) {
-        final Matrix leftEval = top.evaluate(bindings);
-        final Matrix rightEval = bottom.evaluate(bindings);
-        final double[][] values = new double[rows()][cols()];
+    public DMatrix evaluate(Model.ParameterBindings bindings) {
+        final DMatrix leftEval = top.evaluate(bindings);
+        final DMatrix rightEval = bottom.evaluate(bindings);
+        final DMatrixRMaj values = new DMatrixRMaj(rows(), cols());
 
-        for (int i = 0; i < leftEval.rows(); i++) {
-            for (int j = 0; j < cols(); j++) {
-                values[i][j] = leftEval.get(i, j);
+        for (int i = 0; i < leftEval.getNumRows(); i++) {
+            for (int j = 0; j < leftEval.getNumCols(); j++) {
+                values.set(i, j, leftEval.get(i, j));
             }
         }
-        for (int i = 0; i < rightEval.rows(); i++) {
-            for (int j = 0; j < cols(); j++) {
-                values[leftEval.rows()+i][j] = rightEval.get(i, j);
+        for (int i = 0; i < rightEval.getNumRows(); i++) {
+            for (int j = 0; j < rightEval.getNumCols(); j++) {
+                values.set(leftEval.getNumRows() + i, j, rightEval.get(i, j));
             }
         }
 
-        return new ConstantArrayMatrix(values);
+        return values;
     }
 
     @Override
-    public Matrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
-        final MatrixExpression top = this.top.computePartialDerivative(bindings, variable);
-        final MatrixExpression bottom = this.bottom.computePartialDerivative(bindings, variable);
+    public DMatrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
+        final DMatrix top = this.top.computePartialDerivative(bindings, variable);
+        final DMatrix bottom = this.bottom.computePartialDerivative(bindings, variable);
 
-        return new MatrixRowConcat(top, bottom).evaluate(bindings);
+        return new MatrixRowConcat(new DMatrixExpression(top), new DMatrixExpression(bottom)).evaluate(bindings);
     }
 }

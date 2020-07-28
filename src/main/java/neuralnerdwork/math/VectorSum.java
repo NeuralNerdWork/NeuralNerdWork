@@ -1,5 +1,7 @@
 package neuralnerdwork.math;
 
+import org.ejml.data.DMatrix;
+
 import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -54,9 +56,10 @@ public record VectorSum(VectorExpression... expressions) implements VectorExpres
     }
 
     @Override
-    public Matrix computeDerivative(Model.ParameterBindings bindings, int[] variables) {
+    public DMatrix computeDerivative(Model.ParameterBindings bindings) {
         return MatrixSum.sum(Arrays.stream(expressions)
-                                   .map(exp -> exp.computeDerivative(bindings, variables))
+                                   .map(exp -> exp.computeDerivative(bindings))
+                                   .map(DMatrixExpression::new)
                                    .toArray(MatrixExpression[]::new)).evaluate(bindings);
     }
 

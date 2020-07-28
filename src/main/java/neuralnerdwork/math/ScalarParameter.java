@@ -1,6 +1,6 @@
 package neuralnerdwork.math;
 
-import java.util.Arrays;
+import java.util.stream.StreamSupport;
 
 public record ScalarParameter(int variable) implements ScalarExpression {
     @Override
@@ -18,11 +18,11 @@ public record ScalarParameter(int variable) implements ScalarExpression {
     }
 
     @Override
-    public Vector computeDerivative(Model.ParameterBindings bindings, int[] variables) {
+    public Vector computeDerivative(Model.ParameterBindings bindings) {
         return new ScalarComponentsVector(
-                Arrays.stream(variables)
-                      .mapToObj(variable -> new ConstantScalar(computePartialDerivative(bindings, variable)))
-                      .toArray(ScalarExpression[]::new)
+                StreamSupport.stream(bindings.variables().spliterator(), false)
+                             .map(variable -> new ConstantScalar(computePartialDerivative(bindings, variable)))
+                             .toArray(ScalarExpression[]::new)
         ).evaluate(bindings);
     }
 

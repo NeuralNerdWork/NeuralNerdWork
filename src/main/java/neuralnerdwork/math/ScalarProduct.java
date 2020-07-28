@@ -43,9 +43,9 @@ public record ScalarProduct(ScalarExpression left,
     }
 
     @Override
-    public Vector computeDerivative(Model.ParameterBindings bindings, int[] variables) {
-        final VectorExpression leftDerivative = left.computeDerivative(bindings, variables);
-        final VectorExpression rightDerivative = right.computeDerivative(bindings, variables);
+    public Vector computeDerivative(Model.ParameterBindings bindings) {
+        final VectorExpression leftDerivative = left.computeDerivative(bindings);
+        final VectorExpression rightDerivative = right.computeDerivative(bindings);
 
         // Product rule
         // (fg)' = f'g + fg'

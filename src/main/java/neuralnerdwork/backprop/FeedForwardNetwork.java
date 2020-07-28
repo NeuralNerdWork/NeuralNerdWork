@@ -1,6 +1,8 @@
 package neuralnerdwork.backprop;
 
 import neuralnerdwork.math.*;
+import org.ejml.data.DMatrix;
+import org.ejml.data.DMatrixRMaj;
 
 import java.util.Objects;
 
@@ -16,7 +18,7 @@ public record FeedForwardNetwork(Layer<?>[]layers) {
             this.layer = layer;
         }
 
-        Matrix derivativeWithRespectToLayerInput(Vector layerInput, Model.ParameterBindings bindings) {
+        DMatrix derivativeWithRespectToLayerInput(Vector layerInput, Model.ParameterBindings bindings) {
             var result = layer.derivativeWithRespectToLayerInput(layerInput, Objects.requireNonNull(cache), bindings);
             cache = result.cache();
 
@@ -73,7 +75,7 @@ public record FeedForwardNetwork(Layer<?>[]layers) {
 
 
         @Override
-        public Matrix computeDerivative(Model.ParameterBindings bindings, int[] variables) {
+        public DMatrix computeDerivative(Model.ParameterBindings bindings) {
             /*
              Algorithm Summary:
                 - (Bottom to top) Evaluate network with current parameter arguments, saving activations and weighted sums for each layer
@@ -107,7 +109,7 @@ public record FeedForwardNetwork(Layer<?>[]layers) {
 
                 The formula for deltas at each layer is recursive, based on definitions of deltas of higher layers.
              */
-            final Matrix[] deltas = new Matrix[layers.length];
+            final DMatrix[] deltas = new DMatrix[layers.length];
             // Base case: output layer
             {
                 final int layerIndex = layers.length - 1;
@@ -120,14 +122,14 @@ public record FeedForwardNetwork(Layer<?>[]layers) {
             for (int l = layers.length - 2; l > -1; l--) {
                 final StatefulLayerDelegate<?> delegate = layerDelegates[l];
                 try {
-                    final MatrixExpression previousDeltaExpression = deltas[l + 1];
+                    final DMatrix previousDeltaExpression = deltas[l + 1];
 
                     final Vector layerInput = (l == 0) ? input : layerDelegates[l - 1].getCachedEvaluation();
-                    final Matrix layerDerivative = delegate.derivativeWithRespectToLayerInput(layerInput, bindings);
+                    final DMatrix layerDerivative = delegate.derivativeWithRespectToLayerInput(layerInput, bindings);
                     deltas[l] =
                             product(
-                                    previousDeltaExpression,
-                                    layerDerivative
+                                    new DMatrixExpression(previousDeltaExpression),
+                                    new DMatrixExpression(layerDerivative)
                             ).evaluate(bindings);
                 } catch (IllegalArgumentException iae) {
                     throw new RuntimeException("Problem building deltas in layer index " + l + " of " + layers.length, iae);
@@ -138,9 +140,9 @@ public record FeedForwardNetwork(Layer<?>[]layers) {
                 We do this separately from the last step so that we can iterate in order that
                 variables were listed in `computeDerivative`.
              */
-            final double[][] partialDerivatives = new double[variables.length][];
-            for (int varIndex = 0; varIndex < variables.length; varIndex++) {
-                final int variable = variables[varIndex];
+            final double[][] partialDerivatives = new double[layers[layers.length - 1].outputLength()][bindings.size()];
+            int varIndex = 0;
+            for (int variable : bindings.variables()) {
                 final int layerIndex = findLayerIndex(variable);
                 final StatefulLayerDelegate<?> delegate = layerDelegates[layerIndex];
 
@@ -158,27 +160,27 @@ public record FeedForwardNetwork(Layer<?>[]layers) {
                     final Vector layerDerivative = delegate
                             .derivativeWithRespectLayerParameter(layerInput, variable, bindings);
                     if (layerIndex == layers.length - 1) {
-                        partialDerivatives[varIndex] = layerDerivative.toArray();
+                        for (int i = 0; i < layerDerivative.length(); i++) {
+                            partialDerivatives[i][varIndex] = layerDerivative.get(i);
+                        }
                     } else {
-                        final Matrix layerDeltas = deltas[layerIndex + 1];
-                        partialDerivatives[varIndex] =
-                                new MatrixVectorProduct(
-                                        layerDeltas,
-                                        layerDerivative
-                                ).evaluate(bindings)
-                                 .toArray();
+                        final DMatrix layerDeltas = deltas[layerIndex + 1];
+                        Vector derivativeProduct = new MatrixVectorProduct(
+                                new DMatrixExpression(layerDeltas),
+                                layerDerivative
+                        ).evaluate(bindings);
+                        for (int i = 0; i < derivativeProduct.length(); i++) {
+                            partialDerivatives[i][varIndex] = derivativeProduct.get(i);
+                        }
                     }
+                    varIndex++;
                 } catch (RuntimeException e) {
                     throw new RuntimeException(String.format("Problem in (varIndex/totalVars, layerIndex/totalLayers) = (%d/%d, %d/%d)",
-                                                             varIndex, variables.length, layerIndex, layers.length), e);
+                                                             varIndex, bindings.size(), layerIndex, layers.length), e);
                 }
             }
 
-            /*
-             * Because we represent matrices as row-major 2d-arrays, it is more work to assign an entire column
-             * at once than to assign an entire row. For convenience, we build up the transpose of the result.
-             */
-            return new Transpose(new ConstantArrayMatrix(partialDerivatives));
+            return new DMatrixRMaj(partialDerivatives);
         }
 
         @Override

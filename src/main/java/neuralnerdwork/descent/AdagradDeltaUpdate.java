@@ -22,11 +22,10 @@ public class AdagradDeltaUpdate implements WeightUpdateStrategy {
 
     @Override
     public Vector updateVector(ScalarExpression error, Model.ParameterBindings parameterBindings) {
-        final int[] variables = parameterBindings.variables();
-        final Vector rawGradient = error.computeDerivative(parameterBindings, variables);
+        final Vector rawGradient = error.computeDerivative(parameterBindings);
         if (gradientAverage == null) {
-            gradientAverage = new double[variables.length];
-            updateAverage = new double[variables.length];
+            gradientAverage = new double[parameterBindings.size()];
+            updateAverage = new double[parameterBindings.size()];
         }
 
         final double[] updateVectorValues = new double[rawGradient.length()];

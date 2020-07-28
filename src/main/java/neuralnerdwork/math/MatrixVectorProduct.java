@@ -1,6 +1,8 @@
 package neuralnerdwork.math;
 
-import java.util.Arrays;
+import org.ejml.data.DMatrix;
+
+import java.util.stream.StreamSupport;
 
 import static java.lang.String.format;
 
@@ -33,22 +35,14 @@ public record MatrixVectorProduct(MatrixExpression left, VectorExpression right)
 
     @Override
     public Vector evaluate(Model.ParameterBindings bindings) {
-        final Matrix leftValue = this.left.evaluate(bindings);
+        final DMatrix leftValue = this.left.evaluate(bindings);
         final Vector rightValue = this.right.evaluate(bindings);
 
-        final double[] values = new double[leftValue.rows()];
-        if (leftValue instanceof SparseConstantMatrix scm) {
-            for (var e : scm.entries()) {
-                final SparseConstantMatrix.Index index = e.getKey();
-                final double value = e.getValue();
-                values[index.row()] += rightValue.get(index.col()) * value;
-            }
-        } else {
-            for (int col = 0; col < leftValue.cols(); col++) {
-                if (rightValue.get(col) != 0.0) {
-                    for (int row = 0; row < leftValue.rows(); row++) {
-                        values[row] += leftValue.get(row, col) * rightValue.get(col);
-                    }
+        final double[] values = new double[leftValue.getNumRows()];
+        for (int col = 0; col < leftValue.getNumCols(); col++) {
+            if (rightValue.get(col) != 0.0) {
+                for (int row = 0; row < leftValue.getNumRows(); row++) {
+                    values[row] += leftValue.get(row, col) * rightValue.get(col);
                 }
             }
         }
@@ -57,15 +51,15 @@ public record MatrixVectorProduct(MatrixExpression left, VectorExpression right)
     }
 
     @Override
-    public Matrix computeDerivative(Model.ParameterBindings bindings, int[] variables) {
+    public DMatrix computeDerivative(Model.ParameterBindings bindings) {
         final VectorExpression[] leftColumns =
-                Arrays.stream(variables)
-                      .mapToObj(variable -> left.computePartialDerivative(bindings, variable))
-                      .map(derivativeMatrix -> MatrixVectorProduct.product(derivativeMatrix, right))
-                      .toArray(VectorExpression[]::new);
+                StreamSupport.stream(bindings.variables().spliterator(), false)
+                             .map(variable -> left.computePartialDerivative(bindings, variable))
+                             .map(derivativeMatrix -> MatrixVectorProduct.product(new DMatrixExpression(derivativeMatrix), right))
+                             .toArray(VectorExpression[]::new);
 
-        final Matrix rightDerivative = right.computeDerivative(bindings, variables);
-        final MatrixExpression rightOfSum = MatrixProduct.product(left, rightDerivative);
+        final DMatrix rightDerivative = right.computeDerivative(bindings);
+        final MatrixExpression rightOfSum = MatrixProduct.product(left, new DMatrixExpression(rightDerivative));
         final ColumnMatrix columnMatrix = new ColumnMatrix(leftColumns);
 
         return MatrixSum.sum(
@@ -79,10 +73,10 @@ public record MatrixVectorProduct(MatrixExpression left, VectorExpression right)
         // Uses product rule
         // (Fg)' = F'g + Fg'
 
-        final MatrixExpression leftDerivative = left.computePartialDerivative(bindings, variable);
+        final DMatrix leftDerivative = left.computePartialDerivative(bindings, variable);
         if (right instanceof ConstantVector) {
             return MatrixVectorProduct.product(
-                    leftDerivative,
+                    new DMatrixExpression(leftDerivative),
                     right
             ).evaluate(bindings);
         } else {
@@ -90,7 +84,7 @@ public record MatrixVectorProduct(MatrixExpression left, VectorExpression right)
 
             return VectorSum.sum(
                     MatrixVectorProduct.product(
-                            leftDerivative,
+                            new DMatrixExpression(leftDerivative),
                             right
                     ),
                     MatrixVectorProduct.product(

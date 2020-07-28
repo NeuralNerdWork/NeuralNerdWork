@@ -1,5 +1,7 @@
 package neuralnerdwork.math;
 
+import org.ejml.data.DMatrix;
+
 public record VectorizedSingleVariableFunction(SingleVariableFunction function, VectorExpression vectorExpression) implements VectorExpression {
 
     @Override
@@ -24,7 +26,7 @@ public record VectorizedSingleVariableFunction(SingleVariableFunction function, 
     }
 
     @Override
-    public Matrix computeDerivative(Model.ParameterBindings bindings, int[] variables) {
+    public DMatrix computeDerivative(Model.ParameterBindings bindings) {
         final MatrixExpression outerDerivative = new DiagonalizedVector(
                 new VectorizedSingleVariableFunction(
                         function.differentiateByInput(),
@@ -32,7 +34,7 @@ public record VectorizedSingleVariableFunction(SingleVariableFunction function, 
                 )
         );
 
-        return MatrixProduct.product(outerDerivative, vectorExpression.computeDerivative(bindings, variables))
+        return MatrixProduct.product(outerDerivative, new DMatrixExpression(vectorExpression.computeDerivative(bindings)))
                             .evaluate(bindings);
     }
 

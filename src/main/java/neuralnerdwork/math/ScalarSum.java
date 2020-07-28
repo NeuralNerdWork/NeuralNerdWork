@@ -32,10 +32,10 @@ public record ScalarSum(ScalarExpression... expressions) implements ScalarExpres
     }
 
     @Override
-    public Vector computeDerivative(Model.ParameterBindings bindings, int[] variables) {
+    public Vector computeDerivative(Model.ParameterBindings bindings) {
         return VectorSum.sum(
                 Arrays.stream(expressions)
-                      .map(exp -> exp.computeDerivative(bindings, variables))
+                      .map(exp -> exp.computeDerivative(bindings))
                       .toArray(VectorExpression[]::new)
         ).evaluate(bindings);
     }

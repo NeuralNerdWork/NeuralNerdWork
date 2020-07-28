@@ -36,8 +36,8 @@ public interface SingleVariableFunction {
         }
 
         @Override
-        public Vector computeDerivative(Model.ParameterBindings bindings, int[] variables) {
-            VectorExpression innerDerivative = inputExpression.computeDerivative(bindings, variables);
+        public Vector computeDerivative(Model.ParameterBindings bindings) {
+            VectorExpression innerDerivative = inputExpression.computeDerivative(bindings);
             SingleVariableFunction outerDerivative = function.differentiateByInput();
 
             return new ScaledVector(

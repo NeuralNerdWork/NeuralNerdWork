@@ -1,6 +1,9 @@
 package neuralnerdwork.math;
 
-import java.util.Map;
+import org.ejml.data.DMatrix;
+import org.ejml.data.DMatrixRMaj;
+import org.ejml.data.DMatrixSparseCSC;
+
 import java.util.stream.IntStream;
 
 public record ParameterMatrix(int variableStartIndex, int rows, int cols) implements MatrixExpression {
@@ -10,28 +13,30 @@ public record ParameterMatrix(int variableStartIndex, int rows, int cols) implem
     }
 
     @Override
-    public Matrix evaluate(Model.ParameterBindings bindings) {
+    public DMatrix evaluate(Model.ParameterBindings bindings) {
         final int length = this.rows * this.cols;
-        final double[][] values = new double[this.rows][this.cols];
+        final DMatrixRMaj values = new DMatrixRMaj(this.rows, this.cols);
         for (int i = 0; i < length; i++) {
             final int row = i / this.cols;
             final int col = i % this.cols;
 
-            values[row][col] = bindings.get(this.variableStartIndex + i);
+            values.set(row, col, bindings.get(this.variableStartIndex + i));
         }
 
-        return new ConstantArrayMatrix(values);
+        return values;
     }
 
     @Override
-    public Matrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
+    public DMatrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
         final int length = rows * cols;
         if (variable >= variableStartIndex && variable < variableStartIndex + length) {
             final int row = (variable - variableStartIndex) / cols;
             final int col = (variable - variableStartIndex) % cols;
-            return new SparseConstantMatrix(Map.of(new SparseConstantMatrix.Index(row, col), 1.0), rows, cols);
+            DMatrixSparseCSC retVal = new DMatrixSparseCSC(rows, cols, 1);
+            retVal.set(row, col, 1.0);
+            return retVal;
         }
-        return new SparseConstantMatrix(Map.of(), rows, cols);
+        return new DMatrixSparseCSC(rows, cols, 0);
     }
 
     public IntStream variables() {

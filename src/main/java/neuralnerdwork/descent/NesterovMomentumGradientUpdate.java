@@ -20,7 +20,7 @@ public class NesterovMomentumGradientUpdate implements WeightUpdateStrategy {
     @Override
     public Vector updateVector(ScalarExpression error, Model.ParameterBindings parameterBindings) {
         if (momentum == null) {
-            final Vector initialGradient = error.computeDerivative(parameterBindings, parameterBindings.variables());
+            final Vector initialGradient = error.computeDerivative(parameterBindings);
             momentum = new ConstantVector(
                     Arrays.stream(initialGradient.toArray())
                           .map(x -> -x)
@@ -29,11 +29,14 @@ public class NesterovMomentumGradientUpdate implements WeightUpdateStrategy {
         }
 
         final Model.ParameterBindings lookAheadBindings = parameterBindings.copy();
-        final int[] variables = lookAheadBindings.variables();
-        for (int i = 0; i < variables.length; i++) {
-            lookAheadBindings.put(variables[i], lookAheadBindings.get(i) + decayRate * momentum.get(i));
+        {
+            int i = 0;
+            for (int variable : parameterBindings.variables()) {
+                lookAheadBindings.put(variable, lookAheadBindings.get(i) + decayRate * momentum.get(i));
+                i++;
+            }
         }
-        final Vector rawGradient = error.computeDerivative(parameterBindings, variables);
+        final Vector rawGradient = error.computeDerivative(parameterBindings);
 
         final double[] updatedMomentumComponents = new double[momentum.length()];
         for (int i = 0; i < updatedMomentumComponents.length; i++) {

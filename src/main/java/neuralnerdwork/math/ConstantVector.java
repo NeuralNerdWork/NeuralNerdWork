@@ -1,7 +1,9 @@
 package neuralnerdwork.math;
 
+import org.ejml.data.DMatrix;
+import org.ejml.data.DMatrixSparseCSC;
+
 import java.util.Arrays;
-import java.util.Map;
 
 public record ConstantVector(double[] values) implements Vector {
 
@@ -32,8 +34,13 @@ public record ConstantVector(double[] values) implements Vector {
     }
 
     @Override
-    public Matrix computeDerivative(Model.ParameterBindings bindings, int[] variables) {
-        return new SparseConstantMatrix(Map.of(), values.length, variables.length);
+    public DMatrix computeDerivative(Model.ParameterBindings bindings) {
+        return new DMatrixSparseCSC(values.length, bindings.size(), 0);
+    }
+
+    @Override
+    public double[] toArray() {
+        return values;
     }
 
     @Override

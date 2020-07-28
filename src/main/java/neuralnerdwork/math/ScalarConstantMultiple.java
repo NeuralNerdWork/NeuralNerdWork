@@ -14,10 +14,10 @@ public record ScalarConstantMultiple(double constant, ScalarExpression expressio
     }
 
     @Override
-    public Vector computeDerivative(Model.ParameterBindings bindings, int[] variables) {
+    public Vector computeDerivative(Model.ParameterBindings bindings) {
         return new ScaledVector(
                 constant,
-                expression.computeDerivative(bindings, variables)
+                expression.computeDerivative(bindings)
         ).evaluate(bindings);
     }
 

@@ -22,8 +22,7 @@ public interface ScalarExpression {
 
     /**
      * @param bindings A mapping of variable indices to values, used for substitution in this expression.
-     * @param variables An ordered list of variables by which to differentiate this expression.
      * @return The gradient vector for this scalar expression, with respect to the given variables (and order) at the given bindings.
      */
-    Vector computeDerivative(Model.ParameterBindings bindings, int[] variables);
+    Vector computeDerivative(Model.ParameterBindings bindings);
 }

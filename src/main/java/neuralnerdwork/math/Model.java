@@ -1,6 +1,7 @@
 package neuralnerdwork.math;
 
 import java.util.Arrays;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class Model {
@@ -51,11 +52,15 @@ public class Model {
             this.values = values;
         }
 
-        public int[] variables() {
-            return Stream.iterate(start, n -> n + 1)
-                         .limit(values.length)
-                         .mapToInt(n -> n)
-                         .toArray();
+        public int size() {
+            return values.length;
+        }
+
+        public Iterable<Integer> variables() {
+            return () -> Stream.iterate(start, n -> n + 1)
+                               .limit(values.length)
+                               .mapToInt(n -> n)
+                               .iterator();
         }
 
         public double get(int key) {

@@ -1,5 +1,8 @@
 package neuralnerdwork.math;
 
+import org.ejml.data.DMatrix;
+import org.ejml.data.DMatrixRMaj;
+
 public record MaxPoolVector(VectorExpression input,
                             int inputWidth,
                             int inputHeight,
@@ -92,14 +95,14 @@ public record MaxPoolVector(VectorExpression input,
     }
 
     @Override
-    public Matrix computeDerivative(Model.ParameterBindings bindings, int[] variables) {
+    public DMatrix computeDerivative(Model.ParameterBindings bindings) {
         Vector source = input.evaluate(bindings);
-        Matrix sourceDerivative = input.computeDerivative(bindings, variables);
+        DMatrix sourceDerivative = input.computeDerivative(bindings);
 
         int targetWidth = this.inputWidth / this.filterWidth;
         int targetHeight = this.inputHeight / this.filterHeight;
         int length = targetWidth * targetHeight;
-        double[][] derivative = new double[length][variables.length];
+        DMatrixRMaj derivative = new DMatrixRMaj(length, bindings.size());
 
         for (int targetRow = 0; targetRow < targetHeight; targetRow++) {
             for (int targetCol = 0; targetCol < targetWidth; targetCol++) {
@@ -108,8 +111,8 @@ public record MaxPoolVector(VectorExpression input,
                 int targetIndex = targetRow * targetWidth + targetCol;
                 double curMax = source.get(sourceRow * inputWidth + sourceCol);
                 int sourceIndex = sourceRow * inputWidth + sourceCol;
-                for (int varIndex = 0; varIndex < variables.length; varIndex++) {
-                    derivative[targetIndex][varIndex] = sourceDerivative.get(sourceIndex, varIndex);
+                for (int varIndex = 0; varIndex < bindings.size(); varIndex++) {
+                    derivative.set(targetIndex, varIndex, sourceDerivative.get(sourceIndex, varIndex));
                 }
                 for (int rowOffset = 0; rowOffset < filterHeight; rowOffset++) {
                     for (int colOffset = 0; colOffset < filterWidth; colOffset++) {
@@ -117,8 +120,8 @@ public record MaxPoolVector(VectorExpression input,
                         double candidate = source.get(sourceIndex);
                         if (candidate > curMax) {
                             curMax = candidate;
-                            for (int varIndex = 0; varIndex < variables.length; varIndex++) {
-                                derivative[targetIndex][varIndex] = sourceDerivative.get(sourceIndex, varIndex);
+                            for (int varIndex = 0; varIndex < bindings.size(); varIndex++) {
+                                derivative.set(targetIndex, varIndex, sourceDerivative.get(sourceIndex, varIndex));
                             }
                         }
                     }
@@ -126,7 +129,7 @@ public record MaxPoolVector(VectorExpression input,
             }
         }
 
-        return new ConstantArrayMatrix(derivative);
+        return derivative;
     }
 
     @Override

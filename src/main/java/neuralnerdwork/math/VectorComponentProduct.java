@@ -1,5 +1,7 @@
 package neuralnerdwork.math;
 
+import org.ejml.data.DMatrix;
+
 public record VectorComponentProduct(VectorExpression left,
                                      VectorExpression right) implements VectorExpression {
     public static VectorExpression product(VectorExpression left,
@@ -58,18 +60,18 @@ public record VectorComponentProduct(VectorExpression left,
     }
 
     @Override
-    public Matrix computeDerivative(Model.ParameterBindings bindings, int[] variables) {
-        final MatrixExpression leftDerivative = left.computeDerivative(bindings, variables);
-        final MatrixExpression rightDerivative = right.computeDerivative(bindings, variables);
+    public DMatrix computeDerivative(Model.ParameterBindings bindings) {
+        final DMatrix leftDerivative = left.computeDerivative(bindings);
+        final DMatrix rightDerivative = right.computeDerivative(bindings);
 
         return MatrixSum.sum(
                 MatrixProduct.product(
                         new DiagonalizedVector(right),
-                        leftDerivative
+                        new DMatrixExpression(leftDerivative)
                 ),
                 MatrixProduct.product(
                         new DiagonalizedVector(left),
-                        rightDerivative
+                        new DMatrixExpression(rightDerivative)
                 )
         ).evaluate(bindings);
     }

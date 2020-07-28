@@ -12,8 +12,8 @@ public record ConstantScalar(double value) implements ScalarExpression {
     }
 
     @Override
-    public Vector computeDerivative(Model.ParameterBindings bindings, int[] variables) {
-        return new ConstantVector(new double[variables.length]);
+    public Vector computeDerivative(Model.ParameterBindings bindings) {
+        return new ConstantVector(new double[bindings.size()]);
     }
 
     @Override

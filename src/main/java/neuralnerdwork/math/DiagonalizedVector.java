@@ -1,7 +1,9 @@
 package neuralnerdwork.math;
 
-import java.util.HashMap;
-import java.util.Map;
+import org.ejml.data.DMatrix;
+import org.ejml.data.DMatrixSparseCSC;
+import org.ejml.data.DMatrixSparseTriplet;
+import org.ejml.ops.ConvertDMatrixStruct;
 
 public record DiagonalizedVector(VectorExpression vector) implements MatrixExpression {
     @Override
@@ -20,18 +22,18 @@ public record DiagonalizedVector(VectorExpression vector) implements MatrixExpre
     }
 
     @Override
-    public Matrix evaluate(Model.ParameterBindings bindings) {
+    public DMatrix evaluate(Model.ParameterBindings bindings) {
         final Vector vectorValue = vector.evaluate(bindings);
-        final Map<SparseConstantMatrix.Index, Double> values = new HashMap<>();
+        DMatrixSparseTriplet sparseBuilder = new DMatrixSparseTriplet(rows(), cols(), vector.length());
         for (int i = 0; i < vector.length(); i++) {
-            values.put(new SparseConstantMatrix.Index(i, i), vectorValue.get(i));
+            sparseBuilder.addItem(i, i, vectorValue.get(i));
         }
 
-        return new SparseConstantMatrix(values, rows(), cols());
+        return ConvertDMatrixStruct.convert(sparseBuilder, (DMatrixSparseCSC) null);
     }
 
     @Override
-    public Matrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
+    public DMatrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
         return new DiagonalizedVector(vector.computePartialDerivative(bindings, variable)).evaluate(bindings);
     }
 }

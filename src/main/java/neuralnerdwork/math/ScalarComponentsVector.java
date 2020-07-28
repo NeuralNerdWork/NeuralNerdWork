@@ -1,5 +1,7 @@
 package neuralnerdwork.math;
 
+import org.ejml.data.DMatrix;
+
 import java.util.Arrays;
 
 public record ScalarComponentsVector(ScalarExpression[] components) implements VectorExpression {
@@ -39,11 +41,11 @@ public record ScalarComponentsVector(ScalarExpression[] components) implements V
     }
 
     @Override
-    public Matrix computeDerivative(Model.ParameterBindings bindings, int[] variables) {
+    public DMatrix computeDerivative(Model.ParameterBindings bindings) {
         return new TransposeExpression(
                 new ColumnMatrix(
                         Arrays.stream(components)
-                              .map(f -> f.computeDerivative(bindings, variables))
+                              .map(f -> f.computeDerivative(bindings))
                               .toArray(VectorExpression[]::new)
                 )
         ).evaluate(bindings);

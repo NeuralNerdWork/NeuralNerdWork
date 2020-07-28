@@ -27,24 +27,6 @@ public class LinearRegressionTest {
         rand = new Random(11);
     }
 
-    @Test
-    void testBasicLinearRegressionTraining() {
-        var r = new Random(1337);
-
-        NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(fullyConnectedClassificationNetwork(smartRandomWeightInitializer(r), 2, 1), new SimpleBatchGradientDescent(0.1), (iterationCount, network) -> iterationCount < 5000);
-
-        NeuralNetwork network = trainer.train(Arrays.asList(
-                new TrainingSample(new ConstantVector(new double[]{0.0, 0.1}), new ConstantVector(new double[]{0.0})),
-                new TrainingSample(new ConstantVector(new double[]{0.0, 1.3}), new ConstantVector(new double[]{1.0}))
-        ));
-
-
-        assertArrayEquals(new double[]{0.0}, network.apply(new double[]{0.0, 0.1}), 0.2);
-        assertArrayEquals(new double[]{0.0}, network.apply(new double[]{0.0, 0.2}), 0.2);
-        assertArrayEquals(new double[]{1.0}, network.apply(new double[]{0.0, 1.3}), 0.2);
-        assertArrayEquals(new double[]{1.0}, network.apply(new double[]{0.0, 1.2}), 0.2);
-    }
-
     public static Stream<GradientDescentStrategy> gradientDescentStrategies() {
         return Stream.of(
                 new SimpleBatchGradientDescent(1.0),

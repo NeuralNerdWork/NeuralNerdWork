@@ -1,5 +1,8 @@
 package neuralnerdwork.math;
 
+import org.ejml.data.DMatrix;
+import org.ejml.data.DMatrixRMaj;
+
 import java.util.Arrays;
 
 public record ColumnMatrix(VectorExpression[] columns) implements MatrixExpression {
@@ -37,20 +40,20 @@ public record ColumnMatrix(VectorExpression[] columns) implements MatrixExpressi
     }
 
     @Override
-    public Matrix evaluate(Model.ParameterBindings bindings) {
-        final double[][] values = new double[rows()][cols()];
+    public DMatrix evaluate(Model.ParameterBindings bindings) {
+        final DMatrixRMaj values = new DMatrixRMaj(rows(), cols());
         for (int col = 0; col < cols(); col++) {
             final Vector vector = columns[col].evaluate(bindings);
             for (int row = 0; row < rows(); row++) {
-                values[row][col] = vector.get(row);
+                values.set(row, col, vector.get(row));
             }
         }
 
-        return new ConstantArrayMatrix(values);
+        return values;
     }
 
     @Override
-    public Matrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
+    public DMatrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
         throw new UnsupportedOperationException("Not yet implemented!");
     }
 

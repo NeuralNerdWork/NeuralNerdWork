@@ -1,5 +1,8 @@
 package neuralnerdwork.math;
 
+import org.ejml.data.DMatrix;
+import org.ejml.data.DMatrixSparseCSC;
+
 public interface Vector extends VectorExpression {
     double get(int index);
     int length();
@@ -21,12 +24,20 @@ public interface Vector extends VectorExpression {
         return Math.sqrt(sum);
     }
 
-    default double[] toArray() {
-        final double[] retVal = new double[length()];
-        for (int i = 0; i < length(); i++) {
-            retVal[i] = get(i);
-        }
+    double[] toArray();
 
-        return retVal;
+    @Override
+    default Vector evaluate(Model.ParameterBindings bindings) {
+        return this;
+    }
+
+    @Override
+    default Vector computePartialDerivative(Model.ParameterBindings bindings, int variable) {
+        return new RepeatedScalarVector(0, length());
+    }
+
+    @Override
+    default DMatrix computeDerivative(Model.ParameterBindings bindings) {
+        return new DMatrixSparseCSC(length(), bindings.size(), 0);
     }
 }

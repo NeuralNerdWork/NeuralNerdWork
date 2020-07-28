@@ -1,5 +1,8 @@
 package neuralnerdwork.math;
 
+import org.ejml.data.DMatrix;
+import org.ejml.data.DMatrixRMaj;
+
 public record DotProduct(VectorExpression left, VectorExpression right) implements ScalarExpression {
     public static ScalarExpression product(VectorExpression left, VectorExpression right) {
         final DotProduct product = new DotProduct(left, right);
@@ -30,12 +33,22 @@ public record DotProduct(VectorExpression left, VectorExpression right) implemen
     }
 
     @Override
-    public Vector computeDerivative(Model.ParameterBindings bindings, int[] variables) {
-        final MatrixExpression leftDerivative = left.computeDerivative(bindings, variables);
-        final MatrixExpression rightDerivative = right.computeDerivative(bindings, variables);
+    public Vector computeDerivative(Model.ParameterBindings bindings) {
+        final DMatrix leftDerivative = left.computeDerivative(bindings);
+        final DMatrix rightDerivative = right.computeDerivative(bindings);
+        Vector leftValue = left.evaluate(bindings);
+        Vector rightValue = right.evaluate(bindings);
 
-        return VectorSum.sum(MatrixVectorProduct.product(new TransposeExpression(leftDerivative), right),
-                             MatrixVectorProduct.product(new TransposeExpression(rightDerivative), left)).evaluate(bindings);
+        DMatrixRMaj leftAsMatrix = new DMatrixRMaj(1, leftValue.length(), true, leftValue.toArray());
+        DMatrixRMaj rightAsMatrix = new DMatrixRMaj(1, rightValue.length(), true, rightValue.toArray());
+
+        // FIXME Use vector sum after getting rid of vectors
+        DMatrix evaluate = MatrixSum.sum(
+                new MatrixProduct(new DMatrixExpression(leftAsMatrix), new DMatrixExpression(leftDerivative)),
+                new MatrixProduct(new DMatrixExpression(rightAsMatrix), new DMatrixExpression(rightDerivative))
+        ).evaluate(bindings);
+
+        return new DMatrixRowVector(evaluate);
     }
 
     @Override

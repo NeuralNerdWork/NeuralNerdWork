@@ -7,6 +7,7 @@ import net.jqwik.api.constraints.Size;
 import neuralnerdwork.backprop.FeedForwardNetwork;
 import neuralnerdwork.backprop.FullyConnectedLayer;
 import neuralnerdwork.math.*;
+import org.ejml.data.DMatrix;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -21,17 +22,17 @@ public class GradientDescentTest {
     private static final int singleDescentStepWithGenericDerivativeShouldReduceError_parameters =
             singleDescentStepWithGenericDerivativeShouldReduceError_rows
                     * (singleDescentStepWithGenericDerivativeShouldReduceError_cols + 1)
-                    * singleDescentStepWithGenericDerivativeShouldReduceError_layers
-                    + singleDescentStepWithGenericDerivativeShouldReduceError_cols;
+                    * singleDescentStepWithGenericDerivativeShouldReduceError_layers;
     @Property(tries = 3, shrinking = ShrinkingMode.OFF)
     void singleDescentStepWithGenericDerivativeShouldReduceError(@ForAll @Size(value = singleDescentStepWithGenericDerivativeShouldReduceError_parameters) @Weight double[] values,
-                           @ForAll @TrainingOutput @Size(singleDescentStepWithGenericDerivativeShouldReduceError_rows) double[] outputValues) {
+                                                                 @ForAll @Size(value = singleDescentStepWithGenericDerivativeShouldReduceError_cols) @TrainingInput double[] inputs,
+                                                                 @ForAll @TrainingOutput @Size(singleDescentStepWithGenericDerivativeShouldReduceError_rows) double[] outputValues) {
         final int rows = singleDescentStepWithGenericDerivativeShouldReduceError_rows;
         final int cols = singleDescentStepWithGenericDerivativeShouldReduceError_cols;
         final int numLayers = singleDescentStepWithGenericDerivativeShouldReduceError_layers;
 
         final Model builder = new Model();
-        final VectorExpression trainingInput = builder.createParameterVector(cols);
+        final VectorExpression trainingInput = new ConstantVector(inputs);
 
         final LogisticFunction logistic = new LogisticFunction();
 
@@ -69,22 +70,21 @@ public class GradientDescentTest {
 
         final Model.ParameterBindings parameterBindings = builder.createBinder();
         final Vector lossDerivative = Util
-                .logTiming("Computed derivative function", () -> squaredError.computeDerivative(parameterBindings,
-                                                                                                Arrays.copyOfRange(builder.variables(), trainingInput
-                                                                                                        .length(), builder.size())
+                .logTiming("Computed derivative function", () -> squaredError.computeDerivative(parameterBindings
                 ));
 
-        final int[] vars = parameterBindings.variables();
-        for (int i = 0; i < vars.length; i++) {
-            parameterBindings.put(vars[i], values[i]);
+        {
+            int i = 0;
+            for (int var : parameterBindings.variables()) {
+                parameterBindings.put(var, values[i++]);
+            }
         }
         System.out.println();
         final double originalError = Util.logTiming("Invoked undifferentiated error", () -> squaredError.evaluate(parameterBindings));
         Util.logFunctionStructure(lossDerivative);
         final double learningRate = 0.01;
         for (int i = 0; i < lossDerivative.length(); i++) {
-            final int weightVariableIndex = trainingInput.length() + i;
-            parameterBindings.put(weightVariableIndex, parameterBindings.get(weightVariableIndex) - learningRate * lossDerivative
+            parameterBindings.put(i, parameterBindings.get(i) - learningRate * lossDerivative
                     .get(i));
         }
         final double updated = squaredError.evaluate(parameterBindings);
@@ -98,17 +98,17 @@ public class GradientDescentTest {
     private static final int singleDescentStepWithBackpropDerivativeShouldReduceError_parameters =
             singleDescentStepWithBackpropDerivativeShouldReduceError_rows
             * (singleDescentStepWithBackpropDerivativeShouldReduceError_cols + 1)
-            * singleDescentStepWithBackpropDerivativeShouldReduceError_layers
-            + singleDescentStepWithBackpropDerivativeShouldReduceError_cols;
+            * singleDescentStepWithBackpropDerivativeShouldReduceError_layers;
     @Property(tries = 3, shrinking = ShrinkingMode.OFF)
     void singleDescentStepWithBackpropDerivativeShouldReduceError(@ForAll @Size(value = singleDescentStepWithBackpropDerivativeShouldReduceError_parameters) @Weight double[] values,
+                                                                 @ForAll @Size(value = singleDescentStepWithBackpropDerivativeShouldReduceError_cols) @TrainingInput double[] inputs,
                                                                  @ForAll @TrainingOutput @Size(singleDescentStepWithBackpropDerivativeShouldReduceError_rows) double[] outputValues) {
         final int rows = singleDescentStepWithBackpropDerivativeShouldReduceError_rows;
         final int cols = singleDescentStepWithBackpropDerivativeShouldReduceError_cols;
         final int numLayers = singleDescentStepWithBackpropDerivativeShouldReduceError_layers;
 
         final Model builder = new Model();
-        final ConstantVector trainingInput = new ConstantVector(Arrays.copyOf(values, cols));
+        final ConstantVector trainingInput = new ConstantVector(inputs);
 
         final LogisticFunction logistic = new LogisticFunction();
 
@@ -131,22 +131,21 @@ public class GradientDescentTest {
 
         final Model.ParameterBindings parameterBindings = builder.createBinder();
         final Vector lossDerivative = Util
-                .logTiming("Computed derivative function", () -> squaredError.computeDerivative(parameterBindings,
-                                                                                                Arrays.copyOfRange(builder.variables(), trainingInput
-                                                                                                        .length(), builder.size())
+                .logTiming("Computed derivative function", () -> squaredError.computeDerivative(parameterBindings
                 ));
 
-        final int[] vars = parameterBindings.variables();
-        for (int i = 0; i < vars.length; i++) {
-            parameterBindings.put(vars[i], values[i]);
+        {
+            int i = 0;
+            for (int var : parameterBindings.variables()) {
+                parameterBindings.put(var, values[i++]);
+            }
         }
         System.out.println();
         final double originalError = Util.logTiming("Invoked undifferentiated error", () -> squaredError.evaluate(parameterBindings));
         Util.logFunctionStructure(lossDerivative);
         final double learningRate = 0.01;
         for (int i = 0; i < lossDerivative.length(); i++) {
-            final int weightVariableIndex = trainingInput.length() + i;
-            parameterBindings.put(weightVariableIndex, parameterBindings.get(weightVariableIndex) - learningRate * lossDerivative
+            parameterBindings.put(i, parameterBindings.get(i) - learningRate * lossDerivative
                     .get(i));
         }
         final double updated = squaredError.evaluate(parameterBindings);
@@ -201,37 +200,39 @@ public class GradientDescentTest {
         final FeedForwardNetwork.FeedForwardExpression specializedImplementation = new FeedForwardNetwork(layers).expression(trainingInput);
 
         final Model.ParameterBindings parameterBindings = builder.createBinder();
-        final int[] vars = parameterBindings.variables();
-        for (int i = 0; i < vars.length; i++) {
-            parameterBindings.put(vars[i], values[i]);
+        {
+            int i = 0;
+            for (int var : parameterBindings.variables()) {
+                parameterBindings.put(var, values[i++]);
+            }
         }
 
-        final Matrix genericResult = Util.logTiming("Evaluated generic derivative", () -> genericNetwork
-                .computeDerivative(parameterBindings, parameterBindings.variables()));
-        final Matrix specializedResult = Util
+        final DMatrix genericResult = Util.logTiming("Evaluated generic derivative", () -> genericNetwork
+                .computeDerivative(parameterBindings));
+        final DMatrix specializedResult = Util
                 .logTiming("Evaluated specialized derivative", () -> specializedImplementation
-                        .computeDerivative(parameterBindings, parameterBindings.variables()));
+                        .computeDerivative(parameterBindings));
 
         final double delta = 1e-8;
 
-        assertEquals(genericResult.rows(), specializedResult.rows());
-        assertEquals(genericResult.cols(), specializedResult.cols());
+        assertEquals(genericResult.getNumRows(), specializedResult.getNumRows());
+        assertEquals(genericResult.getNumCols(), specializedResult.getNumCols());
 
-        double[][] difference = new double[genericResult.rows()][genericResult.cols()];
-        for (int row = 0; row < genericResult.rows(); row++) {
-            for (int col = 0; col < genericResult.cols(); col++) {
+        double[][] difference = new double[genericResult.getNumRows()][genericResult.getNumCols()];
+        for (int row = 0; row < genericResult.getNumRows(); row++) {
+            for (int col = 0; col < genericResult.getNumCols(); col++) {
                 difference[row][col] = genericResult.get(row, col) - specializedResult.get(row, col);
             }
         }
-        for (int row = 0; row < genericResult.rows(); row++) {
-            for (int col = 0; col < genericResult.cols(); col++) {
+        for (int row = 0; row < genericResult.getNumRows(); row++) {
+            for (int col = 0; col < genericResult.getNumCols(); col++) {
                 assertEquals(0.0, difference[row][col], delta,
                              () -> {
                                  var sb = new StringBuilder("Differences:\n");
 
-                                 for (int r = 0; r < genericResult.rows(); r++) {
+                                 for (int r = 0; r < genericResult.getNumRows(); r++) {
                                      sb.append("[");
-                                     for (int c = 0; c < genericResult.cols(); c++) {
+                                     for (int c = 0; c < genericResult.getNumCols(); c++) {
                                          double rawDiff = difference[r][c];
                                          sb.append(rawDiff);
                                          sb.append(", ");
@@ -295,19 +296,21 @@ public class GradientDescentTest {
         final FeedForwardNetwork.FeedForwardExpression specializedImplementation = new FeedForwardNetwork(layers).expression(trainingInput);
 
         final Model.ParameterBindings parameterBindings = builder.createBinder();
-        final int[] vars = parameterBindings.variables();
-        for (int i = 0; i < vars.length; i++) {
-            parameterBindings.put(vars[i], values[i]);
+        {
+            int i = 0;
+            for (int var : parameterBindings.variables()) {
+                parameterBindings.put(var, values[i++]);
+            }
         }
 
         TrainingSample sample = new TrainingSample(new ConstantVector(inputs), new ConstantVector(outputs));
         ScalarExpression genericError = squaredError(sample, genericNetwork);
         ScalarExpression backpropError = squaredError(sample, specializedImplementation);
         final Vector genericResult = Util.logTiming("Evaluated generic derivative", () -> genericError
-                .computeDerivative(parameterBindings, parameterBindings.variables()));
+                .computeDerivative(parameterBindings));
         final Vector specializedResult = Util
                 .logTiming("Evaluated specialized derivative", () -> backpropError
-                        .computeDerivative(parameterBindings, parameterBindings.variables()));
+                        .computeDerivative(parameterBindings));
 
         final double delta = 1e-8;
 

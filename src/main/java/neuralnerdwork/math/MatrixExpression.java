@@ -1,5 +1,7 @@
 package neuralnerdwork.math;
 
+import org.ejml.data.DMatrix;
+
 public interface MatrixExpression {
     /**
      * @return The number of rows in the {@link #evaluate(Model.ParameterBindings) evaluated} matrix.
@@ -21,12 +23,12 @@ public interface MatrixExpression {
      * @param bindings A mapping of variable indices to values, used for substitution in this expression.
      * @return The matrix value of this expression with all parameters substituted from the given bindings.
      */
-    Matrix evaluate(Model.ParameterBindings bindings);
+    DMatrix evaluate(Model.ParameterBindings bindings);
 
     /**
      * @param bindings A mapping of variable indices to values, used for substitution in this expression.
      * @param variable The index of a variable by which this expression should be differentiated.
      * @return A matrix that is the partial derivative of this one, with respect to the given variable at the given binding value.
      */
-    Matrix computePartialDerivative(Model.ParameterBindings bindings, int variable);
+    DMatrix computePartialDerivative(Model.ParameterBindings bindings, int variable);
 }

@@ -1,12 +1,16 @@
 package neuralnerdwork.math;
 
-import java.util.Map;
+import org.ejml.data.DMatrix;
+import org.ejml.data.DMatrixRMaj;
+import org.ejml.data.DMatrixSparseCSC;
+import org.ejml.dense.row.CommonOps_DDRM;
+import org.ejml.sparse.csc.CommonOps_DSCC;
 
 public record MatrixProduct(MatrixExpression left, MatrixExpression right) implements MatrixExpression {
     public static MatrixExpression product(MatrixExpression left, MatrixExpression right) {
         final MatrixProduct product = new MatrixProduct(left, right);
         if (product.isZero()) {
-            return new SparseConstantMatrix(Map.of(), product.rows(), product.cols());
+            return new DMatrixExpression(new DMatrixSparseCSC(product.rows(), product.cols(), 0));
         } else {
             return product;
         }
@@ -40,32 +44,46 @@ public record MatrixProduct(MatrixExpression left, MatrixExpression right) imple
     }
 
     @Override
-    public Matrix evaluate(Model.ParameterBindings bindings) {
-        final Matrix leftMatrix = left.evaluate(bindings);
-        final Matrix rightMatrix = right.evaluate(bindings);
+    public DMatrix evaluate(Model.ParameterBindings bindings) {
+        final DMatrix leftMatrix = left.evaluate(bindings);
+        final DMatrix rightMatrix = right.evaluate(bindings);
 
-        final double[][] values = new double[leftMatrix.rows()][rightMatrix.cols()];
-        for (int i = 0; i < leftMatrix.rows(); i++) {
-            for (int j = 0; j < rightMatrix.cols(); j++) {
-                for (int k = 0; k < leftMatrix.cols(); k++) {
-                    values[i][j] += leftMatrix.get(i, k) * rightMatrix.get(k, j);
-                }
-            }
+        if (leftMatrix instanceof DMatrixRMaj l && rightMatrix instanceof DMatrixRMaj r) {
+            DMatrixRMaj retVal = new DMatrixRMaj(l.getNumRows(), r.getNumCols());
+            CommonOps_DDRM.mult(l, r, retVal);
+
+            return retVal;
+        } else if (leftMatrix instanceof DMatrixSparseCSC l && rightMatrix instanceof DMatrixSparseCSC r) {
+            DMatrixSparseCSC retVal = new DMatrixSparseCSC(l.getNumRows(), r.getNumCols());
+            CommonOps_DSCC.mult(l, r, retVal);
+
+            return retVal;
+        } else if (leftMatrix instanceof DMatrixSparseCSC l && rightMatrix instanceof DMatrixRMaj r) {
+            DMatrixRMaj retVal = new DMatrixRMaj(l.getNumRows(), r.getNumCols());
+            CommonOps_DSCC.mult(l, r, retVal);
+
+            return retVal;
+        } else if (leftMatrix instanceof DMatrixRMaj l && rightMatrix instanceof DMatrixSparseCSC r) {
+            DMatrixRMaj retVal = new DMatrixRMaj(l.getNumRows(), r.getNumCols());
+            CommonOps_DSCC.multTransAB(r, l, retVal);
+            CommonOps_DDRM.transpose(retVal);
+
+            return retVal;
+        } else {
+            throw new UnsupportedOperationException("Cannot multiply matrix types " + leftMatrix.getClass() + " and " + rightMatrix.getClass());
         }
-
-        return new ConstantArrayMatrix(values);
     }
 
     @Override
-    public Matrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
+    public DMatrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
         // This uses product rule
         // (FG)' = F'G + FG'
-        final MatrixExpression leftDerivative = left.computePartialDerivative(bindings, variable);
-        final MatrixExpression rightDerivative = right.computePartialDerivative(bindings, variable);
+        final DMatrix leftDerivative = left.computePartialDerivative(bindings, variable);
+        final DMatrix rightDerivative = right.computePartialDerivative(bindings, variable);
 
         return MatrixSum.sum(
-                MatrixProduct.product(leftDerivative, right),
-                MatrixProduct.product(left, rightDerivative)
+                MatrixProduct.product(new DMatrixExpression(leftDerivative), right),
+                MatrixProduct.product(left, new DMatrixExpression(rightDerivative))
         ).evaluate(bindings);
     }
 }

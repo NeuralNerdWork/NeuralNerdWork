@@ -23,7 +23,6 @@ public record StochasticGradientDescent(int batchSize,
                                                       TerminationPredicate terminationPredicate) {
         // Make a copy that we can shuffle
         trainingSamples = new ArrayList<>(trainingSamples);
-        final int[] variables = parameterBindings.variables();
 
         // Repeat this until converged
         Vector weightUpdateVector;
@@ -37,8 +36,7 @@ public record StochasticGradientDescent(int batchSize,
             final ScalarExpression error = errorFunction.apply(iterationSamples);
             // use derivative to adjust weights
             weightUpdateVector = updateStrategy.updateVector(error, parameterBindings);
-            for (int variableIndex = 0; variableIndex < parameterBindings.variables().length; variableIndex++) {
-                int variable = variables[variableIndex];
+            for (int variable : parameterBindings.variables()) {
                 parameterBindings.put(variable, parameterBindings.get(variable) + weightUpdateVector.get(variable));
             }
             iterations++;

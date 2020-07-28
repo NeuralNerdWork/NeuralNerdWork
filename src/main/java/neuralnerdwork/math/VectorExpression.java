@@ -1,5 +1,7 @@
 package neuralnerdwork.math;
 
+import org.ejml.data.DMatrix;
+
 public interface VectorExpression {
     /**
      * @return Length of output vectorExpression
@@ -27,9 +29,8 @@ public interface VectorExpression {
 
     /**
      * @param bindings A mapping of variable indices to values, used for substitution in this expression.
-     * @param variables An ordered list of variables by which to differentiate this expression.
      * @return <a href="https://en.wikipedia.org/wiki/Jacobian_matrix_and_determinant">The derivative matrix</a> expression
      * for this vector expression, with respect to the given variables (and order) at the given bindings.
      */
-    Matrix computeDerivative(Model.ParameterBindings bindings, int[] variables);
+    DMatrix computeDerivative(Model.ParameterBindings bindings);
 }

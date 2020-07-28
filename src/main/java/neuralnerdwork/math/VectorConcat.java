@@ -1,5 +1,7 @@
 package neuralnerdwork.math;
 
+import org.ejml.data.DMatrix;
+
 public record VectorConcat(VectorExpression left, VectorExpression right) implements VectorExpression {
     @Override
     public int length() {
@@ -22,11 +24,11 @@ public record VectorConcat(VectorExpression left, VectorExpression right) implem
     }
 
     @Override
-    public Matrix computeDerivative(Model.ParameterBindings bindings, int[] variables) {
-        final MatrixExpression leftDerivative = left.computeDerivative(bindings, variables);
-        final MatrixExpression rightDerivative = right.computeDerivative(bindings, variables);
+    public DMatrix computeDerivative(Model.ParameterBindings bindings) {
+        final DMatrix leftDerivative = left.computeDerivative(bindings);
+        final DMatrix rightDerivative = right.computeDerivative(bindings);
 
-        return new MatrixRowConcat(leftDerivative, rightDerivative).evaluate(bindings);
+        return new MatrixRowConcat(new DMatrixExpression(leftDerivative), new DMatrixExpression(rightDerivative)).evaluate(bindings);
     }
 
     @Override
