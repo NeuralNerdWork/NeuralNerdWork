@@ -1,10 +1,17 @@
 package neuralnerdwork.backprop;
 
 import neuralnerdwork.math.*;
-import org.ejml.data.DMatrix;
-import org.ejml.data.DMatrixRMaj;
+import org.ejml.data.*;
+import org.ejml.dense.row.CommonOps_DDRM;
+import org.ejml.dense.row.MatrixFeatures_DDRM;
+import org.ejml.dense.row.SingularOps_DDRM;
+import org.ejml.dense.row.SpecializedOps_DDRM;
+import org.ejml.ops.ConvertDMatrixStruct;
+import org.ejml.sparse.csc.CommonOps_DSCC;
+import org.ejml.sparse.csc.MatrixFeatures_DSCC;
 
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.stream.IntStream;
 
 import static java.lang.String.format;
@@ -97,7 +104,7 @@ public record ConvolutionLayer(int inputChannels, Convolution[] convolutions, Ac
 
     @Override
     public Result<DMatrix, ConvolutionCache> derivativeWithRespectToLayerInput(DMatrix layerInput, ConvolutionCache cache, Model.ParameterBindings bindings) {
-        DMatrixRMaj derivative = new DMatrixRMaj(outputLength(), inputLength());
+        DMatrixSparseTriplet derivative = new DMatrixSparseTriplet(outputLength(), inputLength(), convolutions.length * inputChannels * outputLength());
         for (int convIndex = 0; convIndex < convolutions.length; convIndex++) {
             for (int channelIndex = 0; channelIndex < inputChannels; channelIndex++) {
                 ChannelCache cacheEntry = cache.channels()[convIndex][channelIndex];
@@ -106,15 +113,20 @@ public record ConvolutionLayer(int inputChannels, Convolution[] convolutions, Ac
                 DMatrix convolutionDerivative = new MatrixProduct(new DMatrixExpression(activationWithRespectConvolution), matrix).evaluate(bindings);
                 int rowOffset = (convIndex * inputChannels + channelIndex) * convolutions[0].outputLength();
                 int colOffset = (convIndex * inputChannels + channelIndex) * convolutions[0].inputLength();
-                for (int row = 0; row < convolutionDerivative.getNumRows(); row++) {
-                    for (int col = 0; col < convolutionDerivative.getNumCols(); col++) {
-                        derivative.set(rowOffset + row, colOffset + col, convolutionDerivative.get(row, col));
+                if (convolutionDerivative instanceof DMatrixSparseCSC m) {
+                    Iterator<DMatrixSparse.CoordinateRealValue> coords = m.createCoordinateIterator();
+                    while (coords.hasNext()) {
+                        DMatrixSparse.CoordinateRealValue coord = coords.next();
+                        derivative.addItem(rowOffset + coord.row, colOffset + coord.col, coord.value);
                     }
+                } else {
+                    throw new UnsupportedOperationException("unsupported convolution matrix type " + convolutionDerivative.getClass());
                 }
             }
         }
+        derivative.shrinkArrays();
 
-        return new Result<>(derivative, cache);
+        return new Result<>(ConvertDMatrixStruct.convert(derivative, (DMatrixSparseCSC) null), cache);
     }
 
     @Override
