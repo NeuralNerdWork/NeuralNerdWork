@@ -47,7 +47,7 @@ public class ConvolutionalNetworkTrainingTest {
 
         Model model = new Model();
 
-        Layer<?>[] layers = new Layer[4];
+        Layer<?>[] layers = new Layer[1 + 2];
         LeakyRelu relu = new LeakyRelu(0.01);
         int filterRows = 3;
         int filterCols = 3;
@@ -62,7 +62,7 @@ public class ConvolutionalNetworkTrainingTest {
                 )
         };
         layers[0] = new ConvolutionLayer(1, convolutions, relu);
-        Layer<?>[] fullyConnectedLayers = fullyConnectedClassificationNetwork(smartRandomWeightInitializer(r), model, (rows - filterRows + 1) * (cols - filterCols + 1), 10, 10, 1)
+        Layer<?>[] fullyConnectedLayers = fullyConnectedClassificationNetwork(smartRandomWeightInitializer(r), model, (rows - filterRows + 1) * (cols - filterCols + 1), 2, 1)
                 .runtimeNetwork()
                 .layers();
         for (int i = 0; i < fullyConnectedLayers.length; i++) {
@@ -79,7 +79,7 @@ public class ConvolutionalNetworkTrainingTest {
 
         NeuralNetwork untrainedNetwork = new NeuralNetwork(networkDef, binder);
         NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(untrainedNetwork, new StochasticGradientDescent(
-                1,
+                20,
                 () -> new RmsPropUpdate(0.001, 0.9, 1e-8)
         ), (iterationCount, network) -> {
             System.out.println("Iteration " + iterationCount);

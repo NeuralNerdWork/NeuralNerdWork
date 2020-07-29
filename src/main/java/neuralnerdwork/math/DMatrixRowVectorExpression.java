@@ -31,6 +31,11 @@ public record DMatrixRowVectorExpression(DMatrix matrix) implements VectorExpres
     }
 
     @Override
+    public boolean columnVector() {
+        return false;
+    }
+
+    @Override
     public DMatrix computeDerivative(Model.ParameterBindings bindings) {
         throw new UnsupportedOperationException("Can't compute full derivative of row vector");
     }

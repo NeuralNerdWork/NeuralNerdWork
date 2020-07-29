@@ -24,6 +24,11 @@ public record ScalarComponentsVector(ScalarExpression[] components) implements V
     }
 
     @Override
+    public boolean columnVector() {
+        return true;
+    }
+
+    @Override
     public DMatrix evaluate(Model.ParameterBindings bindings) {
         return new DMatrixRMaj(components.length, 1, true,
                                Arrays.stream(components)

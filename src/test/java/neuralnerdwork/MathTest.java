@@ -137,8 +137,8 @@ public class MathTest {
                 w1,
                 vector
         );
-        final VectorExpression layerFunction = new VectorizedSingleVariableFunction(new LogisticFunction(),
-                                                                                    weightedInputs);
+        final VectorExpression layerFunction = new ColumnVectorizedSingleVariableFunction(new LogisticFunction(),
+                                                                                          weightedInputs);
 
         final Model.ParameterBindings parameterBindings = builder.createBinder();
         {
@@ -167,8 +167,8 @@ public class MathTest {
                 w1,
                 new DMatrixColumnVectorExpression(inputVector)
         );
-        final VectorExpression layerFunction = new VectorizedSingleVariableFunction(new LogisticFunction(),
-                                                                                    weightedInputs);
+        final VectorExpression layerFunction = new ColumnVectorizedSingleVariableFunction(new LogisticFunction(),
+                                                                                          weightedInputs);
 
         final Model.ParameterBindings parameterBindings = builder.createBinder();
 
@@ -219,8 +219,8 @@ public class MathTest {
                 w1,
                 new DMatrixColumnVectorExpression(trainingInput)
         );
-        final VectorExpression layerFunction = new VectorizedSingleVariableFunction(new LogisticFunction(),
-                                                                                    weightedInputs);
+        final VectorExpression layerFunction = new ColumnVectorizedSingleVariableFunction(new LogisticFunction(),
+                                                                                          weightedInputs);
 
         final DMatrix trainingOutput = new DMatrixRMaj(new double[] { 1.0, 0.0 });
         final VectorExpression error = sum(layerFunction, new ScaledVector(-1.0, new DMatrixColumnVectorExpression(trainingOutput)));
@@ -228,7 +228,7 @@ public class MathTest {
         CommonOps_DDRM.fill(ones, 1.0);
         final ScalarExpression squaredError = new DotProduct(
                 new DMatrixColumnVectorExpression(ones),
-                new VectorizedSingleVariableFunction(new SquaredSingleVariableFunction(), error)
+                new ColumnVectorizedSingleVariableFunction(new SquaredSingleVariableFunction(), error)
         );
         final Model.ParameterBindings parameterBindings = builder.createBinder();
 
@@ -278,7 +278,7 @@ public class MathTest {
         VectorExpression networkFunction = trainingInput;
         for (int i = 0; i < numLayers; i++) {
             networkFunction =
-                    new VectorizedSingleVariableFunction(
+                    new ColumnVectorizedSingleVariableFunction(
                             logistic,
                             new MatrixVectorProduct(
                                     builder.createParameterMatrix(rows, cols),
@@ -293,7 +293,7 @@ public class MathTest {
         final double[] ones = new double[rows];
         Arrays.fill(ones, 1.0);
         final ScalarExpression squaredError = new DotProduct(new DMatrixColumnVectorExpression(new DMatrixRMaj(ones)),
-                                                             new VectorizedSingleVariableFunction(new SquaredSingleVariableFunction(), error));
+                                                             new ColumnVectorizedSingleVariableFunction(new SquaredSingleVariableFunction(), error));
 
         Model.ParameterBindings binder = builder.createBinder();
         for (int i = 0; i < weights.length; i++) {

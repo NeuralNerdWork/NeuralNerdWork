@@ -2,11 +2,13 @@ package neuralnerdwork.math;
 
 import org.ejml.data.DMatrix;
 import org.ejml.data.DMatrixRMaj;
+import org.ejml.data.DMatrixSparse;
 import org.ejml.data.DMatrixSparseCSC;
+import org.ejml.dense.row.CommonOps_DDRM;
 
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public record VectorSum(VectorExpression... expressions) implements VectorExpression {
     public static VectorExpression sum(VectorExpression... expressions) {
@@ -28,11 +30,24 @@ public record VectorSum(VectorExpression... expressions) implements VectorExpres
                                                                                                    .map(Object::toString)
                                                                                                    .collect(Collectors.joining(",")));
         }
+        if (Arrays.stream(expressions).map(VectorExpression::columnVector).distinct().count() != 1) {
+            throw new IllegalArgumentException("Cannot add row and column vectors together: " + Arrays
+                    .stream(expressions)
+                    .distinct()
+                    .map(VectorExpression::columnVector)
+                    .map(Object::toString)
+                    .collect(Collectors.joining(",")));
+        }
     }
 
     @Override
     public int length() {
         return expressions[0].length();
+    }
+
+    @Override
+    public boolean columnVector() {
+        return expressions[0].columnVector();
     }
 
     @Override
@@ -43,24 +58,24 @@ public record VectorSum(VectorExpression... expressions) implements VectorExpres
 
     @Override
     public DMatrix evaluate(Model.ParameterBindings bindings) {
-        DMatrix[] evaluated = Arrays.stream(expressions)
-                                    .map(exp -> exp.evaluate(bindings))
-                                    .toArray(DMatrix[]::new);
+        boolean columnVector = columnVector();
+        DMatrixRMaj accum = new DMatrixRMaj(columnVector ? length() : 1, columnVector ? 1 : length());
+        for (var exp : expressions) {
+            DMatrix vector = exp.evaluate(bindings);
+            if (vector instanceof DMatrixRMaj v) {
+                CommonOps_DDRM.add(accum, v, accum);
+            } else if (vector instanceof DMatrixSparseCSC v) {
+                Iterator<DMatrixSparse.CoordinateRealValue> coords = v.createCoordinateIterator();
+                while (coords.hasNext()) {
+                    DMatrixSparse.CoordinateRealValue coord = coords.next();
+                    accum.add(coord.row, coord.col, coord.value);
+                }
+            } else {
+                throw new UnsupportedOperationException("Cannot sum vector type " + vector.getClass());
+            }
+        }
 
-        final int length = length();
-        final double[] values = IntStream.iterate(0, i -> i < length, i -> i + 1)
-                                         .mapToDouble(i -> Arrays.stream(evaluated)
-                                                                 .mapToDouble(components -> {
-                                                                     if (components.getNumRows() > 1) {
-                                                                         return components.get(i, 0);
-                                                                     } else {
-                                                                         return components.get(0, i);
-                                                                     }
-                                                                 })
-                                                                 .sum())
-                                         .toArray();
-
-        return new DMatrixRMaj(values);
+        return accum;
     }
 
     @Override

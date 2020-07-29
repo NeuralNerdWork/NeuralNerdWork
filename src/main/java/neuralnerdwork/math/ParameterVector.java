@@ -10,6 +10,11 @@ import java.util.stream.StreamSupport;
 public record ParameterVector(int variableStartIndex, int length) implements VectorExpression {
 
     @Override
+    public boolean columnVector() {
+        return true;
+    }
+
+    @Override
     public DMatrix evaluate(Model.ParameterBindings bindings) {
         final double[] values = new double[length];
         for (int i = 0; i < length; i++) {

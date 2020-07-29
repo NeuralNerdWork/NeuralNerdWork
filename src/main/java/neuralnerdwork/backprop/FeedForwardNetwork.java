@@ -64,6 +64,11 @@ public record FeedForwardNetwork(Layer<?>[]layers) {
         }
 
         @Override
+        public boolean columnVector() {
+            return true;
+        }
+
+        @Override
         public DMatrix evaluate(Model.ParameterBindings bindings) {
             DMatrix lastOutput = input;
             for (Layer<?> layer : layers) {

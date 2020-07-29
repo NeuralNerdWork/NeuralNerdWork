@@ -35,6 +35,11 @@ public record MatrixVectorProduct(MatrixExpression left, VectorExpression right)
     }
 
     @Override
+    public boolean columnVector() {
+        return true;
+    }
+
+    @Override
     public DMatrix evaluate(Model.ParameterBindings bindings) {
         final DMatrix leftValue = this.left.evaluate(bindings);
         final DMatrix rightValue = this.right.evaluate(bindings);

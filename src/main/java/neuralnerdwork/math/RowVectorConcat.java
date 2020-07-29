@@ -3,7 +3,13 @@ package neuralnerdwork.math;
 import org.ejml.data.DMatrix;
 import org.ejml.data.DMatrixRMaj;
 
-public record VectorConcat(VectorExpression left, VectorExpression right) implements VectorExpression {
+public record RowVectorConcat(VectorExpression left, VectorExpression right) implements VectorExpression {
+    public RowVectorConcat {
+        if (!(left.columnVector() && right.columnVector())) {
+            throw new IllegalArgumentException("Can only concatenate column vectors but found at least one row vector");
+        }
+    }
+
     @Override
     public int length() {
         return left.length() + right.length();
@@ -25,6 +31,11 @@ public record VectorConcat(VectorExpression left, VectorExpression right) implem
     }
 
     @Override
+    public boolean columnVector() {
+        return true;
+    }
+
+    @Override
     public DMatrix computeDerivative(Model.ParameterBindings bindings) {
         final DMatrix leftDerivative = left.computeDerivative(bindings);
         final DMatrix rightDerivative = right.computeDerivative(bindings);
@@ -37,7 +48,7 @@ public record VectorConcat(VectorExpression left, VectorExpression right) implem
         final DMatrix leftPartial = left.computePartialDerivative(bindings, variable);
         final DMatrix rightPartial = right.computePartialDerivative(bindings, variable);
 
-        return new VectorConcat(new DMatrixColumnVectorExpression(leftPartial), new DMatrixColumnVectorExpression(rightPartial)).evaluate(bindings);
+        return new RowVectorConcat(new DMatrixColumnVectorExpression(leftPartial), new DMatrixColumnVectorExpression(rightPartial)).evaluate(bindings);
     }
 
     @Override

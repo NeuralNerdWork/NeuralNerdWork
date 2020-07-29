@@ -8,14 +8,22 @@ import org.ejml.ops.ConvertDMatrixStruct;
 
 import java.util.Arrays;
 
-public record RepeatedScalarVectorExpression(ScalarExpression scalar, int length) implements VectorExpression {
+public record RepeatedScalarVectorExpression(ScalarExpression scalar, boolean columnVector, int length) implements VectorExpression {
 
     @Override
     public DMatrix evaluate(Model.ParameterBindings bindings) {
         double[] values = new double[length];
         Arrays.fill(values, scalar.evaluate(bindings));
 
-        return new DMatrixRMaj(1, length, true, values);
+        return new DMatrixRMaj(rows(), cols(), true, values);
+    }
+
+    private int rows() {
+        return columnVector ? length : 1;
+    }
+
+    private int cols() {
+        return columnVector ? 1 : length;
     }
 
     @Override
@@ -23,7 +31,7 @@ public record RepeatedScalarVectorExpression(ScalarExpression scalar, int length
         double[] values = new double[length];
         Arrays.fill(values, scalar.computePartialDerivative(bindings, variable));
 
-        return new DMatrixRMaj(1, length, true, values);
+        return new DMatrixRMaj(rows(), cols(), true, values);
     }
 
     @Override

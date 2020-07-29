@@ -1,12 +1,12 @@
 package neuralnerdwork.math;
 
-import org.ejml.data.*;
+import org.ejml.data.DMatrix;
+import org.ejml.data.DMatrix1Row;
+import org.ejml.data.DMatrixRMaj;
+import org.ejml.data.DMatrixSparseCSC;
 import org.ejml.dense.row.CommonOps_DDRM;
 import org.ejml.ops.ConvertDMatrixStruct;
 import org.ejml.sparse.csc.CommonOps_DSCC;
-
-import java.util.Arrays;
-import java.util.Iterator;
 
 public record ScaledVector(ScalarExpression scalarExpression, VectorExpression vectorExpression) implements VectorExpression {
     public ScaledVector(double scalar, VectorExpression vectorExpression) {
@@ -16,6 +16,11 @@ public record ScaledVector(ScalarExpression scalarExpression, VectorExpression v
     @Override
     public int length() {
         return vectorExpression.length();
+    }
+
+    @Override
+    public boolean columnVector() {
+        return vectorExpression.columnVector();
     }
 
     @Override

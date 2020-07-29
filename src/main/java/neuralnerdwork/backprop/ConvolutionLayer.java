@@ -2,13 +2,7 @@ package neuralnerdwork.backprop;
 
 import neuralnerdwork.math.*;
 import org.ejml.data.*;
-import org.ejml.dense.row.CommonOps_DDRM;
-import org.ejml.dense.row.MatrixFeatures_DDRM;
-import org.ejml.dense.row.SingularOps_DDRM;
-import org.ejml.dense.row.SpecializedOps_DDRM;
 import org.ejml.ops.ConvertDMatrixStruct;
-import org.ejml.sparse.csc.CommonOps_DSCC;
-import org.ejml.sparse.csc.MatrixFeatures_DSCC;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -77,12 +71,12 @@ public record ConvolutionLayer(int inputChannels, Convolution[] convolutions, Ac
                                     matrix,
                                     new DMatrixColumnVectorExpression(layerInput)
                             ),
-                            new RepeatedScalarVectorExpression(bias, matrix.rows())
+                            new RepeatedScalarVectorExpression(bias, true, matrix.rows())
                     ).evaluate(bindings);
                     DMatrixColumnVectorExpression activationInputExpression = new DMatrixColumnVectorExpression(activationInput);
-                    DMatrix activation = new VectorizedSingleVariableFunction(this.activation, activationInputExpression).evaluate(bindings);
+                    DMatrix activation = new ColumnVectorizedSingleVariableFunction(this.activation, activationInputExpression).evaluate(bindings);
                     DMatrix activationWithRespectConvolution = new DiagonalizedVector(
-                            new VectorizedSingleVariableFunction(
+                            new ColumnVectorizedSingleVariableFunction(
                                     this.activation,
                                     activationInputExpression
                             )

@@ -17,13 +17,9 @@ public record ScalarConstantMultiple(double constant, ScalarExpression expressio
 
     @Override
     public DMatrix computeDerivative(Model.ParameterBindings bindings) {
-        return new TransposeExpression(
-                new DMatrixExpression(
-                        new ScaledVector(
-                                constant,
-                                new DMatrixColumnVectorExpression(expression.computeDerivative(bindings))
-                        ).evaluate(bindings)
-                )
+        return new ScaledVector(
+                constant,
+                new DMatrixRowVectorExpression(expression.computeDerivative(bindings))
         ).evaluate(bindings);
     }
 

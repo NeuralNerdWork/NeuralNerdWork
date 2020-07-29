@@ -24,11 +24,20 @@ public record MaxPoolVector(VectorExpression input,
                                                              inputWidth,
                                                              inputHeight));
         }
+
+        if (!input.columnVector()) {
+            throw new IllegalArgumentException("Cannot get maxpool of row vector");
+        }
     }
 
     @Override
     public int length() {
         return (inputWidth / filterWidth) * (inputHeight / filterHeight);
+    }
+
+    @Override
+    public boolean columnVector() {
+        return true;
     }
 
     @Override

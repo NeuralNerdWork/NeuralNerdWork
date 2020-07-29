@@ -74,6 +74,6 @@ public class NeuralNetworkTrainer {
         DMatrixRMaj ones = new DMatrixRMaj(sample.output().length, 1);
         CommonOps_DDRM.fill(ones, 1.0);
         return new DotProduct(new DMatrixColumnVectorExpression(ones),
-                new VectorizedSingleVariableFunction(new SquaredSingleVariableFunction(), inputError));
+                new ColumnVectorizedSingleVariableFunction(new SquaredSingleVariableFunction(), inputError));
     }
 }

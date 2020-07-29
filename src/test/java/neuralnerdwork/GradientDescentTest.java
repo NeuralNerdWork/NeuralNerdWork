@@ -40,11 +40,11 @@ public class GradientDescentTest {
         final LogisticFunction logistic = new LogisticFunction();
 
         final DMatrixRMaj biasComponent = new DMatrixRMaj(new double[]{1.0});
-        VectorExpression networkFunction = new VectorConcat(new DMatrixColumnVectorExpression(trainingInput), new DMatrixColumnVectorExpression(biasComponent));
+        VectorExpression networkFunction = new RowVectorConcat(new DMatrixColumnVectorExpression(trainingInput), new DMatrixColumnVectorExpression(biasComponent));
         for (int i = 0; i < numLayers-1; i++) {
             networkFunction =
-                    new VectorConcat(
-                            new VectorizedSingleVariableFunction(
+                    new RowVectorConcat(
+                            new ColumnVectorizedSingleVariableFunction(
                                     logistic,
                                     new MatrixVectorProduct(
                                             builder.createParameterMatrix(rows, cols + 1),
@@ -55,7 +55,7 @@ public class GradientDescentTest {
                     );
         }
         networkFunction =
-                new VectorizedSingleVariableFunction(
+                new ColumnVectorizedSingleVariableFunction(
                         logistic,
                         new MatrixVectorProduct(
                                 builder.createParameterMatrix(rows, cols + 1),
@@ -69,7 +69,7 @@ public class GradientDescentTest {
         final double[] ones = new double[rows];
         Arrays.fill(ones, 1.0);
         final ScalarExpression squaredError = new DotProduct(new DMatrixColumnVectorExpression(new DMatrixRMaj(ones)),
-                new VectorizedSingleVariableFunction(new SquaredSingleVariableFunction(), error));
+                new ColumnVectorizedSingleVariableFunction(new SquaredSingleVariableFunction(), error));
 
         final Model.ParameterBindings parameterBindings = builder.createBinder();
         final DMatrix lossDerivative = Util
@@ -130,7 +130,7 @@ public class GradientDescentTest {
         final double[] ones = new double[rows];
         Arrays.fill(ones, 1.0);
         final ScalarExpression squaredError = new DotProduct(new DMatrixColumnVectorExpression(new DMatrixRMaj(ones)),
-                                                             new VectorizedSingleVariableFunction(new SquaredSingleVariableFunction(), error));
+                                                             new ColumnVectorizedSingleVariableFunction(new SquaredSingleVariableFunction(), error));
 
         final Model.ParameterBindings parameterBindings = builder.createBinder();
         final DMatrix lossDerivative = Util
@@ -182,7 +182,7 @@ public class GradientDescentTest {
             ParameterVector bias = i < numLayers - 1 ? builder.createParameterVector(rows) : null;
             layers[i] = new FullyConnectedLayer(weights, Optional.ofNullable(bias), logistic);
             genericNetworkBuilder =
-                    new VectorizedSingleVariableFunction(
+                    new ColumnVectorizedSingleVariableFunction(
                             logistic,
                             bias != null ?
                                     VectorSum.sum(
@@ -278,7 +278,7 @@ public class GradientDescentTest {
             ParameterVector bias = i < numLayers - 1 ? builder.createParameterVector(rows) : null;
             layers[i] = new FullyConnectedLayer(weights, Optional.ofNullable(bias), logistic);
             genericNetworkBuilder =
-                    new VectorizedSingleVariableFunction(
+                    new ColumnVectorizedSingleVariableFunction(
                             logistic,
                             bias != null ?
                                     VectorSum.sum(
@@ -329,6 +329,6 @@ public class GradientDescentTest {
         final double[] ones = new double[sample.output().length];
         Arrays.fill(ones, 1.0);
         return new DotProduct(new DMatrixColumnVectorExpression(new DMatrixRMaj(ones)),
-                              new VectorizedSingleVariableFunction(new SquaredSingleVariableFunction(), inputError));
+                              new ColumnVectorizedSingleVariableFunction(new SquaredSingleVariableFunction(), inputError));
     }
 }

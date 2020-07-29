@@ -93,7 +93,7 @@ public record FullyConnectedLayer(ParameterMatrix weights, Optional<ParameterVec
          We use this in the backpropogation so that we can build up delta terms from left to right.
          */
         return new DiagonalizedVector(
-                new VectorizedSingleVariableFunction(
+                new ColumnVectorizedSingleVariableFunction(
                         activationDerivative,
                         new DMatrixColumnVectorExpression(activationInputs)
                 )
@@ -120,7 +120,7 @@ public record FullyConnectedLayer(ParameterMatrix weights, Optional<ParameterVec
     public Result<DMatrix, PerceptronCache> evaluate(DMatrix layerInput, Model.ParameterBindings bindings) {
         final DMatrix weightedSums = calculateWeightedSums(layerInput, bindings);
 
-        DMatrix output = new VectorizedSingleVariableFunction(
+        DMatrix output = new ColumnVectorizedSingleVariableFunction(
                 activation,
                 new DMatrixColumnVectorExpression(weightedSums)
         ).evaluate(bindings);

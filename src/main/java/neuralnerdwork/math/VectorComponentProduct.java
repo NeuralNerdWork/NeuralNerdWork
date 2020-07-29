@@ -25,11 +25,21 @@ public record VectorComponentProduct(VectorExpression left,
                                                              left.length(),
                                                              right.length()));
         }
+        if (left.columnVector() != right.columnVector()) {
+            throw new IllegalArgumentException(String.format("left and right must have both have same orientation, but found [columnVector=%b] != [columnVector=%b]",
+                                                             left.columnVector(),
+                                                             right.columnVector()));
+        }
     }
 
     @Override
     public int length() {
         return left.length();
+    }
+
+    @Override
+    public boolean columnVector() {
+        return left.columnVector();
     }
 
     @Override

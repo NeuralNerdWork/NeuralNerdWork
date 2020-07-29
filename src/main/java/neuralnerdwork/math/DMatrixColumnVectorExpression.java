@@ -16,6 +16,11 @@ public record DMatrixColumnVectorExpression(DMatrix matrix) implements VectorExp
     }
 
     @Override
+    public boolean columnVector() {
+        return true;
+    }
+
+    @Override
     public DMatrix evaluate(Model.ParameterBindings bindings) {
         return matrix;
     }

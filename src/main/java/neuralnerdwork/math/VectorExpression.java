@@ -8,6 +8,8 @@ public interface VectorExpression {
      */
     int length();
 
+    boolean columnVector();
+
     /**
      * @param bindings A mapping of variable indices to values, used for substitution in this expression.
      * @return The vector value of this expression with all parameters substituted from the given bindings.
