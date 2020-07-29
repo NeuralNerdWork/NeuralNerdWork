@@ -26,12 +26,12 @@ public class AverageGradientUpdate implements WeightUpdateStrategy {
         }
 
         final double[] toRemove = buffer[curIndex];
-        for (int i = 0; i < rawGradient.getNumCols(); i++) {
-            buffer[curIndex][i] = rawGradient.get(0, i);
-        }
         curIndex = (curIndex + 1) % buffer.length;
         for (int i = 0; i < movingAverage.length; i++) {
             movingAverage[i] = movingAverage[i] + (rawGradient.get(0, i) - toRemove[i]) / buffer.length;
+        }
+        for (int i = 0; i < rawGradient.getNumCols(); i++) {
+            buffer[curIndex][i] = rawGradient.get(0, i);
         }
 
         final double[] retVal = new double[movingAverage.length];
