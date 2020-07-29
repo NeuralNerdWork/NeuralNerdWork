@@ -1,5 +1,7 @@
 package neuralnerdwork.math;
 
+import org.ejml.data.DMatrix;
+
 public interface ScalarExpression {
     /**
      * @param bindings A mapping of variable indices to values, used for substitution in this expression.
@@ -24,5 +26,5 @@ public interface ScalarExpression {
      * @param bindings A mapping of variable indices to values, used for substitution in this expression.
      * @return The gradient vector for this scalar expression, with respect to the given variables (and order) at the given bindings.
      */
-    Vector computeDerivative(Model.ParameterBindings bindings);
+    DMatrix computeDerivative(Model.ParameterBindings bindings);
 }

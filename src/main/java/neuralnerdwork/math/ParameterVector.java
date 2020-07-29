@@ -1,6 +1,8 @@
 package neuralnerdwork.math;
 
 import org.ejml.data.DMatrix;
+import org.ejml.data.DMatrixRMaj;
+import org.ejml.data.DMatrixSparseCSC;
 
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
@@ -8,24 +10,24 @@ import java.util.stream.StreamSupport;
 public record ParameterVector(int variableStartIndex, int length) implements VectorExpression {
 
     @Override
-    public Vector evaluate(Model.ParameterBindings bindings) {
+    public DMatrix evaluate(Model.ParameterBindings bindings) {
         final double[] values = new double[length];
         for (int i = 0; i < length; i++) {
             values[i] = bindings.get(variableStartIndex + i);
         }
 
-        return new ConstantVector(values);
+        return new DMatrixRMaj(length, 1, true, values);
     }
 
     @Override
-    public Vector computePartialDerivative(Model.ParameterBindings bindings, int variable) {
+    public DMatrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
         if (variable >= variableStartIndex && variable < variableStartIndex + length) {
             final double[] values = new double[length];
             values[variable - variableStartIndex] = 1.0;
 
-            return new ConstantVector(values);
+            return new DMatrixRMaj(length, 1, true, values);
         } else {
-            return new ConstantVector(new double[length]);
+            return new DMatrixSparseCSC(length, 1, 0);
         }
     }
 
@@ -34,6 +36,7 @@ public record ParameterVector(int variableStartIndex, int length) implements Vec
         return new ColumnMatrix(
                 StreamSupport.stream(bindings.variables().spliterator(), false)
                              .map(variable -> computePartialDerivative(bindings, variable))
+                             .map(DMatrixColumnVectorExpression::new)
                              .toArray(VectorExpression[]::new)
         ).evaluate(bindings);
     }

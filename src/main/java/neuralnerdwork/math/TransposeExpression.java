@@ -27,8 +27,7 @@ public record TransposeExpression(MatrixExpression matrix) implements MatrixExpr
         final DMatrix evaluated = matrix.evaluate(bindings);
 
         if (evaluated instanceof DMatrixRMaj m) {
-            CommonOps_DDRM.transpose(m);
-            return m;
+            return CommonOps_DDRM.transpose(m, null);
         } else if (evaluated instanceof DMatrixSparseCSC m) {
             DMatrixSparseCSC transposed = m.createLike();
             CommonOps_DSCC.transpose(m, transposed, null);

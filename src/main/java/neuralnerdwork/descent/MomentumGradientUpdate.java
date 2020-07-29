@@ -1,16 +1,13 @@
 package neuralnerdwork.descent;
 
-import neuralnerdwork.math.ConstantVector;
 import neuralnerdwork.math.Model;
 import neuralnerdwork.math.ScalarExpression;
-import neuralnerdwork.math.Vector;
-
-import java.util.Arrays;
+import org.ejml.data.DMatrix;
 
 public class MomentumGradientUpdate implements WeightUpdateStrategy {
     private final double learningRate;
     private final double decayRate;
-    private Vector momentum;
+    private double[] momentum;
 
     public MomentumGradientUpdate(double learningRate, double decayRate) {
         this.learningRate = learningRate;
@@ -18,21 +15,17 @@ public class MomentumGradientUpdate implements WeightUpdateStrategy {
     }
 
     @Override
-    public Vector updateVector(ScalarExpression error, Model.ParameterBindings parameterBindings) {
-        final Vector rawGradient = error.computeDerivative(parameterBindings);
+    public double[] updateVector(ScalarExpression error, Model.ParameterBindings parameterBindings) {
+        final DMatrix rawGradient = error.computeDerivative(parameterBindings);
         if (momentum == null) {
-            momentum = new ConstantVector(
-                    Arrays.stream(rawGradient.toArray())
-                          .map(x -> -x)
-                          .toArray()
-            );
+            momentum = new double[rawGradient.getNumCols()];
         }
 
-        final double[] updatedMomentumComponents = new double[momentum.length()];
+        final double[] updatedMomentumComponents = new double[momentum.length];
         for (int i = 0; i < updatedMomentumComponents.length; i++) {
-            updatedMomentumComponents[i] = decayRate * momentum.get(i) - learningRate * rawGradient.get(i);
+            updatedMomentumComponents[i] = decayRate * momentum[i] - learningRate * rawGradient.get(0, i);
         }
-        momentum = new ConstantVector(updatedMomentumComponents);
+        momentum = updatedMomentumComponents;
 
         return momentum;
     }

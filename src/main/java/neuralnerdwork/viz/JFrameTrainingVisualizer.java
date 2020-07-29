@@ -3,7 +3,6 @@ package neuralnerdwork.viz;
 import neuralnerdwork.IterationObserver;
 import neuralnerdwork.NeuralNetwork;
 import neuralnerdwork.TrainingSample;
-import neuralnerdwork.math.ConstantVector;
 
 import javax.swing.*;
 import java.awt.*;
@@ -23,11 +22,11 @@ public class JFrameTrainingVisualizer implements IterationObserver, AutoCloseabl
     private final JLabel iterationLabel = new JLabel("Not started");
     private final PlotPanel plotPanel = new PlotPanel();
     private final Collection<TrainingSample> validationPoints;
-    private final BiFunction<TrainingSample, ConstantVector, Color> predictionTester;
+    private final BiFunction<TrainingSample, double[], Color> predictionTester;
 
     public JFrameTrainingVisualizer(Collection<TrainingSample> validationPoints,
                                     Rectangle2D viewport,
-                                    BiFunction<TrainingSample, ConstantVector, Color> predictionTester) {
+                                    BiFunction<TrainingSample, double[], Color> predictionTester) {
         this.validationPoints = validationPoints;
         this.predictionTester = predictionTester;
         plotPanel.setDataViewport(viewport);
@@ -58,10 +57,10 @@ public class JFrameTrainingVisualizer implements IterationObserver, AutoCloseabl
                 try {
                     pointSets = validationPoints.stream()
                         .map(sample -> {
-                            ConstantVector prediction = new ConstantVector(network.apply(sample.input().values()));
+                            double[] prediction = network.apply(sample.input());
                             return new ClassifiedPoint(predictionTester.apply(sample, prediction),
-                                                       sample.input().values());
-                        }) // TODO confusion between ConstantVector and double[] here - I always had the wrong one!
+                                                       sample.input());
+                        })
                         .collect(Collectors.toMap(
                                 ClassifiedPoint::paint,
                                 cp -> new PointSet(cp.paint(), List.of(cp.point())),

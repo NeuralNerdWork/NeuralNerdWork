@@ -23,10 +23,10 @@ public record DiagonalizedVector(VectorExpression vector) implements MatrixExpre
 
     @Override
     public DMatrix evaluate(Model.ParameterBindings bindings) {
-        final Vector vectorValue = vector.evaluate(bindings);
+        final DMatrix vectorValue = vector.evaluate(bindings);
         DMatrixSparseTriplet sparseBuilder = new DMatrixSparseTriplet(rows(), cols(), vector.length());
         for (int i = 0; i < vector.length(); i++) {
-            sparseBuilder.addItem(i, i, vectorValue.get(i));
+            sparseBuilder.addItem(i, i, vectorValue.get(i, 0));
         }
 
         return ConvertDMatrixStruct.convert(sparseBuilder, (DMatrixSparseCSC) null);
@@ -34,6 +34,7 @@ public record DiagonalizedVector(VectorExpression vector) implements MatrixExpre
 
     @Override
     public DMatrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
-        return new DiagonalizedVector(vector.computePartialDerivative(bindings, variable)).evaluate(bindings);
+        DMatrix vectorDerivative = vector.computePartialDerivative(bindings, variable);
+        return new DiagonalizedVector(new DMatrixColumnVectorExpression(vectorDerivative)).evaluate(bindings);
     }
 }

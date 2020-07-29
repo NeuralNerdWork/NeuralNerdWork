@@ -32,8 +32,8 @@ public record MaxPoolVector(VectorExpression input,
     }
 
     @Override
-    public Vector evaluate(Model.ParameterBindings bindings) {
-        Vector source = input.evaluate(bindings);
+    public DMatrix evaluate(Model.ParameterBindings bindings) {
+        DMatrix source = input.evaluate(bindings);
 
         int targetWidth = this.inputWidth / this.filterWidth;
         int targetHeight = this.inputHeight / this.filterHeight;
@@ -45,10 +45,10 @@ public record MaxPoolVector(VectorExpression input,
                 int sourceRow = targetRow * filterHeight;
                 int sourceCol = targetCol * filterWidth;
                 int targetIndex = targetRow * targetWidth + targetCol;
-                values[targetIndex] = source.get(sourceRow * inputWidth + sourceCol);
+                values[targetIndex] = source.get(sourceRow * inputWidth + sourceCol, 0);
                 for (int rowOffset = 0; rowOffset < filterHeight; rowOffset++) {
                     for (int colOffset = 0; colOffset < filterWidth; colOffset++) {
-                        double candidate = source.get((sourceRow + rowOffset) * inputWidth + (sourceCol + colOffset));
+                        double candidate = source.get((sourceRow + rowOffset) * inputWidth + (sourceCol + colOffset), 0);
                         if (candidate > values[targetIndex]) {
                             values[targetIndex] = candidate;
                         }
@@ -57,13 +57,13 @@ public record MaxPoolVector(VectorExpression input,
             }
         }
 
-        return new ConstantVector(values);
+        return new DMatrixRMaj(values.length, 1, true, values);
     }
 
     @Override
-    public Vector computePartialDerivative(Model.ParameterBindings bindings, int variable) {
-        Vector source = input.evaluate(bindings);
-        Vector sourceDerivative = input.computePartialDerivative(bindings, variable);
+    public DMatrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
+        DMatrix source = input.evaluate(bindings);
+        DMatrix sourceDerivative = input.computePartialDerivative(bindings, variable);
 
         int targetWidth = this.inputWidth / this.filterWidth;
         int targetHeight = this.inputHeight / this.filterHeight;
@@ -75,28 +75,28 @@ public record MaxPoolVector(VectorExpression input,
                 int sourceRow = targetRow * filterHeight;
                 int sourceCol = targetCol * filterWidth;
                 int targetIndex = targetRow * targetWidth + targetCol;
-                double curMax = source.get(sourceRow * inputWidth + sourceCol);
+                double curMax = source.get(sourceRow * inputWidth + sourceCol, 0);
                 int sourceIndex = sourceRow * inputWidth + sourceCol;
-                derivatives[targetIndex] = sourceDerivative.get(sourceIndex);
+                derivatives[targetIndex] = sourceDerivative.get(sourceIndex, 0);
                 for (int rowOffset = 0; rowOffset < filterHeight; rowOffset++) {
                     for (int colOffset = 0; colOffset < filterWidth; colOffset++) {
                         sourceIndex = (sourceRow + rowOffset) * inputWidth + (sourceCol + colOffset);
-                        double candidate = source.get(sourceIndex);
+                        double candidate = source.get(sourceIndex, 0);
                         if (candidate > curMax) {
                             curMax = candidate;
-                            derivatives[targetIndex] = sourceDerivative.get(sourceIndex);
+                            derivatives[targetIndex] = sourceDerivative.get(sourceIndex, 0);
                         }
                     }
                 }
             }
         }
 
-        return new ConstantVector(derivatives);
+        return new DMatrixRMaj(derivatives.length, 1, true, derivatives);
     }
 
     @Override
     public DMatrix computeDerivative(Model.ParameterBindings bindings) {
-        Vector source = input.evaluate(bindings);
+        DMatrix source = input.evaluate(bindings);
         DMatrix sourceDerivative = input.computeDerivative(bindings);
 
         int targetWidth = this.inputWidth / this.filterWidth;
@@ -109,7 +109,7 @@ public record MaxPoolVector(VectorExpression input,
                 int sourceRow = targetRow * filterHeight;
                 int sourceCol = targetCol * filterWidth;
                 int targetIndex = targetRow * targetWidth + targetCol;
-                double curMax = source.get(sourceRow * inputWidth + sourceCol);
+                double curMax = source.get(sourceRow * inputWidth + sourceCol, 0);
                 int sourceIndex = sourceRow * inputWidth + sourceCol;
                 for (int varIndex = 0; varIndex < bindings.size(); varIndex++) {
                     derivative.set(targetIndex, varIndex, sourceDerivative.get(sourceIndex, varIndex));
@@ -117,7 +117,7 @@ public record MaxPoolVector(VectorExpression input,
                 for (int rowOffset = 0; rowOffset < filterHeight; rowOffset++) {
                     for (int colOffset = 0; colOffset < filterWidth; colOffset++) {
                         sourceIndex = (sourceRow + rowOffset) * inputWidth + (sourceCol + colOffset);
-                        double candidate = source.get(sourceIndex);
+                        double candidate = source.get(sourceIndex, 0);
                         if (candidate > curMax) {
                             curMax = candidate;
                             for (int varIndex = 0; varIndex < bindings.size(); varIndex++) {

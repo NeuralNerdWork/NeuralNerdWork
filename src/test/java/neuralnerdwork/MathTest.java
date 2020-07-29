@@ -9,6 +9,7 @@ import neuralnerdwork.math.*;
 import org.ejml.data.DMatrix;
 import org.ejml.data.DMatrixRMaj;
 import org.ejml.dense.row.CommonOps_DDRM;
+import org.ejml.dense.row.MatrixFeatures_DDRM;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,14 +46,14 @@ public class MathTest {
             }
         }
 
-        final Vector inputEval = vector.evaluate(parameterBindings);
-        final Vector derivativeVector = multiplication.computePartialDerivative(parameterBindings, variable);
+        final DMatrix inputEval = vector.evaluate(parameterBindings);
+        final DMatrix derivativeVector = multiplication.computePartialDerivative(parameterBindings, variable);
         final double firstVar = parameterBindings.get(w1.variableIndexFor(1, 0));
         final double secondVar = parameterBindings.get(w1.variableIndexFor(1, 1));
 
-        assertEquals(2, derivativeVector.length(), "Length not equal");
-        assertEquals(inputEval.get(0) * firstVar + inputEval.get(1) * secondVar, derivativeVector.get(0), 0.0001);
-        assertEquals(0.0, derivativeVector.get(1), 0.0001);
+        assertEquals(2, derivativeVector.getNumRows(), "Length not equal");
+        assertEquals(inputEval.get(0, 0) * firstVar + inputEval.get(1, 0) * secondVar, derivativeVector.get(0, 0), 0.0001);
+        assertEquals(0.0, derivativeVector.get(1, 0), 0.0001);
     }
 
     @Property(shrinking = ShrinkingMode.OFF)
@@ -80,14 +81,14 @@ public class MathTest {
             }
         }
 
-        final Vector inputEval = vector.evaluate(parameterBindings);
-        final Vector derivativeVector = multiplication.computePartialDerivative(parameterBindings, variable);
+        final DMatrix inputEval = vector.evaluate(parameterBindings);
+        final DMatrix derivativeVector = multiplication.computePartialDerivative(parameterBindings, variable);
         final double firstVar = parameterBindings.get(w2.variableIndexFor(0, 0));
         final double secondVar = parameterBindings.get(w2.variableIndexFor(1, 0));
 
-        assertEquals(2, derivativeVector.length(), "Length not equal");
-        assertEquals(inputEval.get(1) * firstVar, derivativeVector.get(0), 0.0001);
-        assertEquals(inputEval.get(1) * secondVar, derivativeVector.get(1), 0.0001);
+        assertEquals(2, derivativeVector.getNumRows(), "Length not equal");
+        assertEquals(inputEval.get(1, 0) * firstVar, derivativeVector.get(0, 0), 0.0001);
+        assertEquals(inputEval.get(1, 0) * secondVar, derivativeVector.get(1, 0), 0.0001);
     }
 
     /*
@@ -98,14 +99,14 @@ public class MathTest {
     void associativityOfDerivative(@ForAll @Size(value = 2*2 + 2*2) @Weight double[] weights, @ForAll @Size(2) @TrainingInput double[] inputs) {
         // https://www.wolframalpha.com/input/?i=derivative+of+%7B%7Ba%2Cb%7D%2C%7Bc%2Cd%7D%7D%7B%7Be%2Cf%7D%2C%7Bg%2Ch%7D%7D%7B%7Bi%7D%2C%7Bj%7D%7D+by+f
         final Model builder = new Model();
-        final VectorExpression vector = new ConstantVector(inputs);
+        final DMatrix inputVector = new DMatrixRMaj(inputs);
         final ParameterMatrix w1 = builder.createParameterMatrix(2, 2);
         final ParameterMatrix w2 = builder.createParameterMatrix(2, 2);
         final MatrixVectorProduct multiplication = new MatrixVectorProduct(
                 w2,
                 new MatrixVectorProduct(
                         w1,
-                        vector
+                        new DMatrixColumnVectorExpression(inputVector)
                 )
         );
 
@@ -118,14 +119,13 @@ public class MathTest {
                 parameterBindings.put(var, weights[i++]);
             }
         }
-        final Vector inputEval = vector.evaluate(parameterBindings);
-        final Vector derivativeVector = multiplication.computePartialDerivative(parameterBindings, variable);
+        final DMatrix derivativeVector = multiplication.computePartialDerivative(parameterBindings, variable);
         final double firstVar = parameterBindings.get(w2.variableIndexFor(0, 0));
         final double secondVar = parameterBindings.get(w2.variableIndexFor(1, 0));
 
-        assertEquals(2, derivativeVector.length(), "Length not equal");
-        assertEquals(inputEval.get(1) * firstVar, derivativeVector.get(0), 0.0001);
-        assertEquals(inputEval.get(1) * secondVar, derivativeVector.get(1), 0.0001);
+        assertEquals(2, derivativeVector.getNumRows(), "Length not equal");
+        assertEquals(inputVector.get(1, 0) * firstVar, derivativeVector.get(0, 0), 0.0001);
+        assertEquals(inputVector.get(1, 0) * secondVar, derivativeVector.get(1, 0), 0.0001);
     }
 
     @Property(shrinking = ShrinkingMode.OFF)
@@ -147,24 +147,25 @@ public class MathTest {
                 parameterBindings.put(var, values[i++]);
             }
         }
-        final Vector observed = layerFunction.computePartialDerivative(parameterBindings, w1.variableIndexFor(0, 0));
+        final DMatrix observed = layerFunction.computePartialDerivative(parameterBindings, w1.variableIndexFor(0, 0));
 
-        assertEquals(2, observed.length(), "Length not equal");
-        final Vector inputEval = vector.evaluate(parameterBindings);
-        final double logisticInput = parameterBindings.get(w1.variableIndexFor(0, 0)) * inputEval.get(0) + parameterBindings.get(w1.variableIndexFor(0, 1)) * inputEval.get(1);
-        final double firstExpected = Util.logistic(logisticInput) * (1 - Util.logistic(logisticInput)) * inputEval.get(0);
-        assertEquals(firstExpected, observed.get(0), 0.0001);
-        assertEquals(0.0, observed.get(1), 0.0001);
+        assertEquals(2, observed.getNumRows(), "Length not equal");
+        final DMatrix inputEval = vector.evaluate(parameterBindings);
+        final double logisticInput = parameterBindings.get(w1.variableIndexFor(0, 0)) * inputEval
+                .get(0, 0) + parameterBindings.get(w1.variableIndexFor(0, 1)) * inputEval.get(1, 0);
+        final double firstExpected = Util.logistic(logisticInput) * (1 - Util.logistic(logisticInput)) * inputEval.get(0, 0);
+        assertEquals(firstExpected, observed.get(0, 0), 0.0001);
+        assertEquals(0.0, observed.get(1, 0), 0.0001);
     }
 
     @Property(shrinking = ShrinkingMode.OFF)
     void fullDerivativeWeightsWithActivation(@ForAll @Size(value = 2 + 2*2) @Weight double[] values) {
         final Model builder = new Model();
-        final Vector vector = new ConstantVector(Arrays.copyOfRange(values, 4, 6));
+        final DMatrix inputVector = new DMatrixRMaj(Arrays.copyOfRange(values, 4, 6));
         final ParameterMatrix w1 = builder.createParameterMatrix(2, 2);
         final MatrixVectorProduct weightedInputs = new MatrixVectorProduct(
                 w1,
-                vector
+                new DMatrixColumnVectorExpression(inputVector)
         );
         final VectorExpression layerFunction = new VectorizedSingleVariableFunction(new LogisticFunction(),
                                                                                     weightedInputs);
@@ -182,14 +183,19 @@ public class MathTest {
         assertEquals(2, observed.getNumRows(), "Rows not equal");
         assertEquals(4, observed.getNumCols(), "Cols not equal");
 
-        final Vector inputEval = vector.evaluate(parameterBindings);
-        final double firstLogisticInput = parameterBindings.get(w1.variableIndexFor(0, 0)) * inputEval.get(0) + parameterBindings.get(w1.variableIndexFor(0, 1)) * inputEval.get(1);
-        final double secondLogisticInput = parameterBindings.get(w1.variableIndexFor(1, 0)) * inputEval.get(0) + parameterBindings.get(w1.variableIndexFor(1, 1)) * inputEval.get(1);
+        final double firstLogisticInput = parameterBindings.get(w1.variableIndexFor(0, 0)) * inputVector
+                .get(0, 0) + parameterBindings.get(w1.variableIndexFor(0, 1)) * inputVector.get(1, 0);
+        final double secondLogisticInput = parameterBindings.get(w1.variableIndexFor(1, 0)) * inputVector
+                .get(0, 0) + parameterBindings.get(w1.variableIndexFor(1, 1)) * inputVector.get(1, 0);
 
-        final double firstExpected = Util.logistic(firstLogisticInput) * Util.logistic(-firstLogisticInput) * inputEval.get(0);
-        final double secondExpected = Util.logistic(firstLogisticInput) * Util.logistic(-firstLogisticInput) * inputEval.get(1);
-        final double thirdExpected = Util.logistic(secondLogisticInput) * Util.logistic(-secondLogisticInput) * inputEval.get(0);
-        final double fourthExpected = Util.logistic(secondLogisticInput) * Util.logistic(-secondLogisticInput) * inputEval.get(1);
+        final double firstExpected = Util.logistic(firstLogisticInput) * Util.logistic(-firstLogisticInput) * inputVector
+                .get(0, 0);
+        final double secondExpected = Util.logistic(firstLogisticInput) * Util.logistic(-firstLogisticInput) * inputVector
+                .get(1, 0);
+        final double thirdExpected = Util.logistic(secondLogisticInput) * Util.logistic(-secondLogisticInput) * inputVector
+                .get(0, 0);
+        final double fourthExpected = Util.logistic(secondLogisticInput) * Util.logistic(-secondLogisticInput) * inputVector
+                .get(1, 0);
 
         assertEquals(firstExpected, observed.get(0, 0), 0.0001);
         assertEquals(0.0, observed.get(1, 0), 0.0001);
@@ -207,20 +213,23 @@ public class MathTest {
     @Property(shrinking = ShrinkingMode.OFF)
     void fullDerivativeOfLossFunctionOnLayer(@ForAll @Size(value = 2*2) @Weight double[] values, @ForAll @Size(value = 2) @TrainingInput double[] inputs) {
         final Model builder = new Model();
-        final Vector trainingInput = new ConstantVector(inputs);
+        final DMatrix trainingInput = new DMatrixRMaj(inputs);
         final ParameterMatrix w1 = builder.createParameterMatrix(2, 2);
         final MatrixVectorProduct weightedInputs = new MatrixVectorProduct(
                 w1,
-                trainingInput
+                new DMatrixColumnVectorExpression(trainingInput)
         );
         final VectorExpression layerFunction = new VectorizedSingleVariableFunction(new LogisticFunction(),
                                                                                     weightedInputs);
 
-        final ConstantVector trainingOutput = new ConstantVector(new double[] { 1.0, 0.0 });
-        final VectorExpression error = sum(layerFunction, new ScaledVector(-1.0, trainingOutput));
-        // TODO should make a square combinator; this will differentiate error twice
-        final DotProduct squaredError = new DotProduct(error, error);
-
+        final DMatrix trainingOutput = new DMatrixRMaj(new double[] { 1.0, 0.0 });
+        final VectorExpression error = sum(layerFunction, new ScaledVector(-1.0, new DMatrixColumnVectorExpression(trainingOutput)));
+        DMatrixRMaj ones = new DMatrixRMaj(error.length(), 1);
+        CommonOps_DDRM.fill(ones, 1.0);
+        final ScalarExpression squaredError = new DotProduct(
+                new DMatrixColumnVectorExpression(ones),
+                new VectorizedSingleVariableFunction(new SquaredSingleVariableFunction(), error)
+        );
         final Model.ParameterBindings parameterBindings = builder.createBinder();
 
         {
@@ -229,22 +238,30 @@ public class MathTest {
                 parameterBindings.put(var, values[i++]);
             }
         }
-        final Vector observed = squaredError.computeDerivative(parameterBindings);
+        final DMatrix observed = squaredError.computeDerivative(parameterBindings);
 
-        assertEquals(4, observed.length(), "Length not equal");
+        assertEquals(4, observed.getNumCols(), "Length not equal");
 
-        final Vector inputEval = trainingInput.evaluate(parameterBindings);
-        final double unactivatedNeuron1 = parameterBindings.get(w1.variableIndexFor(0, 0)) * inputEval.get(0) + parameterBindings.get(w1.variableIndexFor(0, 1)) * inputEval.get(1);
-        final double unactivatedNeuron2 = parameterBindings.get(w1.variableIndexFor(1, 0)) * inputEval.get(0) + parameterBindings.get(w1.variableIndexFor(1, 1)) * inputEval.get(1);
+        final double unactivatedNeuron1 = parameterBindings.get(w1.variableIndexFor(0, 0)) * trainingInput
+                .get(0, 0) + parameterBindings.get(w1.variableIndexFor(0, 1)) * trainingInput.get(1, 0);
+        final double unactivatedNeuron2 = parameterBindings.get(w1.variableIndexFor(1, 0)) * trainingInput
+                .get(0, 0) + parameterBindings.get(w1.variableIndexFor(1, 1)) * trainingInput.get(1, 0);
 
         final double[] expected = new double[] {
-                2.0 * (Util.logistic(unactivatedNeuron1) - trainingOutput.get(0)) * Util.logisticDerivative(unactivatedNeuron1) * inputEval.get(0),
-                2.0 * (Util.logistic(unactivatedNeuron1) - trainingOutput.get(0)) * Util.logisticDerivative(unactivatedNeuron1) * inputEval.get(1),
-                2.0 * (Util.logistic(unactivatedNeuron2) - trainingOutput.get(1)) * Util.logisticDerivative(unactivatedNeuron2) * inputEval.get(0),
-                2.0 * (Util.logistic(unactivatedNeuron2) - trainingOutput.get(1)) * Util.logisticDerivative(unactivatedNeuron2) * inputEval.get(1)
+                2.0 * (Util.logistic(unactivatedNeuron1) - trainingOutput.get(0, 0)) * Util.logisticDerivative(unactivatedNeuron1) * trainingInput
+                        .get(0, 0),
+                2.0 * (Util.logistic(unactivatedNeuron1) - trainingOutput.get(0, 0)) * Util.logisticDerivative(unactivatedNeuron1) * trainingInput
+                        .get(1, 0),
+                2.0 * (Util.logistic(unactivatedNeuron2) - trainingOutput.get(1, 0)) * Util.logisticDerivative(unactivatedNeuron2) * trainingInput
+                        .get(0, 0),
+                2.0 * (Util.logistic(unactivatedNeuron2) - trainingOutput.get(1, 0)) * Util.logisticDerivative(unactivatedNeuron2) * trainingInput
+                        .get(1, 0)
         };
 
-        assertArrayEquals(expected, observed.toArray(), 0.0001, format("Expected: %s, Observed: %s", Arrays.toString(expected), Arrays.toString(observed.toArray())));
+        assertTrue(MatrixFeatures_DDRM
+                           .isEquals(new DMatrixRMaj(1, 4, true, expected), (DMatrixRMaj) observed, 0.0001),
+                   () -> format("Expected:\n%s\n\nObserved:\n%s\n", Arrays
+                           .toString(expected), observed));
     }
 
     @Property(tries = 3)
@@ -270,19 +287,19 @@ public class MathTest {
                     );
         }
 
-        final ConstantVector trainingOutput = new ConstantVector(outputValues);
-        final VectorExpression error = sum(networkFunction, new ScaledVector(-1.0, trainingOutput));
+        final DMatrix trainingOutput = new DMatrixRMaj(outputValues);
+        final VectorExpression error = sum(networkFunction, new ScaledVector(-1.0, new DMatrixColumnVectorExpression(trainingOutput)));
 
         final double[] ones = new double[rows];
         Arrays.fill(ones, 1.0);
-        final ScalarExpression squaredError = new DotProduct(new ConstantVector(ones),
+        final ScalarExpression squaredError = new DotProduct(new DMatrixColumnVectorExpression(new DMatrixRMaj(ones)),
                                                              new VectorizedSingleVariableFunction(new SquaredSingleVariableFunction(), error));
 
         Model.ParameterBindings binder = builder.createBinder();
         for (int i = 0; i < weights.length; i++) {
             binder.put(i, weights[i]);
         }
-        final VectorExpression lossDerivative = Util.logTiming("Computed derivative function", () -> squaredError
+        final DMatrix lossDerivative = Util.logTiming("Computed derivative function", () -> squaredError
                 .computeDerivative(binder));
         assertNonZero(lossDerivative);
     }
@@ -292,7 +309,7 @@ public class MathTest {
         final Model builder = new Model();
         final ParameterMatrix filter = builder.createParameterMatrix(2, 2);
         final ConvolutionFilterMatrix convolutionMatrix = new ConvolutionFilterMatrix(filter, 3, 3);
-        final Vector inputVector = new ConstantVector(Arrays.copyOfRange(values, 4, values.length));
+        final DMatrix inputVector = new DMatrixRMaj(Arrays.copyOfRange(values, 4, values.length));
 
         final Model.ParameterBindings parameterBindings = builder.createBinder();
         {
@@ -302,7 +319,8 @@ public class MathTest {
             }
         }
 
-        Vector convolutionResult = new MatrixVectorProduct(convolutionMatrix, inputVector).evaluate(parameterBindings);
+        DMatrix convolutionResult = new MatrixVectorProduct(convolutionMatrix, new DMatrixColumnVectorExpression(inputVector))
+                .evaluate(parameterBindings);
 
         double[] expected = {
                 values[0] * values[4] + values[1] * values[5] + values[2] * values[7] + values[3] * values[8],
@@ -311,13 +329,12 @@ public class MathTest {
                 values[0] * values[8] + values[1] * values[9] + values[2] * values[11] + values[3] * values[12],
         };
 
-        assertArrayEquals(expected,
-                          convolutionResult.toArray(),
-                          0.0001,
-                          () -> "Expected: " + Arrays.toString(expected) + "\nObserved: " + Arrays
-                                  .toString(convolutionResult.toArray()) +
-                                  "\nValues: " + Arrays.toString(values) +
-                                  "\nConvolution Matrix: " + convolutionMatrix.evaluate(parameterBindings) + "\n");
+        assertTrue(MatrixFeatures_DDRM.isEquals(new DMatrixRMaj(expected),
+                                                (DMatrixRMaj) convolutionResult,
+                                                0.0001),
+                   () -> "Expected: " + Arrays.toString(expected) + "\nObserved: " + convolutionResult +
+                           "\nValues: " + Arrays.toString(values) +
+                           "\nConvolution Matrix: " + convolutionMatrix.evaluate(parameterBindings) + "\n");
     }
 
     @Example
@@ -327,23 +344,23 @@ public class MathTest {
         final ConvolutionFilterMatrix convolutionMatrix = new ConvolutionFilterMatrix(filter, 20, 20);
         double[] inputOnes = new double[20 * 20];
         Arrays.fill(inputOnes, 1.0);
-        final Vector inputVector = new ConstantVector(inputOnes);
+        final DMatrix inputVector = new DMatrixRMaj(inputOnes);
 
         final Model.ParameterBindings parameterBindings = builder.createBinder();
         for (int var : parameterBindings.variables()) {
             parameterBindings.put(var, 1.0);
         }
 
-        Vector convolutionResult = new MatrixVectorProduct(convolutionMatrix, inputVector).evaluate(parameterBindings);
+        DMatrix convolutionResult = new MatrixVectorProduct(convolutionMatrix, new DMatrixColumnVectorExpression(inputVector))
+                .evaluate(parameterBindings);
 
         double[] expected = new double[16*16];
         Arrays.fill(expected, 25.0);
 
-        assertArrayEquals(expected,
-                          convolutionResult.toArray(),
-                          0.0001,
-                          () -> "Expected: " + Arrays.toString(expected) + "\nObserved: " + Arrays
-                                  .toString(convolutionResult.toArray()) +
+        assertTrue(MatrixFeatures_DDRM.isEquals(new DMatrixRMaj(expected),
+                                                (DMatrixRMaj) convolutionResult,
+                                                0.0001),
+                          () -> "Expected: " + Arrays.toString(expected) + "\nObserved: " + convolutionResult +
                                   "\nConvolution Matrix: " + convolutionMatrix.evaluate(parameterBindings) + "\n");
     }
 
@@ -352,20 +369,19 @@ public class MathTest {
         final Model builder = new Model();
         final ParameterMatrix filter = builder.createParameterMatrix(1, 1);
         final ConvolutionFilterMatrix convolutionMatrix = new ConvolutionFilterMatrix(filter, 3, 3);
-        final Vector inputVector = new ConstantVector(Arrays.copyOf(values, values.length));
+        final DMatrix inputVector = new DMatrixRMaj(Arrays.copyOf(values, values.length));
 
         final Model.ParameterBindings parameterBindings = builder.createBinder();
         parameterBindings.put(0, 1.0);
 
-        Vector convolutionResult = new MatrixVectorProduct(convolutionMatrix, inputVector).evaluate(parameterBindings);
+        DMatrix convolutionResult = new MatrixVectorProduct(convolutionMatrix, new DMatrixColumnVectorExpression(inputVector)).evaluate(parameterBindings);
 
-        assertArrayEquals(values,
-                          convolutionResult.toArray(),
-                          0.0001,
-                          () -> "Expected: " + Arrays.toString(values) + "\nObserved: " + Arrays
-                                  .toString(convolutionResult.toArray()) +
-                                  "\nValues: " + Arrays.toString(values) +
-                                  "\nConvolution Matrix: " + convolutionMatrix.evaluate(parameterBindings) + "\n");
+        assertTrue(MatrixFeatures_DDRM.isEquals(new DMatrixRMaj(values),
+                                                (DMatrixRMaj) convolutionResult,
+                                                0.0001),
+                   () -> "Expected: " + Arrays.toString(values) + "\nObserved: " + convolutionResult +
+                           "\nValues: " + Arrays.toString(values) +
+                           "\nConvolution Matrix: " + convolutionMatrix.evaluate(parameterBindings) + "\n");
     }
 
     @Property(shrinking = ShrinkingMode.OFF)
@@ -373,16 +389,16 @@ public class MathTest {
         final Model builder = new Model();
         final ParameterMatrix filter = builder.createParameterMatrix(3, 3);
         final ConvolutionFilterMatrix convolutionMatrix = new ConvolutionFilterMatrix(filter, 3, 3);
-        final Vector inputVector = new ConstantVector(Arrays.copyOf(values, values.length));
+        final DMatrix inputVector = new DMatrixRMaj(Arrays.copyOf(values, values.length));
 
         final Model.ParameterBindings parameterBindings = builder.createBinder();
         for (int var : parameterBindings.variables()) {
             parameterBindings.put(var, 1.0);
         }
 
-        Vector convolutionResult = new MatrixVectorProduct(convolutionMatrix, inputVector).evaluate(parameterBindings);
-        assertEquals(1, convolutionResult.length());
-        double observed = convolutionResult.get(0);
+        DMatrix convolutionResult = new MatrixVectorProduct(convolutionMatrix, new DMatrixColumnVectorExpression(inputVector)).evaluate(parameterBindings);
+        assertEquals(1, convolutionResult.getNumRows());
+        double observed = convolutionResult.get(0, 0);
 
         assertEquals(Arrays.stream(values).sum(), observed, 1e-8);
     }
@@ -392,7 +408,7 @@ public class MathTest {
         final Model builder = new Model();
         final ParameterMatrix filter = builder.createParameterMatrix(2, 2);
         final ConvolutionFilterMatrix convolutionMatrix = new ConvolutionFilterMatrix(filter, 3, 3);
-        final Vector inputVector = new ConstantVector(Arrays.copyOfRange(values, 4, values.length));
+        final DMatrix inputVector = new DMatrixRMaj(Arrays.copyOfRange(values, 4, values.length));
 
         final Model.ParameterBindings parameterBindings = builder.createBinder();
         {
@@ -402,7 +418,7 @@ public class MathTest {
             }
         }
 
-        Vector derivativeResult = new MatrixVectorProduct(convolutionMatrix, inputVector)
+        DMatrix derivativeResult = new MatrixVectorProduct(convolutionMatrix, new DMatrixColumnVectorExpression(inputVector))
                 .computePartialDerivative(parameterBindings, filter.variableIndexFor(0, 0));
 
         double[] expected = {
@@ -412,13 +428,12 @@ public class MathTest {
                 values[8]
         };
 
-        assertArrayEquals(expected,
-                          derivativeResult.toArray(),
-                          0.0001,
-                          () -> "Expected: " + Arrays.toString(expected) + "\nObserved: " + Arrays
-                                  .toString(derivativeResult.toArray()) +
-                                  "\nValues: " + Arrays.toString(values) +
-                                  "\nConvolution Matrix: " + convolutionMatrix.evaluate(parameterBindings) + "\n");
+        assertTrue(MatrixFeatures_DDRM.isEquals(new DMatrixRMaj(expected),
+                                                (DMatrixRMaj) derivativeResult,
+                                                0.0001),
+                   () -> "Expected: " + Arrays.toString(expected) + "\nObserved: " + derivativeResult +
+                           "\nValues: " + Arrays.toString(values) +
+                           "\nConvolution Matrix: " + convolutionMatrix.evaluate(parameterBindings) + "\n");
     }
 
     @Example
@@ -431,10 +446,10 @@ public class MathTest {
                 0.8, 1.0,   1.0, 0.0
         };
 
-        MaxPoolVector maxPool = new MaxPoolVector(new ConstantVector(flatValues), 4, 4, 2, 2);
-        Vector result = maxPool.evaluate(null);
+        MaxPoolVector maxPool = new MaxPoolVector(new DMatrixColumnVectorExpression(new DMatrixRMaj(flatValues)), 4, 4, 2, 2);
+        DMatrix result = maxPool.evaluate(null);
 
-        assertArrayEquals(new double[] { 2.0, 1.0, 8.0, 3.0 }, result.toArray(), 1e-8);
+        assertTrue(MatrixFeatures_DDRM.isEquals(new DMatrixRMaj(new double[] { 2.0, 1.0, 8.0, 3.0 }), (DMatrixRMaj) result, 1e-8));
     }
 
     @Example
@@ -454,14 +469,14 @@ public class MathTest {
         }
 
         VectorExpression maxPoolInput = new MatrixVectorProduct(
-                new DiagonalizedVector(new ConstantVector(flatValues)),
+                new DiagonalizedVector(new DMatrixColumnVectorExpression(new DMatrixRMaj(flatValues))),
                 paramVector
         );
 
         MaxPoolVector maxPool = new MaxPoolVector(maxPoolInput, 4, 4, 2, 2);
-        Vector result = maxPool.computePartialDerivative(binder, paramVector.variableFor(0));
+        DMatrix result = maxPool.computePartialDerivative(binder, paramVector.variableFor(0));
 
-        assertArrayEquals(new double[] { 2.0, 0.0, 0.0, 0.0 }, result.toArray(), 1e-8);
+        assertTrue(MatrixFeatures_DDRM.isEquals(new DMatrixRMaj(new double[] { 2.0, 0.0, 0.0, 0.0 }), (DMatrixRMaj) result, 1e-8));
     }
 
     @Example
@@ -481,7 +496,7 @@ public class MathTest {
         }
 
         VectorExpression maxPoolInput = new MatrixVectorProduct(
-                new DiagonalizedVector(new ConstantVector(flatValues)),
+                new DiagonalizedVector(new DMatrixColumnVectorExpression(new DMatrixRMaj(flatValues))),
                 paramVector
         );
 

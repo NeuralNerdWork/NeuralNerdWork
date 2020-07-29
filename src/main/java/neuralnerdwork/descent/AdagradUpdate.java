@@ -1,9 +1,8 @@
 package neuralnerdwork.descent;
 
-import neuralnerdwork.math.ConstantVector;
 import neuralnerdwork.math.Model;
 import neuralnerdwork.math.ScalarExpression;
-import neuralnerdwork.math.Vector;
+import org.ejml.data.DMatrix;
 
 public class AdagradUpdate implements WeightUpdateStrategy {
     private final double learningRate;
@@ -16,19 +15,19 @@ public class AdagradUpdate implements WeightUpdateStrategy {
     }
 
     @Override
-    public Vector updateVector(ScalarExpression error, Model.ParameterBindings parameterBindings) {
-        final Vector rawGradient = error.computeDerivative(parameterBindings);
+    public double[] updateVector(ScalarExpression error, Model.ParameterBindings parameterBindings) {
+        final DMatrix rawGradient = error.computeDerivative(parameterBindings);
         if (sumsOfSquares == null) {
             sumsOfSquares = new double[parameterBindings.size()];
         }
 
-        final double[] updateVectorValues = new double[rawGradient.length()];
+        final double[] updateVectorValues = new double[rawGradient.getNumCols()];
         for (int i = 0; i < updateVectorValues.length; i++) {
-            final double gradientComponent = rawGradient.get(i);
+            final double gradientComponent = rawGradient.get(0, i);
             sumsOfSquares[i] += gradientComponent * gradientComponent;
             updateVectorValues[i] = -learningRate * (gradientComponent / (Math.sqrt(sumsOfSquares[i]) + epsilon));
         }
 
-        return new ConstantVector(updateVectorValues);
+        return updateVectorValues;
     }
 }

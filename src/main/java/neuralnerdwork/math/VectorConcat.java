@@ -1,6 +1,7 @@
 package neuralnerdwork.math;
 
 import org.ejml.data.DMatrix;
+import org.ejml.data.DMatrixRMaj;
 
 public record VectorConcat(VectorExpression left, VectorExpression right) implements VectorExpression {
     @Override
@@ -9,18 +10,18 @@ public record VectorConcat(VectorExpression left, VectorExpression right) implem
     }
 
     @Override
-    public Vector evaluate(Model.ParameterBindings bindings) {
-        final Vector leftEval = left.evaluate(bindings);
-        final Vector rightEval = right.evaluate(bindings);
+    public DMatrix evaluate(Model.ParameterBindings bindings) {
+        final DMatrix leftEval = left.evaluate(bindings);
+        final DMatrix rightEval = right.evaluate(bindings);
         final double[] values = new double[length()];
-        for (int i = 0; i < leftEval.length(); i++) {
-            values[i] = leftEval.get(i);
+        for (int i = 0; i < leftEval.getNumRows(); i++) {
+            values[i] = leftEval.get(i, 0);
         }
-        for (int i = 0; i < rightEval.length(); i++) {
-            values[leftEval.length() + i] = rightEval.get(i);
+        for (int i = 0; i < rightEval.getNumRows(); i++) {
+            values[leftEval.getNumRows() + i] = rightEval.get(i, 0);
         }
 
-        return new ConstantVector(values);
+        return new DMatrixRMaj(length(), 1, true, values);
     }
 
     @Override
@@ -32,11 +33,11 @@ public record VectorConcat(VectorExpression left, VectorExpression right) implem
     }
 
     @Override
-    public Vector computePartialDerivative(Model.ParameterBindings bindings, int variable) {
-        final VectorExpression leftPartial = left.computePartialDerivative(bindings, variable);
-        final VectorExpression rightPartial = right.computePartialDerivative(bindings, variable);
+    public DMatrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
+        final DMatrix leftPartial = left.computePartialDerivative(bindings, variable);
+        final DMatrix rightPartial = right.computePartialDerivative(bindings, variable);
 
-        return new VectorConcat(leftPartial, rightPartial).evaluate(bindings);
+        return new VectorConcat(new DMatrixColumnVectorExpression(leftPartial), new DMatrixColumnVectorExpression(rightPartial)).evaluate(bindings);
     }
 
     @Override

@@ -4,7 +4,6 @@ import neuralnerdwork.TerminationPredicate;
 import neuralnerdwork.TrainingSample;
 import neuralnerdwork.math.Model;
 import neuralnerdwork.math.ScalarExpression;
-import neuralnerdwork.math.Vector;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,7 +24,7 @@ public record StochasticGradientDescent(int batchSize,
         trainingSamples = new ArrayList<>(trainingSamples);
 
         // Repeat this until converged
-        Vector weightUpdateVector;
+        double[] weightUpdateVector;
         final Random rand = new Random();
         final WeightUpdateStrategy updateStrategy = updateStrategySupplier.get();
         long iterations = 0;
@@ -37,7 +36,7 @@ public record StochasticGradientDescent(int batchSize,
             // use derivative to adjust weights
             weightUpdateVector = updateStrategy.updateVector(error, parameterBindings);
             for (int variable : parameterBindings.variables()) {
-                parameterBindings.put(variable, parameterBindings.get(variable) + weightUpdateVector.get(variable));
+                parameterBindings.put(variable, parameterBindings.get(variable) + weightUpdateVector[variable]);
             }
             iterations++;
         } while (terminationPredicate.shouldContinue(iterations, weightUpdateVector, parameterBindings));

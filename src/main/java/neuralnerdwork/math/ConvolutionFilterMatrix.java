@@ -38,7 +38,7 @@ public record ConvolutionFilterMatrix(ParameterMatrix filter, int inputHeight, i
     @Override
     public DMatrix evaluate(Model.ParameterBindings bindings) {
         DMatrix filter = this.filter.evaluate(bindings);
-        DMatrixSparseTriplet sparseBuilder = new DMatrixSparseTriplet(rows(), cols(), filter.getNumElements() * rows());
+        DMatrixSparseTriplet sparseBuilder = new DMatrixSparseTriplet(rows(), cols(), filter.getNumRows() * filter.getNumCols() * rows());
 
         int filterRows = filter.getNumRows();
         int filterCols = filter.getNumCols();

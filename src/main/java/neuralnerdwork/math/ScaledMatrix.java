@@ -32,9 +32,10 @@ public record ScaledMatrix(ScalarExpression scalarExpression, MatrixExpression m
         final double value = scalarExpression.evaluate(bindings);
 
         if (matrix instanceof DMatrixRMaj m) {
-            CommonOps_DDRM.scale(value, m);
+            DMatrixRMaj retVal = m.createLike();
+            CommonOps_DDRM.scale(value, m, retVal);
 
-            return m;
+            return retVal;
         } else if (matrix instanceof DMatrixSparseCSC m) {
             DMatrixSparseCSC retVal = m.createLike();
             CommonOps_DSCC.scale(value, m, retVal);

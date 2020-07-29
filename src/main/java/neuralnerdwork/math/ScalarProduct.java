@@ -1,5 +1,7 @@
 package neuralnerdwork.math;
 
+import org.ejml.data.DMatrix;
+
 public record ScalarProduct(ScalarExpression left,
                             ScalarExpression right) implements ScalarExpression {
 
@@ -43,20 +45,20 @@ public record ScalarProduct(ScalarExpression left,
     }
 
     @Override
-    public Vector computeDerivative(Model.ParameterBindings bindings) {
-        final VectorExpression leftDerivative = left.computeDerivative(bindings);
-        final VectorExpression rightDerivative = right.computeDerivative(bindings);
+    public DMatrix computeDerivative(Model.ParameterBindings bindings) {
+        final DMatrix leftDerivative = left.computeDerivative(bindings);
+        final DMatrix rightDerivative = right.computeDerivative(bindings);
 
         // Product rule
         // (fg)' = f'g + fg'
         return VectorSum.sum(
                 new ScaledVector(
                         right,
-                        leftDerivative
+                        new DMatrixColumnVectorExpression(leftDerivative)
                 ),
                 new ScaledVector(
                         left,
-                        rightDerivative
+                        new DMatrixColumnVectorExpression(rightDerivative)
                 )
         ).evaluate(bindings);
     }

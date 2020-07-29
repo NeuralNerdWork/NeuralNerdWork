@@ -1,5 +1,7 @@
 package neuralnerdwork.math;
 
+import org.ejml.data.DMatrix;
+
 import java.util.Arrays;
 
 public record ScalarSum(ScalarExpression... expressions) implements ScalarExpression {
@@ -32,10 +34,11 @@ public record ScalarSum(ScalarExpression... expressions) implements ScalarExpres
     }
 
     @Override
-    public Vector computeDerivative(Model.ParameterBindings bindings) {
+    public DMatrix computeDerivative(Model.ParameterBindings bindings) {
         return VectorSum.sum(
                 Arrays.stream(expressions)
                       .map(exp -> exp.computeDerivative(bindings))
+                      .map(DMatrixRowVectorExpression::new)
                       .toArray(VectorExpression[]::new)
         ).evaluate(bindings);
     }

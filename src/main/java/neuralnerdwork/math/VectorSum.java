@@ -1,6 +1,8 @@
 package neuralnerdwork.math;
 
 import org.ejml.data.DMatrix;
+import org.ejml.data.DMatrixRMaj;
+import org.ejml.data.DMatrixSparseCSC;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -12,7 +14,7 @@ public record VectorSum(VectorExpression... expressions) implements VectorExpres
                                                       .filter(exp -> !exp.isZero())
                                                       .toArray(VectorExpression[]::new);
         if (nonZeroExpressions.length == 0) {
-            return new ConstantVector(new double[expressions[0].length()]);
+            return new DMatrixColumnVectorExpression(new DMatrixSparseCSC(expressions[0].length(), 1, 0));
         } else {
             return new VectorSum(nonZeroExpressions);
         }
@@ -40,19 +42,25 @@ public record VectorSum(VectorExpression... expressions) implements VectorExpres
     }
 
     @Override
-    public Vector evaluate(Model.ParameterBindings bindings) {
-        Vector[] evaluated = Arrays.stream(expressions)
-                                   .map(exp -> exp.evaluate(bindings))
-                                   .toArray(Vector[]::new);
+    public DMatrix evaluate(Model.ParameterBindings bindings) {
+        DMatrix[] evaluated = Arrays.stream(expressions)
+                                    .map(exp -> exp.evaluate(bindings))
+                                    .toArray(DMatrix[]::new);
 
         final int length = length();
         final double[] values = IntStream.iterate(0, i -> i < length, i -> i + 1)
                                          .mapToDouble(i -> Arrays.stream(evaluated)
-                                                                 .mapToDouble(components -> components.get(i))
+                                                                 .mapToDouble(components -> {
+                                                                     if (components.getNumRows() > 1) {
+                                                                         return components.get(i, 0);
+                                                                     } else {
+                                                                         return components.get(0, i);
+                                                                     }
+                                                                 })
                                                                  .sum())
                                          .toArray();
 
-        return new ConstantVector(values);
+        return new DMatrixRMaj(values);
     }
 
     @Override
@@ -60,14 +68,16 @@ public record VectorSum(VectorExpression... expressions) implements VectorExpres
         return MatrixSum.sum(Arrays.stream(expressions)
                                    .map(exp -> exp.computeDerivative(bindings))
                                    .map(DMatrixExpression::new)
-                                   .toArray(MatrixExpression[]::new)).evaluate(bindings);
+                                   .toArray(MatrixExpression[]::new))
+                        .evaluate(bindings);
     }
 
     @Override
-    public Vector computePartialDerivative(Model.ParameterBindings bindings, int variable) {
+    public DMatrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
         return VectorSum.sum(
                 Arrays.stream(expressions)
                       .map(exp -> exp.computePartialDerivative(bindings, variable))
+                      .map(DMatrixColumnVectorExpression::new)
                       .toArray(VectorExpression[]::new)
         ).evaluate(bindings);
     }

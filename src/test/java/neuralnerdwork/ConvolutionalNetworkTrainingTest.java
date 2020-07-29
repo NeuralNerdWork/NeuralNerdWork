@@ -6,7 +6,6 @@ import neuralnerdwork.backprop.FeedForwardNetwork;
 import neuralnerdwork.backprop.Layer;
 import neuralnerdwork.descent.RmsPropUpdate;
 import neuralnerdwork.descent.StochasticGradientDescent;
-import neuralnerdwork.math.ConstantVector;
 import neuralnerdwork.math.ConvolutionFilterMatrix;
 import neuralnerdwork.math.LeakyRelu;
 import neuralnerdwork.math.Model;
@@ -15,7 +14,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Random;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -91,8 +89,8 @@ public class ConvolutionalNetworkTrainingTest {
                 var fails = verificationSet.stream()
                                            .parallel()
                                            .map(i -> {
-                                               return Util.compareClassifications(network.apply(i.input()).get(0), i
-                                                       .output().get(0));
+                                               return Util.compareClassifications(network.apply(i.input())[0], i
+                                                       .output()[0]);
                                            })
                                            .map(b -> new FailurePercent(b ? 0 : 1, 1))
                                            .reduce(new FailurePercent(0, 0), FailurePercent::merge);
@@ -134,13 +132,13 @@ public class ConvolutionalNetworkTrainingTest {
                      })
                      .map(sample -> {
                          double[] pixels = new double[rows * cols];
-                         ConstantVector input = sample.input();
-                         int xToCol = (int) Math.round((input.get(0) / 2.0 + 0.5) * (cols - 1));
-                         int yToRow = (int) Math.round((input.get(1) / 2.0 + 0.5) * (rows - 1));
+                         double[] input = sample.input();
+                         int xToCol = (int) Math.round((input[0] / 2.0 + 0.5) * (cols - 1));
+                         int yToRow = (int) Math.round((input[1] / 2.0 + 0.5) * (rows - 1));
                          int pixelIndex = xToCol * cols + yToRow;
                          pixels[pixelIndex] = 1.0;
 
-                         return new TrainingSample(pixels, sample.output().toArray());
+                         return new TrainingSample(pixels, sample.output());
                      })
                      .collect(Collectors.toList());
     }

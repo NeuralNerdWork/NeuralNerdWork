@@ -3,7 +3,6 @@ package neuralnerdwork;
 import neuralnerdwork.descent.RmsPropUpdate;
 import neuralnerdwork.descent.SimpleBatchGradientDescent;
 import neuralnerdwork.descent.StochasticGradientDescent;
-import neuralnerdwork.math.ConstantVector;
 import neuralnerdwork.viz.JFrameTrainingVisualizer;
 import org.junit.jupiter.api.Test;
 
@@ -18,8 +17,8 @@ import java.util.stream.Stream;
 
 import static neuralnerdwork.NeuralNetwork.fullyConnectedClassificationNetwork;
 import static neuralnerdwork.weight.VariableWeightInitializer.smartRandomWeightInitializer;
-import static neuralnerdwork.weight.VariableWeightInitializer.dumbRandomWeightInitializer;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SimpleTrainingTest {
 // TODO - Parallelize error for training points
@@ -48,8 +47,8 @@ public class SimpleTrainingTest {
         );
 
         NeuralNetwork network = trainer.train(Arrays.asList(
-            new TrainingSample(new ConstantVector(new double[]{0.0, 0.1}), new ConstantVector(new double[]{0.0})),
-            new TrainingSample(new ConstantVector(new double[]{0.0, 1.3}), new ConstantVector(new double[]{1.0}))
+            new TrainingSample(new double[]{0.0, 0.1}, new double[]{0.0}),
+            new TrainingSample(new double[]{0.0, 1.3}, new double[]{1.0})
         ));
 
         
@@ -66,7 +65,7 @@ public class SimpleTrainingTest {
                 double x = r.nextDouble() * 2.0 - 1.0;
                 double y = r.nextDouble() * 2.0 - 1.0;
                 boolean inside = Math.sqrt(x*x + y*y) <= 0.75;
-                return new TrainingSample(new ConstantVector(new double[]{x, y}), new ConstantVector(new double[]{inside ? 1.0 : 0.0}));
+                return new TrainingSample(new double[]{x, y}, new double[]{inside ? 1.0 : 0.0});
             })
             .collect(Collectors.toList());
 
@@ -75,7 +74,7 @@ public class SimpleTrainingTest {
                 double x = r.nextDouble() * 2.0 - 1.0;
                 double y = r.nextDouble() * 2.0 - 1.0;
                 boolean inside = Math.sqrt(x*x + y*y) <= 0.75;
-                return new TrainingSample(new ConstantVector(new double[]{x, y}), new ConstantVector(new double[]{inside ? 1.0 : 0.0}));
+                return new TrainingSample(new double[]{x, y}, new double[]{inside ? 1.0 : 0.0});
             })
             .collect(Collectors.toList());
 
@@ -83,7 +82,7 @@ public class SimpleTrainingTest {
                 trainingSet,
                 new Rectangle2D.Double(-1.0, -1.0, 2.0, 2.0),
                 (sample, prediction) -> {
-                    boolean predictedInside = prediction.get(0) >= 0.5;
+                    boolean predictedInside = prediction[0] >= 0.5;
                     if (predictedInside) {
                         return Color.GREEN;
                     } else {
@@ -101,7 +100,7 @@ public class SimpleTrainingTest {
                         ), (iterationCount, network) -> {
                             var fails = verificationSet.stream()
                             .map (i -> {
-                                return Util.compareClassifications(network.apply(i.input()).get(0), i.output().get(0));
+                                return Util.compareClassifications(network.apply(i.input())[0], i.output()[0]);
                             })
                             .map(b -> new FailurePercent(b ? 0 : 1,  1))
                             .reduce(new FailurePercent(0, 0), FailurePercent::merge);
@@ -141,7 +140,7 @@ public class SimpleTrainingTest {
                 var distance = Math.sqrt(x*x + y*y);
                 boolean inside = distance <= 0.75 && distance >= 0.25;
 
-                return new TrainingSample(new ConstantVector(new double[]{x, y}), new ConstantVector(new double[]{inside ? 1.0 : 0.0}));
+                return new TrainingSample(new double[]{x, y}, new double[]{inside ? 1.0 : 0.0});
             })
             .collect(Collectors.toList());
 
@@ -152,7 +151,7 @@ public class SimpleTrainingTest {
                 var distance = Math.sqrt(x*x + y*y);
                 boolean inside = distance <= 0.75 && distance >= 0.25;
 
-                return new TrainingSample(new ConstantVector(new double[]{x, y}), new ConstantVector(new double[]{inside ? 1.0 : 0.0}));
+                return new TrainingSample(new double[]{x, y}, new double[]{inside ? 1.0 : 0.0});
             })
             .collect(Collectors.toList());
 
@@ -161,10 +160,10 @@ public class SimpleTrainingTest {
             new Rectangle2D.Double(-2.0, -2.0, 4.0, 4.0),
             (sample, prediction) -> {
                 // System.out.printf("(%1.3f,%1.3f) inside? %1.3f\n", sample.input().get(0), sample.input().get(1), prediction.get(0));
-                var greenAmt = (int) Math.floor((prediction.get(0)-0.5) * 2.0 * 127) + 127;
-                var redAmt = (int) Math.floor((0.5 - prediction.get(0)) * 2.0 * 127) + 127;
+                var greenAmt = (int) Math.floor((prediction[0]-0.5) * 2.0 * 127) + 127;
+                var redAmt = (int) Math.floor((0.5 - prediction[0]) * 2.0 * 127) + 127;
                 
-                if(prediction.get(0) >= 0.5) {
+                if(prediction[0] >= 0.5) {
                     return new Color(0, greenAmt, 0);
                 } else {
                     return new Color(redAmt, 0, 0);
@@ -182,7 +181,7 @@ public class SimpleTrainingTest {
                         ), (iterationCount, network) -> {
                             var fails = verificationSet.stream()
                             .map (i -> {
-                                return Util.compareClassifications(network.apply(i.input()).get(0), i.output().get(0));
+                                return Util.compareClassifications(network.apply(i.input())[0], i.output()[0]);
                             })
                             .map(b -> new FailurePercent(b ? 0 : 1,  1))
                             .reduce(new FailurePercent(0, 0), FailurePercent::merge);

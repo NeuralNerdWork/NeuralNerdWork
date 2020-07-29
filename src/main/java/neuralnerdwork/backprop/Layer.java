@@ -2,7 +2,6 @@ package neuralnerdwork.backprop;
 
 import neuralnerdwork.math.ActivationFunction;
 import neuralnerdwork.math.Model;
-import neuralnerdwork.math.Vector;
 import org.ejml.data.DMatrix;
 
 import java.util.stream.IntStream;
@@ -47,18 +46,18 @@ public interface Layer<C> {
 
     /**
      * Used for back-propogating derivative to lower layers.
-     * This method is always called after {@link #evaluate(Vector, Model.ParameterBindings)}.
+     * This method is always called after {@link #evaluate(DMatrix, Model.ParameterBindings)}.
      *
      * @param layerInput The input vector for this layer. Never null.
      * @param cache Cache object that may contain intermediate results. Never null. Fields in cache maybe null.
      * @param bindings Bindings of parameters in entire network. Never null.
      * @return The derivative of this layer with respect to the input of this layer.
      */
-    Result<DMatrix, C> derivativeWithRespectToLayerInput(Vector layerInput, C cache, Model.ParameterBindings bindings);
+    Result<DMatrix, C> derivativeWithRespectToLayerInput(DMatrix layerInput, C cache, Model.ParameterBindings bindings);
 
     /**
      * Used for back-propogating derivative to lower layers.
-     * This method is always called after {@link #evaluate(Vector, Model.ParameterBindings)}.
+     * This method is always called after {@link #evaluate(DMatrix, Model.ParameterBindings)}.
      *
      * @param layerInput The input vector for this layer. Never null.
      * @param variable A variable that is guaranteed to give result {@code true} as an argument to {@link #containsVariable(int)}.
@@ -66,7 +65,7 @@ public interface Layer<C> {
      * @param bindings Bindings of parameters in entire network. Never null.
      * @return The derivative of this layer with respect to a variable in this layer.
      */
-    Result<Vector, C> derivativeWithRespectLayerParameter(Vector layerInput, int variable, C cache, Model.ParameterBindings bindings);
+    Result<DMatrix, C> derivativeWithRespectLayerParameter(DMatrix layerInput, int variable, C cache, Model.ParameterBindings bindings);
 
     /**
      * Evaluate this layer given an input vector.
@@ -75,11 +74,11 @@ public interface Layer<C> {
      * @param bindings Bindings of parameters in entire network. Never null.
      * @return The output of this layer, given a particular input vector and parameter bindings.
      */
-    Result<Vector, C> evaluate(Vector layerInput, Model.ParameterBindings bindings);
+    Result<DMatrix, C> evaluate(DMatrix layerInput, Model.ParameterBindings bindings);
 
     /**
-     * @param cache A cache object from a previous call to {@link #evaluate(Vector, Model.ParameterBindings)}. Must not be null.
+     * @param cache A cache object from a previous call to {@link #evaluate(DMatrix, Model.ParameterBindings)}. Must not be null.
      * @return The cached evaluation result.
      */
-    Vector getEvaluation(C cache);
+    DMatrix getEvaluation(C cache);
 }

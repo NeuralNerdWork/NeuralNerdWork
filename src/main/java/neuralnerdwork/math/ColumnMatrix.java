@@ -43,9 +43,9 @@ public record ColumnMatrix(VectorExpression[] columns) implements MatrixExpressi
     public DMatrix evaluate(Model.ParameterBindings bindings) {
         final DMatrixRMaj values = new DMatrixRMaj(rows(), cols());
         for (int col = 0; col < cols(); col++) {
-            final Vector vector = columns[col].evaluate(bindings);
+            final DMatrix vector = columns[col].evaluate(bindings);
             for (int row = 0; row < rows(); row++) {
-                values.set(row, col, vector.get(row));
+                values.set(row, col, vector.get(row, 0));
             }
         }
 
@@ -54,7 +54,12 @@ public record ColumnMatrix(VectorExpression[] columns) implements MatrixExpressi
 
     @Override
     public DMatrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
-        throw new UnsupportedOperationException("Not yet implemented!");
+        VectorExpression[] derivatives = Arrays.stream(columns)
+                                                     .map(c -> c.computePartialDerivative(bindings, variable))
+                                                     .map(DMatrixColumnVectorExpression::new)
+                                                     .toArray(VectorExpression[]::new);
+
+        return new ColumnMatrix(derivatives).evaluate(bindings);
     }
 
     @Override

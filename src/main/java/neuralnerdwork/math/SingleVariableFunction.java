@@ -1,6 +1,7 @@
 package neuralnerdwork.math;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.ejml.data.DMatrix;
 
 public interface SingleVariableFunction {
 
@@ -36,13 +37,13 @@ public interface SingleVariableFunction {
         }
 
         @Override
-        public Vector computeDerivative(Model.ParameterBindings bindings) {
-            VectorExpression innerDerivative = inputExpression.computeDerivative(bindings);
+        public DMatrix computeDerivative(Model.ParameterBindings bindings) {
+            DMatrix innerDerivative = inputExpression.computeDerivative(bindings);
             SingleVariableFunction outerDerivative = function.differentiateByInput();
 
             return new ScaledVector(
                     outerDerivative.invoke(inputExpression),
-                    innerDerivative
+                    new DMatrixColumnVectorExpression(innerDerivative)
             ).evaluate(bindings);
         }
 

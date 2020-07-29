@@ -4,6 +4,8 @@ import neuralnerdwork.backprop.FeedForwardNetwork;
 import neuralnerdwork.backprop.FullyConnectedLayer;
 import neuralnerdwork.backprop.Layer;
 import neuralnerdwork.math.*;
+import org.ejml.data.DMatrix;
+import org.ejml.data.DMatrixRMaj;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -11,12 +13,22 @@ import java.util.function.Function;
 public record NeuralNetwork(FeedForwardNetwork runtimeNetwork, Model.ParameterBindings parameterBindings) {
 
     public double[] apply(double[] input) {
-        var inputVector = new ConstantVector(input);
-        return runtimeNetwork.expression(inputVector).evaluate(parameterBindings).toArray();
+        var inputVector = new DMatrixRMaj(input.length, 1, true, input);
+        DMatrix result = apply(inputVector);
+        if (result instanceof DMatrixRMaj m) {
+            return m.getData();
+        } else {
+            double[] values = new double[result.getNumRows() * result.getNumCols()];
+            for (int i = 0; i < values.length; i++) {
+                values[i] = result.get(i, 0);
+            }
+
+            return values;
+        }
     }
     
-    public Vector apply(Vector input) {
-        return new ConstantVector(apply(input.toArray()));
+    public DMatrix apply(DMatrix input) {
+        return runtimeNetwork.expression(input).evaluate(parameterBindings);
     }
 
     public static NeuralNetwork fullyConnectedClassificationNetwork(Function<Layer<?>, Double> initialWeightSupplier, int... layerSizes) {

@@ -51,10 +51,10 @@ public record ConvolutionLayer(int inputChannels, Convolution[] convolutions, Ac
     }
 
     @Override
-    public Result<Vector, ConvolutionCache> evaluate(Vector layerInput, Model.ParameterBindings bindings) {
-        if (layerInput.length() != inputLength()) {
+    public Result<DMatrix, ConvolutionCache> evaluate(DMatrix layerInput, Model.ParameterBindings bindings) {
+        if (layerInput.getNumRows() != inputLength()) {
             throw new IllegalArgumentException(format("given vector length [%d] does not match expected input size [%d]", layerInput
-                    .length(), inputLength()));
+                    .getNumRows(), inputLength()));
         }
 
         double[] values = new double[outputLength()];
@@ -65,38 +65,38 @@ public record ConvolutionLayer(int inputChannels, Convolution[] convolutions, Ac
                 try {
                     ConvolutionFilterMatrix matrix = convolutions[convIndex].matrix();
                     ScalarParameter bias = convolutions[convIndex].bias();
-                    Vector activationInput = sum(
+                    DMatrix activationInput = sum(
                             new MatrixVectorProduct(
                                     matrix,
-                                    layerInput
+                                    new DMatrixColumnVectorExpression(layerInput)
                             ),
                             new RepeatedScalarVectorExpression(bias, matrix.rows())
                     ).evaluate(bindings);
-                    Vector activation = new VectorizedSingleVariableFunction(this.activation, activationInput).evaluate(bindings);
+                    DMatrixColumnVectorExpression activationInputExpression = new DMatrixColumnVectorExpression(activationInput);
+                    DMatrix activation = new VectorizedSingleVariableFunction(this.activation, activationInputExpression).evaluate(bindings);
                     DMatrix activationWithRespectConvolution = new DiagonalizedVector(
                             new VectorizedSingleVariableFunction(
                                     this.activation,
-                                    activationInput
+                                    activationInputExpression
                             )
                     ).evaluate(bindings);
                     channels[convIndex][channelIndex] = new ChannelCache(activation, activationInput, activationWithRespectConvolution);
-                    System.arraycopy(activation.toArray(),
-                                     0,
-                                     values,
-                                     (convIndex * inputChannels + channelIndex) * convolutions[0].outputLength(),
-                                     activation.length());
+                    int dstOffset = (convIndex * inputChannels + channelIndex) * convolutions[0].outputLength();
+                    for (int i = 0; i < activation.getNumRows(); i++) {
+                        values[dstOffset + i] = activation.get(i, 0);
+                    }
                 } catch (RuntimeException ex) {
                     throw new RuntimeException(format("encountered exception at (convIndex, channelIndex)=(%d, %d)", convIndex, channelIndex), ex);
                 }
             }
         }
 
-        ConstantVector combinedActivation = new ConstantVector(values);
+        DMatrixRMaj combinedActivation = new DMatrixRMaj(values.length, 1, true, values);
         return new Result<>(combinedActivation, new ConvolutionCache(combinedActivation, channels));
     }
 
     @Override
-    public Result<DMatrix, ConvolutionCache> derivativeWithRespectToLayerInput(Vector layerInput, ConvolutionCache cache, Model.ParameterBindings bindings) {
+    public Result<DMatrix, ConvolutionCache> derivativeWithRespectToLayerInput(DMatrix layerInput, ConvolutionCache cache, Model.ParameterBindings bindings) {
         DMatrixRMaj derivative = new DMatrixRMaj(outputLength(), inputLength());
         for (int convIndex = 0; convIndex < convolutions.length; convIndex++) {
             for (int channelIndex = 0; channelIndex < inputChannels; channelIndex++) {
@@ -118,35 +118,33 @@ public record ConvolutionLayer(int inputChannels, Convolution[] convolutions, Ac
     }
 
     @Override
-    public Result<Vector, ConvolutionCache> derivativeWithRespectLayerParameter(Vector layerInput, int variable, ConvolutionCache cache, Model.ParameterBindings bindings) {
+    public Result<DMatrix, ConvolutionCache> derivativeWithRespectLayerParameter(DMatrix layerInput, int variable, ConvolutionCache cache, Model.ParameterBindings bindings) {
         double[] derivative = new double[outputLength()];
         for (int convIndex = 0; convIndex < convolutions.length; convIndex++) {
             for (int channelIndex = 0; channelIndex < inputChannels; channelIndex++) {
                 ChannelCache cacheEntry = cache.channels()[convIndex][channelIndex];
                 DMatrix activationWithRespectConvolution = cacheEntry.activationWithRespectConvolution();
                 ConvolutionFilterMatrix matrix = convolutions[convIndex].matrix();
-                Vector convolutionDerivative =
+                DMatrix convolutionDerivative =
                         new MatrixVectorProduct(
                                 new MatrixProduct(
                                         new DMatrixExpression(activationWithRespectConvolution),
                                         new DMatrixExpression(matrix.computePartialDerivative(bindings, variable))
                                 ),
-                                layerInput
+                                new DMatrixColumnVectorExpression(layerInput)
                         ).evaluate(bindings);
-                double[] derivativeValues = convolutionDerivative.toArray();
-                System.arraycopy(derivativeValues,
-                                 0,
-                                 derivative,
-                                 (convIndex * inputChannels + channelIndex) * convolutions[0].inputLength(),
-                                 convolutionDerivative.length());
+                int dstOffset = (convIndex * inputChannels + channelIndex) * convolutions[0].inputLength();
+                for (int i = 0; i < convolutionDerivative.getNumRows(); i++) {
+                    derivative[dstOffset + i] = convolutionDerivative.get(i, 0);
+                }
             }
         }
 
-        return new Result<>(new ConstantVector(derivative), cache);
+        return new Result<>(new DMatrixRMaj(derivative.length, 1, true, derivative), cache);
     }
 
     @Override
-    public Vector getEvaluation(ConvolutionCache cache) {
+    public DMatrix getEvaluation(ConvolutionCache cache) {
         return cache.output();
     }
 
@@ -160,7 +158,7 @@ public record ConvolutionLayer(int inputChannels, Convolution[] convolutions, Ac
         }
     }
 
-    public record ConvolutionCache(Vector output, ChannelCache[][] channels) {}
+    public record ConvolutionCache(DMatrix output, ChannelCache[][] channels) {}
 
-    public record ChannelCache(Vector activation, Vector activationInput, DMatrix activationWithRespectConvolution) {}
+    public record ChannelCache(DMatrix activation, DMatrix activationInput, DMatrix activationWithRespectConvolution) {}
 }

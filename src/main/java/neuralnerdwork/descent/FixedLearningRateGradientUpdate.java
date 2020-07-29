@@ -1,19 +1,18 @@
 package neuralnerdwork.descent;
 
-import neuralnerdwork.math.ConstantVector;
 import neuralnerdwork.math.Model;
 import neuralnerdwork.math.ScalarExpression;
-import neuralnerdwork.math.Vector;
+import org.ejml.data.DMatrix;
 
 public record FixedLearningRateGradientUpdate(double learningRate) implements WeightUpdateStrategy {
     @Override
-    public Vector updateVector(ScalarExpression error, Model.ParameterBindings parameterBindings) {
-        final Vector rawGradient = error.computeDerivative(parameterBindings);
-        final double[] updateValues = rawGradient.toArray();
+    public double[] updateVector(ScalarExpression error, Model.ParameterBindings parameterBindings) {
+        final DMatrix rawGradient = error.computeDerivative(parameterBindings);
+        final double[] updateValues = new double[rawGradient.getNumCols()];
         for (int i = 0; i < updateValues.length; i++) {
-            updateValues[i] *= -learningRate;
+            updateValues[i] = -learningRate * rawGradient.get(0, i);
         }
 
-        return new ConstantVector(updateValues);
+        return updateValues;
     }
 }

@@ -1,16 +1,13 @@
 package neuralnerdwork.descent;
 
-import neuralnerdwork.math.ConstantVector;
 import neuralnerdwork.math.Model;
 import neuralnerdwork.math.ScalarExpression;
-import neuralnerdwork.math.Vector;
-
-import java.util.Arrays;
+import org.ejml.data.DMatrix;
 
 public class NesterovMomentumGradientUpdate implements WeightUpdateStrategy {
     private final double learningRate;
     private final double decayRate;
-    private Vector momentum;
+    private double[] momentum;
 
     public NesterovMomentumGradientUpdate(double learningRate, double decayRate) {
         this.learningRate = learningRate;
@@ -18,31 +15,26 @@ public class NesterovMomentumGradientUpdate implements WeightUpdateStrategy {
     }
 
     @Override
-    public Vector updateVector(ScalarExpression error, Model.ParameterBindings parameterBindings) {
+    public double[] updateVector(ScalarExpression error, Model.ParameterBindings parameterBindings) {
         if (momentum == null) {
-            final Vector initialGradient = error.computeDerivative(parameterBindings);
-            momentum = new ConstantVector(
-                    Arrays.stream(initialGradient.toArray())
-                          .map(x -> -x)
-                          .toArray()
-            );
+            momentum = new double[parameterBindings.size()];
         }
 
         final Model.ParameterBindings lookAheadBindings = parameterBindings.copy();
         {
             int i = 0;
             for (int variable : parameterBindings.variables()) {
-                lookAheadBindings.put(variable, lookAheadBindings.get(i) + decayRate * momentum.get(i));
+                lookAheadBindings.put(variable, lookAheadBindings.get(i) + decayRate * momentum[i]);
                 i++;
             }
         }
-        final Vector rawGradient = error.computeDerivative(parameterBindings);
+        final DMatrix rawGradient = error.computeDerivative(parameterBindings);
 
-        final double[] updatedMomentumComponents = new double[momentum.length()];
+        final double[] updatedMomentumComponents = new double[momentum.length];
         for (int i = 0; i < updatedMomentumComponents.length; i++) {
-            updatedMomentumComponents[i] = decayRate * momentum.get(i) - learningRate * rawGradient.get(i);
+            updatedMomentumComponents[i] = decayRate * momentum[i] - learningRate * rawGradient.get(0, i);
         }
-        momentum = new ConstantVector(updatedMomentumComponents);
+        momentum = updatedMomentumComponents;
 
         return momentum;
     }

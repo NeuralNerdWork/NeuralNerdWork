@@ -18,14 +18,14 @@ public record FeedForwardNetwork(Layer<?>[]layers) {
             this.layer = layer;
         }
 
-        DMatrix derivativeWithRespectToLayerInput(Vector layerInput, Model.ParameterBindings bindings) {
+        DMatrix derivativeWithRespectToLayerInput(DMatrix layerInput, Model.ParameterBindings bindings) {
             var result = layer.derivativeWithRespectToLayerInput(layerInput, Objects.requireNonNull(cache), bindings);
             cache = result.cache();
 
             return result.output();
         }
 
-        Vector derivativeWithRespectLayerParameter(Vector layerInput, int variable, Model.ParameterBindings bindings) {
+        DMatrix derivativeWithRespectLayerParameter(DMatrix layerInput, int variable, Model.ParameterBindings bindings) {
             var result = layer
                     .derivativeWithRespectLayerParameter(layerInput, variable, Objects.requireNonNull(cache), bindings);
             cache = result.cache();
@@ -33,14 +33,14 @@ public record FeedForwardNetwork(Layer<?>[]layers) {
             return result.output();
         }
 
-        Vector evaluate(Vector layerInput, Model.ParameterBindings bindings) {
+        DMatrix evaluate(DMatrix layerInput, Model.ParameterBindings bindings) {
             var result = layer.evaluate(layerInput, bindings);
             cache = result.cache();
 
             return result.output();
         }
 
-        Vector getCachedEvaluation() {
+        DMatrix getCachedEvaluation() {
             return layer.getEvaluation(Objects.requireNonNull(cache));
         }
     }
@@ -53,19 +53,19 @@ public record FeedForwardNetwork(Layer<?>[]layers) {
         return layers[layers.length - 1].outputLength();
     }
 
-    public FeedForwardExpression expression(ConstantVector input) {
+    public FeedForwardExpression expression(DMatrix input) {
         return new FeedForwardExpression(layers, input);
     }
 
-    public record FeedForwardExpression(Layer<?>[]layers, ConstantVector input) implements VectorExpression {
+    public record FeedForwardExpression(Layer<?>[]layers, DMatrix input) implements VectorExpression {
         @Override
         public int length() {
             return layers[layers.length - 1].outputLength();
         }
 
         @Override
-        public Vector evaluate(Model.ParameterBindings bindings) {
-            Vector lastOutput = input;
+        public DMatrix evaluate(Model.ParameterBindings bindings) {
+            DMatrix lastOutput = input;
             for (Layer<?> layer : layers) {
                 lastOutput = layer.evaluate(lastOutput, bindings).output();
             }
@@ -86,7 +86,7 @@ public record FeedForwardNetwork(Layer<?>[]layers) {
                                 partial derivatives to be returned in a layout consistent with a given variable order.
              */
 
-            Vector lastOutput = input;
+            DMatrix lastOutput = input;
 
             /* Feed forward
                 Evaluate network, saving activation values and weighted sums of inputs at each layer to be re-used
@@ -113,7 +113,7 @@ public record FeedForwardNetwork(Layer<?>[]layers) {
             // Base case: output layer
             {
                 final int layerIndex = layers.length - 1;
-                final Vector layerInput = (layerIndex != 0) ?
+                final DMatrix layerInput = (layerIndex != 0) ?
                         layerDelegates[layerIndex - 1].getCachedEvaluation() :
                         input;
                 deltas[layerIndex] = layerDelegates[layerIndex].derivativeWithRespectToLayerInput(layerInput, bindings);
@@ -124,7 +124,7 @@ public record FeedForwardNetwork(Layer<?>[]layers) {
                 try {
                     final DMatrix previousDeltaExpression = deltas[l + 1];
 
-                    final Vector layerInput = (l == 0) ? input : layerDelegates[l - 1].getCachedEvaluation();
+                    final DMatrix layerInput = (l == 0) ? input : layerDelegates[l - 1].getCachedEvaluation();
                     final DMatrix layerDerivative = delegate.derivativeWithRespectToLayerInput(layerInput, bindings);
                     deltas[l] =
                             product(
@@ -150,27 +150,27 @@ public record FeedForwardNetwork(Layer<?>[]layers) {
                     /*
                      Special cases for input layer
                      */
-                    final Vector layerInput;
+                    final DMatrix layerInput;
                     if (layerIndex > 0) {
                         layerInput = layerDelegates[layerIndex - 1].getCachedEvaluation();
                     } else {
                         layerInput = input;
                     }
 
-                    final Vector layerDerivative = delegate
+                    final DMatrix layerDerivative = delegate
                             .derivativeWithRespectLayerParameter(layerInput, variable, bindings);
                     if (layerIndex == layers.length - 1) {
-                        for (int i = 0; i < layerDerivative.length(); i++) {
-                            partialDerivatives[i][varIndex] = layerDerivative.get(i);
+                        for (int i = 0; i < layerDerivative.getNumRows(); i++) {
+                            partialDerivatives[i][varIndex] = layerDerivative.get(i, 0);
                         }
                     } else {
                         final DMatrix layerDeltas = deltas[layerIndex + 1];
-                        Vector derivativeProduct = new MatrixVectorProduct(
+                        DMatrix derivativeProduct = new MatrixVectorProduct(
                                 new DMatrixExpression(layerDeltas),
-                                layerDerivative
+                                new DMatrixColumnVectorExpression(layerDerivative)
                         ).evaluate(bindings);
-                        for (int i = 0; i < derivativeProduct.length(); i++) {
-                            partialDerivatives[i][varIndex] = derivativeProduct.get(i);
+                        for (int i = 0; i < derivativeProduct.getNumRows(); i++) {
+                            partialDerivatives[i][varIndex] = derivativeProduct.get(i, 0);
                         }
                     }
                     varIndex++;
@@ -184,7 +184,7 @@ public record FeedForwardNetwork(Layer<?>[]layers) {
         }
 
         @Override
-        public Vector computePartialDerivative(Model.ParameterBindings bindings, int variable) {
+        public DMatrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
             throw new UnsupportedOperationException("Not implemented");
         }
 

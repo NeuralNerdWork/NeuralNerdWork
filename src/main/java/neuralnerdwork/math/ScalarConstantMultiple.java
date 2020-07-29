@@ -1,5 +1,7 @@
 package neuralnerdwork.math;
 
+import org.ejml.data.DMatrix;
+
 public record ScalarConstantMultiple(double constant, ScalarExpression expression) implements ScalarExpression {
     @Override
     public double evaluate(Model.ParameterBindings bindings) {
@@ -14,10 +16,14 @@ public record ScalarConstantMultiple(double constant, ScalarExpression expressio
     }
 
     @Override
-    public Vector computeDerivative(Model.ParameterBindings bindings) {
-        return new ScaledVector(
-                constant,
-                expression.computeDerivative(bindings)
+    public DMatrix computeDerivative(Model.ParameterBindings bindings) {
+        return new TransposeExpression(
+                new DMatrixExpression(
+                        new ScaledVector(
+                                constant,
+                                new DMatrixColumnVectorExpression(expression.computeDerivative(bindings))
+                        ).evaluate(bindings)
+                )
         ).evaluate(bindings);
     }
 

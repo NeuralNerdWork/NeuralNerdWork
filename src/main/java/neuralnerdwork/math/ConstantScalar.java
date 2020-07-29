@@ -1,5 +1,8 @@
 package neuralnerdwork.math;
 
+import org.ejml.data.DMatrix;
+import org.ejml.data.DMatrixSparseCSC;
+
 public record ConstantScalar(double value) implements ScalarExpression {
     @Override
     public double evaluate(Model.ParameterBindings bindings) {
@@ -12,8 +15,8 @@ public record ConstantScalar(double value) implements ScalarExpression {
     }
 
     @Override
-    public Vector computeDerivative(Model.ParameterBindings bindings) {
-        return new ConstantVector(new double[bindings.size()]);
+    public DMatrix computeDerivative(Model.ParameterBindings bindings) {
+        return new DMatrixSparseCSC(1, bindings.size(), 0);
     }
 
     @Override

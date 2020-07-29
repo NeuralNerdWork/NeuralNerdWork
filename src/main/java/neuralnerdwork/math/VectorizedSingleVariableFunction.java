@@ -1,6 +1,7 @@
 package neuralnerdwork.math;
 
 import org.ejml.data.DMatrix;
+import org.ejml.data.DMatrixRMaj;
 
 public record VectorizedSingleVariableFunction(SingleVariableFunction function, VectorExpression vectorExpression) implements VectorExpression {
 
@@ -15,14 +16,14 @@ public record VectorizedSingleVariableFunction(SingleVariableFunction function, 
     }
 
     @Override
-    public Vector evaluate(Model.ParameterBindings bindings) {
-        final Vector vector = vectorExpression.evaluate(bindings);
-        final double[] values = new double[vector.length()];
+    public DMatrix evaluate(Model.ParameterBindings bindings) {
+        final DMatrix vector = vectorExpression.evaluate(bindings);
+        final double[] values = new double[vector.getNumRows()];
         for (int i = 0; i < values.length; i++) {
-            values[i] = function.apply(vector.get(i));
+            values[i] = function.apply(vector.get(i, 0));
         }
 
-        return new ConstantVector(values);
+        return new DMatrixRMaj(values.length, 1, true, values);
     }
 
     @Override
@@ -39,12 +40,12 @@ public record VectorizedSingleVariableFunction(SingleVariableFunction function, 
     }
 
     @Override
-    public Vector computePartialDerivative(Model.ParameterBindings bindings, int variable) {
-        final VectorExpression innerDerivative = this.vectorExpression.computePartialDerivative(bindings, variable);
+    public DMatrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
+        final DMatrix innerDerivative = this.vectorExpression.computePartialDerivative(bindings, variable);
 
         return VectorComponentProduct.product(
                 new VectorizedSingleVariableFunction(function.differentiateByInput(),
                                                      vectorExpression),
-                innerDerivative).evaluate(bindings);
+                new DMatrixColumnVectorExpression(innerDerivative)).evaluate(bindings);
     }
 }

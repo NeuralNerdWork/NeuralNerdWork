@@ -2,17 +2,28 @@ package neuralnerdwork.math;
 
 import org.ejml.data.DMatrix;
 import org.ejml.data.DMatrixRMaj;
+import org.ejml.data.DMatrixSparseCSC;
+import org.ejml.dense.row.CommonOps_DDRM;
+import org.ejml.ops.ConvertDMatrixStruct;
+
+import java.util.Arrays;
 
 public record RepeatedScalarVectorExpression(ScalarExpression scalar, int length) implements VectorExpression {
 
     @Override
-    public Vector evaluate(Model.ParameterBindings bindings) {
-        return new RepeatedScalarVector(scalar.evaluate(bindings), length);
+    public DMatrix evaluate(Model.ParameterBindings bindings) {
+        double[] values = new double[length];
+        Arrays.fill(values, scalar.evaluate(bindings));
+
+        return new DMatrixRMaj(1, length, true, values);
     }
 
     @Override
-    public Vector computePartialDerivative(Model.ParameterBindings bindings, int variable) {
-        return new RepeatedScalarVector(scalar.computePartialDerivative(bindings, variable), length);
+    public DMatrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
+        double[] values = new double[length];
+        Arrays.fill(values, scalar.computePartialDerivative(bindings, variable));
+
+        return new DMatrixRMaj(1, length, true, values);
     }
 
     @Override
@@ -22,12 +33,17 @@ public record RepeatedScalarVectorExpression(ScalarExpression scalar, int length
 
     @Override
     public DMatrix computeDerivative(Model.ParameterBindings bindings) {
-        double[] gradient = scalar.computeDerivative(bindings).toArray();
-        double[] values = new double[length * gradient.length];
-        for (int i = 0; i < values.length; i++) {
-            System.arraycopy(gradient, 0, values, gradient.length * i, gradient.length);
+        DMatrix gradient = scalar.computeDerivative(bindings);
+        if (gradient instanceof DMatrixSparseCSC m) {
+            gradient = ConvertDMatrixStruct.convert(m, (DMatrixRMaj) null);
         }
 
-        return new DMatrixRMaj(length, gradient.length, true, values);
+        if (gradient instanceof DMatrixRMaj m) {
+            DMatrixRMaj[] rows = new DMatrixRMaj[length];
+            Arrays.fill(rows, m);
+            return CommonOps_DDRM.concatRowsMulti(rows);
+        } else {
+            throw new UnsupportedOperationException("Cannot create repeated vector for gradient type " + gradient.getClass());
+        }
     }
 }

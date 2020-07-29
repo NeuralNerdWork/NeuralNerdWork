@@ -2,7 +2,7 @@ package neuralnerdwork.descent;
 
 import neuralnerdwork.math.Model;
 import neuralnerdwork.math.ScalarExpression;
-import neuralnerdwork.math.Vector;
+import org.ejml.data.DMatrix;
 
 /**
  * Does the weight update step for a variation of gradient descent. See
@@ -19,5 +19,5 @@ public interface WeightUpdateStrategy {
      *                          mutate this.
      * @return A vector that can be added to the current parameter bindings to update their values.
      */
-    Vector updateVector(ScalarExpression error, Model.ParameterBindings parameterBindings);
+    double[] updateVector(ScalarExpression error, Model.ParameterBindings parameterBindings);
 }

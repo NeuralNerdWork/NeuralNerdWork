@@ -8,11 +8,14 @@ import neuralnerdwork.backprop.FeedForwardNetwork;
 import neuralnerdwork.backprop.FullyConnectedLayer;
 import neuralnerdwork.math.*;
 import org.ejml.data.DMatrix;
+import org.ejml.data.DMatrixRMaj;
+import org.ejml.dense.row.MatrixFeatures_DDRM;
 
 import java.util.Arrays;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class GradientDescentTest {
 
@@ -32,12 +35,12 @@ public class GradientDescentTest {
         final int numLayers = singleDescentStepWithGenericDerivativeShouldReduceError_layers;
 
         final Model builder = new Model();
-        final VectorExpression trainingInput = new ConstantVector(inputs);
+        final DMatrix trainingInput = new DMatrixRMaj(inputs);
 
         final LogisticFunction logistic = new LogisticFunction();
 
-        final ConstantVector biasComponent = new ConstantVector(new double[]{1.0});
-        VectorExpression networkFunction = new VectorConcat(trainingInput, biasComponent);
+        final DMatrixRMaj biasComponent = new DMatrixRMaj(new double[]{1.0});
+        VectorExpression networkFunction = new VectorConcat(new DMatrixColumnVectorExpression(trainingInput), new DMatrixColumnVectorExpression(biasComponent));
         for (int i = 0; i < numLayers-1; i++) {
             networkFunction =
                     new VectorConcat(
@@ -48,7 +51,7 @@ public class GradientDescentTest {
                                             networkFunction
                                     )
                             ),
-                            biasComponent
+                            new DMatrixColumnVectorExpression(biasComponent)
                     );
         }
         networkFunction =
@@ -60,16 +63,16 @@ public class GradientDescentTest {
                         )
                 );
 
-        final ConstantVector trainingOutput = new ConstantVector(outputValues);
-        final VectorExpression error = VectorSum.sum(networkFunction, new ScaledVector(-1.0, trainingOutput));
+        final DMatrixRMaj trainingOutput = new DMatrixRMaj(outputValues);
+        final VectorExpression error = VectorSum.sum(networkFunction, new ScaledVector(-1.0, new DMatrixColumnVectorExpression(trainingOutput)));
 
         final double[] ones = new double[rows];
         Arrays.fill(ones, 1.0);
-        final ScalarExpression squaredError = new DotProduct(new ConstantVector(ones),
+        final ScalarExpression squaredError = new DotProduct(new DMatrixColumnVectorExpression(new DMatrixRMaj(ones)),
                 new VectorizedSingleVariableFunction(new SquaredSingleVariableFunction(), error));
 
         final Model.ParameterBindings parameterBindings = builder.createBinder();
-        final Vector lossDerivative = Util
+        final DMatrix lossDerivative = Util
                 .logTiming("Computed derivative function", () -> squaredError.computeDerivative(parameterBindings
                 ));
 
@@ -83,9 +86,9 @@ public class GradientDescentTest {
         final double originalError = Util.logTiming("Invoked undifferentiated error", () -> squaredError.evaluate(parameterBindings));
         Util.logFunctionStructure(lossDerivative);
         final double learningRate = 0.01;
-        for (int i = 0; i < lossDerivative.length(); i++) {
+        for (int i = 0; i < lossDerivative.getNumRows() * lossDerivative.getNumCols(); i++) {
             parameterBindings.put(i, parameterBindings.get(i) - learningRate * lossDerivative
-                    .get(i));
+                    .get(0, i));
         }
         final double updated = squaredError.evaluate(parameterBindings);
         assertTrue(updated <= originalError, String.format("Expected error to decrease, but observed (original, updated) = (%f, %f)", originalError, updated));
@@ -108,7 +111,7 @@ public class GradientDescentTest {
         final int numLayers = singleDescentStepWithBackpropDerivativeShouldReduceError_layers;
 
         final Model builder = new Model();
-        final ConstantVector trainingInput = new ConstantVector(inputs);
+        final DMatrix trainingInput = new DMatrixRMaj(inputs);
 
         final LogisticFunction logistic = new LogisticFunction();
 
@@ -121,16 +124,16 @@ public class GradientDescentTest {
 
         final FeedForwardNetwork.FeedForwardExpression networkFunction = new FeedForwardNetwork(layers).expression(trainingInput);
 
-        final ConstantVector trainingOutput = new ConstantVector(outputValues);
-        final VectorExpression error = VectorSum.sum(networkFunction, new ScaledVector(-1.0, trainingOutput));
+        final DMatrix trainingOutput = new DMatrixRMaj(outputValues);
+        final VectorExpression error = VectorSum.sum(networkFunction, new ScaledVector(-1.0, new DMatrixColumnVectorExpression(trainingOutput)));
 
         final double[] ones = new double[rows];
         Arrays.fill(ones, 1.0);
-        final ScalarExpression squaredError = new DotProduct(new ConstantVector(ones),
+        final ScalarExpression squaredError = new DotProduct(new DMatrixColumnVectorExpression(new DMatrixRMaj(ones)),
                                                              new VectorizedSingleVariableFunction(new SquaredSingleVariableFunction(), error));
 
         final Model.ParameterBindings parameterBindings = builder.createBinder();
-        final Vector lossDerivative = Util
+        final DMatrix lossDerivative = Util
                 .logTiming("Computed derivative function", () -> squaredError.computeDerivative(parameterBindings
                 ));
 
@@ -144,9 +147,9 @@ public class GradientDescentTest {
         final double originalError = Util.logTiming("Invoked undifferentiated error", () -> squaredError.evaluate(parameterBindings));
         Util.logFunctionStructure(lossDerivative);
         final double learningRate = 0.01;
-        for (int i = 0; i < lossDerivative.length(); i++) {
+        for (int i = 0; i < lossDerivative.getNumRows() * lossDerivative.getNumCols(); i++) {
             parameterBindings.put(i, parameterBindings.get(i) - learningRate * lossDerivative
-                    .get(i));
+                    .get(0, i));
         }
         final double updated = squaredError.evaluate(parameterBindings);
         assertTrue(updated <= originalError, String.format("Expected error to decrease, but observed (original, updated) = (%f, %f)", originalError, updated));
@@ -168,12 +171,12 @@ public class GradientDescentTest {
         final int numLayers = backpropShouldBeSameAsRegularGradient_layers;
 
         final Model builder = new Model();
-        final ConstantVector trainingInput = new ConstantVector(Arrays.copyOf(values, cols));
+        final DMatrix trainingInput = new DMatrixRMaj(Arrays.copyOf(values, cols));
 
         final LogisticFunction logistic = new LogisticFunction();
 
         final FullyConnectedLayer[] layers = new FullyConnectedLayer[backpropShouldBeSameAsRegularGradient_layers];
-        VectorExpression genericNetworkBuilder = trainingInput;
+        VectorExpression genericNetworkBuilder = new DMatrixColumnVectorExpression(trainingInput);
         for (int i = 0; i < numLayers; i++) {
             ParameterMatrix weights = builder.createParameterMatrix(rows, cols);
             ParameterVector bias = i < numLayers - 1 ? builder.createParameterVector(rows) : null;
@@ -264,12 +267,12 @@ public class GradientDescentTest {
         final int numLayers = backpropSquaredErrorShoudlBeSameAsRegularGradientSquaredError_layers;
 
         final Model builder = new Model();
-        final ConstantVector trainingInput = new ConstantVector(Arrays.copyOf(values, cols));
+        final DMatrix trainingInput = new DMatrixRMaj(Arrays.copyOf(values, cols));
 
         final LogisticFunction logistic = new LogisticFunction();
 
         final FullyConnectedLayer[] layers = new FullyConnectedLayer[backpropSquaredErrorShoudlBeSameAsRegularGradientSquaredError_layers];
-        VectorExpression genericNetworkBuilder = trainingInput;
+        VectorExpression genericNetworkBuilder = new DMatrixColumnVectorExpression(trainingInput);
         for (int i = 0; i < numLayers; i++) {
             ParameterMatrix weights = builder.createParameterMatrix(rows, cols);
             ParameterVector bias = i < numLayers - 1 ? builder.createParameterVector(rows) : null;
@@ -303,28 +306,29 @@ public class GradientDescentTest {
             }
         }
 
-        TrainingSample sample = new TrainingSample(new ConstantVector(inputs), new ConstantVector(outputs));
+        TrainingSample sample = new TrainingSample(inputs, outputs);
         ScalarExpression genericError = squaredError(sample, genericNetwork);
         ScalarExpression backpropError = squaredError(sample, specializedImplementation);
-        final Vector genericResult = Util.logTiming("Evaluated generic derivative", () -> genericError
+        final DMatrix genericResult = Util.logTiming("Evaluated generic derivative", () -> genericError
                 .computeDerivative(parameterBindings));
-        final Vector specializedResult = Util
+        final DMatrix specializedResult = Util
                 .logTiming("Evaluated specialized derivative", () -> backpropError
                         .computeDerivative(parameterBindings));
 
         final double delta = 1e-8;
 
-        assertEquals(genericResult.length(), specializedResult.length());
-        assertArrayEquals(genericResult.toArray(), specializedResult.toArray(), delta);
+        assertTrue(MatrixFeatures_DDRM.isEquals((DMatrixRMaj) genericResult, (DMatrixRMaj) specializedResult, delta), () ->
+                "expected:\n" + genericResult + "\n\nobserved:\n" + specializedResult + "\n"
+        );
     }
 
     private static ScalarExpression squaredError(TrainingSample sample, VectorExpression network) {
         // difference between network output and expected output
-        final VectorExpression inputError = VectorSum.sum(network, new ScaledVector(-1.0, sample.output()));
+        final VectorExpression inputError = VectorSum.sum(network, new ScaledVector(-1.0, new DMatrixColumnVectorExpression(new DMatrixRMaj(sample.output()))));
 
-        final double[] ones = new double[sample.output().length()];
+        final double[] ones = new double[sample.output().length];
         Arrays.fill(ones, 1.0);
-        return new DotProduct(new ConstantVector(ones),
+        return new DotProduct(new DMatrixColumnVectorExpression(new DMatrixRMaj(ones)),
                               new VectorizedSingleVariableFunction(new SquaredSingleVariableFunction(), inputError));
     }
 }

@@ -1,6 +1,7 @@
 package neuralnerdwork.math;
 
 import org.ejml.data.DMatrix;
+import org.ejml.data.DMatrixSparseCSC;
 
 import java.util.stream.StreamSupport;
 
@@ -10,7 +11,7 @@ public record MatrixVectorProduct(MatrixExpression left, VectorExpression right)
     public static VectorExpression product(MatrixExpression left, VectorExpression right) {
         final MatrixVectorProduct product = new MatrixVectorProduct(left, right);
         if (product.isZero()) {
-            return new ConstantVector(new double[product.length()]);
+            return new DMatrixColumnVectorExpression(new DMatrixSparseCSC(product.length(), 1, 0));
         } else {
             return product;
         }
@@ -34,20 +35,11 @@ public record MatrixVectorProduct(MatrixExpression left, VectorExpression right)
     }
 
     @Override
-    public Vector evaluate(Model.ParameterBindings bindings) {
+    public DMatrix evaluate(Model.ParameterBindings bindings) {
         final DMatrix leftValue = this.left.evaluate(bindings);
-        final Vector rightValue = this.right.evaluate(bindings);
+        final DMatrix rightValue = this.right.evaluate(bindings);
 
-        final double[] values = new double[leftValue.getNumRows()];
-        for (int col = 0; col < leftValue.getNumCols(); col++) {
-            if (rightValue.get(col) != 0.0) {
-                for (int row = 0; row < leftValue.getNumRows(); row++) {
-                    values[row] += leftValue.get(row, col) * rightValue.get(col);
-                }
-            }
-        }
-
-        return new ConstantVector(values);
+        return EJMLUtil.mult(leftValue, rightValue);
     }
 
     @Override
@@ -69,18 +61,18 @@ public record MatrixVectorProduct(MatrixExpression left, VectorExpression right)
     }
 
     @Override
-    public Vector computePartialDerivative(Model.ParameterBindings bindings, int variable) {
+    public DMatrix computePartialDerivative(Model.ParameterBindings bindings, int variable) {
         // Uses product rule
         // (Fg)' = F'g + Fg'
 
         final DMatrix leftDerivative = left.computePartialDerivative(bindings, variable);
-        if (right instanceof ConstantVector) {
+        if (right instanceof DMatrixColumnVectorExpression) {
             return MatrixVectorProduct.product(
                     new DMatrixExpression(leftDerivative),
                     right
             ).evaluate(bindings);
         } else {
-            final Vector rightDerivative = right.computePartialDerivative(bindings, variable);
+            final DMatrix rightDerivative = right.computePartialDerivative(bindings, variable);
 
             return VectorSum.sum(
                     MatrixVectorProduct.product(
@@ -89,7 +81,7 @@ public record MatrixVectorProduct(MatrixExpression left, VectorExpression right)
                     ),
                     MatrixVectorProduct.product(
                             left,
-                            rightDerivative
+                            new DMatrixColumnVectorExpression(rightDerivative)
                     )
             ).evaluate(bindings);
         }

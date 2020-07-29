@@ -1,5 +1,7 @@
 package neuralnerdwork.math;
 
+import org.ejml.data.DMatrix;
+
 import java.util.stream.StreamSupport;
 
 public record ScalarParameter(int variable) implements ScalarExpression {
@@ -18,7 +20,7 @@ public record ScalarParameter(int variable) implements ScalarExpression {
     }
 
     @Override
-    public Vector computeDerivative(Model.ParameterBindings bindings) {
+    public DMatrix computeDerivative(Model.ParameterBindings bindings) {
         return new ScalarComponentsVector(
                 StreamSupport.stream(bindings.variables().spliterator(), false)
                              .map(variable -> new ConstantScalar(computePartialDerivative(bindings, variable)))
