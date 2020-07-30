@@ -38,7 +38,7 @@ public class NeuralNetworkTrainer {
                         var sample = ts.get(i);
                         var inputLayer = sample.input();
                         if (inputLayer.length != feedforwardDefinition.inputLength()) {
-                            throw new IllegalArgumentException("Sample " + i + " has wrong size (got " + sample.input().length + "; expected " + inputLayer.length + ")");
+                            throw new IllegalArgumentException("Sample " + i + " has wrong size (got " + sample.input().length + "; expected " + feedforwardDefinition.inputLength() + ")");
                         }
                         if (sample.output().length != feedforwardDefinition.outputLength()) {
                             throw new IllegalArgumentException("Sample " + i + " has wrong size (got " + sample.output().length + "; expected " + feedforwardDefinition.outputLength() + ")");

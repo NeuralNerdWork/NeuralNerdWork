@@ -2,6 +2,7 @@ package neuralnerdwork.backprop;
 
 import neuralnerdwork.math.*;
 import org.ejml.data.*;
+import org.ejml.dense.row.CommonOps_DDRM;
 import org.ejml.ops.ConvertDMatrixStruct;
 
 import java.util.Arrays;
@@ -40,7 +41,7 @@ public record ConvolutionLayer(int inputChannels, Convolution[] convolutions, Ac
 
     @Override
     public int inputLength() {
-        return convolutions[0].inputLength() * convolutions.length * inputChannels;
+        return convolutions[0].inputLength() * inputChannels;
     }
 
     @Override
@@ -98,7 +99,7 @@ public record ConvolutionLayer(int inputChannels, Convolution[] convolutions, Ac
 
     @Override
     public Result<DMatrix, ConvolutionCache> derivativeWithRespectToLayerInput(DMatrix layerInput, ConvolutionCache cache, Model.ParameterBindings bindings) {
-        DMatrixSparseTriplet derivative = new DMatrixSparseTriplet(outputLength(), inputLength(), convolutions.length * inputChannels * outputLength());
+        DMatrixSparseTriplet derivative = new DMatrixSparseTriplet(outputLength(), inputLength(), inputChannels * outputLength());
         for (int convIndex = 0; convIndex < convolutions.length; convIndex++) {
             for (int channelIndex = 0; channelIndex < inputChannels; channelIndex++) {
                 ChannelCache cacheEntry = cache.channels()[convIndex][channelIndex];
@@ -106,7 +107,7 @@ public record ConvolutionLayer(int inputChannels, Convolution[] convolutions, Ac
                 ConvolutionFilterMatrix matrix = convolutions[convIndex].matrix();
                 DMatrix convolutionDerivative = new MatrixProduct(new DMatrixExpression(activationWithRespectConvolution), matrix).evaluate(bindings);
                 int rowOffset = (convIndex * inputChannels + channelIndex) * convolutions[0].outputLength();
-                int colOffset = (convIndex * inputChannels + channelIndex) * convolutions[0].inputLength();
+                int colOffset = channelIndex * convolutions[0].inputLength();
                 if (convolutionDerivative instanceof DMatrixSparseCSC m) {
                     Iterator<DMatrixSparse.CoordinateRealValue> coords = m.createCoordinateIterator();
                     while (coords.hasNext()) {
@@ -125,7 +126,7 @@ public record ConvolutionLayer(int inputChannels, Convolution[] convolutions, Ac
 
     @Override
     public Result<DMatrix, ConvolutionCache> derivativeWithRespectLayerParameter(DMatrix layerInput, int variable, ConvolutionCache cache, Model.ParameterBindings bindings) {
-        double[] derivative = new double[outputLength()];
+        DMatrixRMaj derivative = new DMatrixRMaj(outputLength(), 1);
         for (int convIndex = 0; convIndex < convolutions.length; convIndex++) {
             for (int channelIndex = 0; channelIndex < inputChannels; channelIndex++) {
                 ChannelCache cacheEntry = cache.channels()[convIndex][channelIndex];
@@ -139,14 +140,22 @@ public record ConvolutionLayer(int inputChannels, Convolution[] convolutions, Ac
                                 ),
                                 new DMatrixColumnVectorExpression(layerInput)
                         ).evaluate(bindings);
-                int dstOffset = (convIndex * inputChannels + channelIndex) * convolutions[0].inputLength();
-                for (int i = 0; i < convolutionDerivative.getNumRows(); i++) {
-                    derivative[dstOffset + i] = convolutionDerivative.get(i, 0);
+                int dstOffset = (convIndex * inputChannels + channelIndex) * convolutions[0].outputLength();
+                if (convolutionDerivative instanceof DMatrixRMaj cd) {
+                    CommonOps_DDRM.insert(cd, derivative, dstOffset, 0);
+                } else if (convolutionDerivative instanceof DMatrixSparseCSC cd) {
+                    Iterator<DMatrixSparse.CoordinateRealValue> coords = cd.createCoordinateIterator();
+                    while (coords.hasNext()) {
+                        DMatrixSparse.CoordinateRealValue coord = coords.next();
+                        derivative.set(dstOffset + coord.row, coord.col, coord.value);
+                    }
+                } else {
+                    throw new UnsupportedOperationException("Unknown matrix type " + convolutionDerivative.getClass());
                 }
             }
         }
 
-        return new Result<>(new DMatrixRMaj(derivative.length, 1, true, derivative), cache);
+        return new Result<>(derivative, cache);
     }
 
     @Override

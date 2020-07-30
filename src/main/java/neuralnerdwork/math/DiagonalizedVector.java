@@ -1,9 +1,12 @@
 package neuralnerdwork.math;
 
 import org.ejml.data.DMatrix;
+import org.ejml.data.DMatrixRMaj;
 import org.ejml.data.DMatrixSparseCSC;
 import org.ejml.data.DMatrixSparseTriplet;
+import org.ejml.dense.row.CommonOps_DDRM;
 import org.ejml.ops.ConvertDMatrixStruct;
+import org.ejml.sparse.csc.CommonOps_DSCC;
 
 public record DiagonalizedVector(VectorExpression vector) implements MatrixExpression {
     @Override
