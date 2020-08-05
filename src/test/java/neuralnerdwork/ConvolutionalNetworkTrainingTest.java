@@ -6,8 +6,6 @@ import neuralnerdwork.backprop.FeedForwardNetwork;
 import neuralnerdwork.backprop.Layer;
 import neuralnerdwork.backprop.MaxPoolLayer;
 import neuralnerdwork.backprop.MaxPoolLayer.Channel;
-import neuralnerdwork.descent.AdagradUpdate;
-import neuralnerdwork.descent.NesterovMomentumGradientUpdate;
 import neuralnerdwork.descent.RmsPropUpdate;
 import neuralnerdwork.descent.StochasticGradientDescent;
 import neuralnerdwork.math.ConvolutionFilterMatrix;
@@ -25,7 +23,6 @@ import static neuralnerdwork.NeuralNetwork.fullyConnectedClassificationNetwork;
 import static neuralnerdwork.weight.VariableWeightInitializer.dumbRandomWeightInitializer;
 import static neuralnerdwork.weight.VariableWeightInitializer.smartRandomWeightInitializer;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 public class ConvolutionalNetworkTrainingTest {
 

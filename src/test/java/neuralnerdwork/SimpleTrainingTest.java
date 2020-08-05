@@ -10,6 +10,8 @@ import java.awt.*;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -21,9 +23,9 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SimpleTrainingTest {
-// TODO - Parallelize error for training points
 // TODO - Drop out
 // TODO - L2 Regularization
+// TODO - Do multiple classifications with softmax
 
     static record FailurePercent(int failures, int total) { 
         FailurePercent merge(FailurePercent other) { 
@@ -131,7 +133,7 @@ public class SimpleTrainingTest {
 
     @Test
     void trainingForPointsInsideARingShouldConverge() throws Exception {
-
+        var start = Instant.now();
         Random r = new Random(12); 
         var trainingSet = Stream.iterate(1, i -> i < 1000, i -> i+1)
             .map(i -> {
@@ -209,6 +211,8 @@ public class SimpleTrainingTest {
             })
             .collect(Collectors.toList());
 
+        var end = Instant.now();
+        System.out.printf("Total test time %d", Duration.between(start, end).toMillis());
         assertTrue(failures.size() <= 100, () -> failures.size() + " incorrect predictions");
     }
 

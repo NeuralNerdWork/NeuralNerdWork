@@ -2,7 +2,6 @@ package neuralnerdwork.descent;
 
 import neuralnerdwork.math.Model;
 import neuralnerdwork.math.ScalarExpression;
-import org.ejml.data.DMatrix;
 
 /**
  * Does the weight update step for a variation of gradient descent. See

@@ -5,11 +5,6 @@ import org.ejml.data.DMatrixSparseCSC;
 import org.ejml.data.DMatrixSparseTriplet;
 import org.ejml.ops.ConvertDMatrixStruct;
 
-import java.util.SortedMap;
-import java.util.TreeMap;
-
-import static java.util.Collections.emptySortedMap;
-
 /**
  * A matrix capable of representing a convolution filter (without padding) as a linear transformation
  * (i.e. multiplying a flattened vector by this filter is equivalent to applying the given

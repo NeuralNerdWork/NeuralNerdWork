@@ -5,6 +5,7 @@ import neuralnerdwork.TrainingSample;
 import neuralnerdwork.math.Model;
 import neuralnerdwork.math.ScalarExpression;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -32,9 +33,13 @@ public record StochasticGradientDescent(int batchSize,
             Collections.shuffle(trainingSamples, rand);
             final int batchSize = Math.min(batchSize(), trainingSamples.size());
             final List<TrainingSample> iterationSamples = trainingSamples.subList(0, batchSize);
+            var start = Instant.now();
             final ScalarExpression error = errorFunction.apply(iterationSamples);
+            System.out.printf("Time for error function construction: %dms\n", java.time.Duration.between(start, Instant.now()).toMillis());
             // use derivative to adjust weights
+            start = Instant.now();
             weightUpdateVector = updateStrategy.updateVector(error, parameterBindings);
+            System.out.printf("Time for update vector evaluation: %dms\n", java.time.Duration.between(start, Instant.now()).toMillis());
             for (int variable : parameterBindings.variables()) {
                 parameterBindings.put(variable, parameterBindings.get(variable) + weightUpdateVector[variable]);
             }

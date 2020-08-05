@@ -59,9 +59,9 @@ public record MaxPoolLayer(Channel[] channels) implements Layer<MaxPoolLayer.Max
         int totalInputLength = inputLength();
         int totalOutputLength = outputLength();
         DMatrixSparseTriplet derivative = new DMatrixSparseTriplet(totalOutputLength, totalInputLength, 0);
-        for (int i = 0, sourceChannelOffset = 0, targetChannelOffset = 0;
+        for (int i = 0, sourceChannelOffset = 0;
              i < channels.length;
-             sourceChannelOffset += channels[i].inputLength(), targetChannelOffset += channels[i].outputLength(), i += 1) {
+             sourceChannelOffset += channels[i].inputLength(), i += 1) {
             Channel channel = channels[i];
             int targetWidth = channel.inputWidth() / channel.filterWidth();
             int targetHeight = channel.inputHeight() / channel.filterHeight();

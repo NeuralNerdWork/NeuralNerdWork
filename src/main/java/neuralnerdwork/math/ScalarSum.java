@@ -11,6 +11,7 @@ public record ScalarSum(ScalarExpression... expressions) implements ScalarExpres
                                                       .toArray(ScalarExpression[]::new);
 
         if (nonZeroExpressions.length == 0) {
+            System.out.println("ScalarSum.sum() hit a zero sum case!");
             return new ConstantScalar(0.0);
         } else {
             return new ScalarSum(nonZeroExpressions);
@@ -37,6 +38,7 @@ public record ScalarSum(ScalarExpression... expressions) implements ScalarExpres
     public DMatrix computeDerivative(Model.ParameterBindings bindings) {
         return VectorSum.sum(
                 Arrays.stream(expressions)
+                      .parallel()
                       .map(exp -> exp.computeDerivative(bindings))
                       .map(DMatrixRowVectorExpression::new)
                       .toArray(VectorExpression[]::new)
