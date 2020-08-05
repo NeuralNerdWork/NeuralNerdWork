@@ -23,8 +23,9 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SimpleTrainingTest {
+// TODO - L2 Regularization (need to make configurable)
+// TODO - Visualize weights during training (maybe compare regularized vs not)
 // TODO - Drop out
-// TODO - L2 Regularization
 // TODO - Do multiple classifications with softmax
 
     static record FailurePercent(int failures, int total) { 

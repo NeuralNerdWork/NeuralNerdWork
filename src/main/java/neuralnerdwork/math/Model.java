@@ -80,5 +80,8 @@ public class Model {
         public ParameterBindings copy() {
             return new ParameterBindings(start, Arrays.copyOf(values, values.length));
         }
+		public ParameterVector allWeightsVector() {
+			return new ParameterVector(start, values.length);
+		}
     }
 }

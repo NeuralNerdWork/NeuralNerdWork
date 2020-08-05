@@ -50,8 +50,14 @@ public class NeuralNetworkTrainer {
                         squaredErrors[i] = squaredError(sample, network);
                     }
 
+                    ParameterVector allWeights = network.parameterBindings().allWeightsVector();
+                    var weightL2Norm = new ScalarConstantMultiple(0.001, new SquareRoot(sumOfSquaredVector(allWeights)));
+
                     // this is a function that hasn't been evaluated yet
-                    return new ScalarConstantMultiple(1.0 / (double) ts.size(), ScalarSum.sum(squaredErrors));
+                    return new ScalarSum(
+                            new ScalarConstantMultiple(1.0 / (double) ts.size(), ScalarSum.sum(squaredErrors)),
+                            weightL2Norm
+                        );
                 },
                 (iterationCount, lastUpdateVector, currentParameters) -> {
                     NeuralNetwork network = new NeuralNetwork(feedforwardDefinition, currentParameters);
@@ -71,9 +77,15 @@ public class NeuralNetworkTrainer {
                                          .output())))
         );
 
-        DMatrixRMaj ones = new DMatrixRMaj(sample.output().length, 1);
+        return sumOfSquaredVector(inputError);
+    }
+
+    private static ScalarExpression sumOfSquaredVector(VectorExpression expression) {
+        DMatrixRMaj ones = new DMatrixRMaj(expression.length(), 1);
         CommonOps_DDRM.fill(ones, 1.0);
         return new DotProduct(new DMatrixColumnVectorExpression(ones),
-                new ColumnVectorizedSingleVariableFunction(new SquaredSingleVariableFunction(), inputError));
+                new ColumnVectorizedSingleVariableFunction(new SquaredSingleVariableFunction(), expression));
     }
+
+
 }
