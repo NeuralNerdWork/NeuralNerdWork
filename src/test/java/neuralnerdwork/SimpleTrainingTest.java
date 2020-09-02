@@ -99,6 +99,7 @@ public class SimpleTrainingTest {
 
         NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(fullyConnectedClassificationNetwork(smartRandomWeightInitializer(r), 2, 10, 10, 1), new StochasticGradientDescent(
                                 200,
+                                r,
                                 () -> new RmsPropUpdate(0.001, 0.9, 1e-8)
                         ), (iterationCount, network) -> {
                             var fails = verificationSet.stream()
@@ -180,6 +181,7 @@ public class SimpleTrainingTest {
 
         NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(fullyConnectedClassificationNetwork(smartRandomWeightInitializer(r), 2, 20, 20, 1), new StochasticGradientDescent(
                                 100,
+                                r,
                                 () -> new RmsPropUpdate(0.001, 0.9, 1e-8)
                         ), (iterationCount, network) -> {
                             var fails = verificationSet.stream()

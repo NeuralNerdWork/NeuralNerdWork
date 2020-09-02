@@ -24,34 +24,42 @@ public class LinearRegressionTest {
     }
 
     public static Stream<GradientDescentStrategy> gradientDescentStrategies() {
+        Random rand = new Random(33);
         return Stream.of(
                 new SimpleBatchGradientDescent(1.0),
                 new StochasticGradientDescent(
                         200,
+                        rand,
                         () -> new FixedLearningRateGradientUpdate(0.5)
                 ),
                 new StochasticGradientDescent(
                         200,
+                        rand,
                         () -> new AverageGradientUpdate(0.5, 5)
                 ),
                 new StochasticGradientDescent(
                         200,
+                        rand,
                         () -> new MomentumGradientUpdate(0.1, 0.9)
                 ),
                 new StochasticGradientDescent(
                         200,
+                        rand,
                         () -> new NesterovMomentumGradientUpdate(0.1, 0.9)
                 ),
                 new StochasticGradientDescent(
                         200,
+                        rand,
                         () -> new AdagradUpdate(0.1, 1e-8)
                 ),
                 new StochasticGradientDescent(
                         200,
+                        rand,
                         () -> new AdagradDeltaUpdate(0.9, 1e-4)
                 ),
                 new StochasticGradientDescent(
                         200,
+                        rand,
                         () -> new RmsPropUpdate(0.001, 0.9, 1e-8)
                 )
         );

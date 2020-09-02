@@ -14,6 +14,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 public record StochasticGradientDescent(int batchSize,
+                                        Random rand,
                                         Supplier<WeightUpdateStrategy> updateStrategySupplier) implements GradientDescentStrategy {
 
     @Override
@@ -26,7 +27,6 @@ public record StochasticGradientDescent(int batchSize,
 
         // Repeat this until converged
         double[] weightUpdateVector;
-        final Random rand = new Random();
         final WeightUpdateStrategy updateStrategy = updateStrategySupplier.get();
         long iterations = 0;
         do {

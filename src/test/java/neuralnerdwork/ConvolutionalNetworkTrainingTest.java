@@ -102,6 +102,7 @@ public class ConvolutionalNetworkTrainingTest {
         NeuralNetwork untrainedNetwork = new NeuralNetwork(networkDef, binder);
         NeuralNetworkTrainer trainer = new NeuralNetworkTrainer(untrainedNetwork, new StochasticGradientDescent(
                 50,
+                r,
                 () -> new RmsPropUpdate(0.001, 0.9, 1e-8)
         ), (iterationCount, network) -> {
             System.out.println("Iteration " + iterationCount);

@@ -87,13 +87,11 @@ public class NeuralNetworkTrainer {
                     }
 
                     ParameterVector allWeights = network.parameterBindings().allWeightsVector();
-                    var additionalError = new ScalarConstantMultiple(0.001,
-                                                                     new SquareRoot(sumOfSquaredVector(allWeights)));
 
                     // this is a function that hasn't been evaluated yet
                     return new ScalarSum(
                             new ScalarConstantMultiple(1.0 / (double) ts.size(), ScalarSum.sum(squaredErrors)),
-                            additionalError
+                            additionalError.apply(allWeights)
                     );
                 },
                 (iterationCount, lastUpdateVector, currentParameters) -> {
