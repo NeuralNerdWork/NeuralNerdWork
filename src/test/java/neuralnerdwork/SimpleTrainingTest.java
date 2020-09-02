@@ -23,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SimpleTrainingTest {
-// TODO - L2 Regularization (need to make configurable)
 // TODO - Visualize weights during training (maybe compare regularized vs not)
 // TODO - Drop out
 // TODO - Do multiple classifications with softmax
@@ -111,7 +110,7 @@ public class SimpleTrainingTest {
                             System.out.println("Percentage of verification set failing: " + fails.asPercent());
 
                             return fails.asPercent() > 0.05;
-                        }, visualizer);
+                        }, visualizer, NeuralNetworkTrainer.L2NormAdditionalError(0.001));
 
         NeuralNetwork network = trainer.train(trainingSet);
 
@@ -192,7 +191,7 @@ public class SimpleTrainingTest {
                             System.out.println("Percentage of verification set failing: " + fails.asPercent());
 
                             return fails.asPercent() > 0.05;
-                        }, visualizer);
+                        }, visualizer, NeuralNetworkTrainer.L2NormAdditionalError(0.001));
 
 
         NeuralNetwork network = trainer.train(trainingSet);

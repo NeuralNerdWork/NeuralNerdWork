@@ -1,28 +1,57 @@
+
 package neuralnerdwork;
 
-import neuralnerdwork.descent.GradientDescentStrategy;
-import neuralnerdwork.math.*;
-import neuralnerdwork.math.Model.ParameterBindings;
+import java.util.List;
+import java.util.function.Function;
+
 import org.ejml.data.DMatrixRMaj;
 import org.ejml.dense.row.CommonOps_DDRM;
 
-import java.util.List;
+import neuralnerdwork.descent.GradientDescentStrategy;
+import neuralnerdwork.math.ColumnVectorizedSingleVariableFunction;
+import neuralnerdwork.math.DMatrixColumnVectorExpression;
+import neuralnerdwork.math.DotProduct;
+import neuralnerdwork.math.Model;
+import neuralnerdwork.math.Model.ParameterBindings;
+import neuralnerdwork.math.ParameterVector;
+import neuralnerdwork.math.ScalarConstantMultiple;
+import neuralnerdwork.math.ScalarExpression;
+import neuralnerdwork.math.ScalarSum;
+import neuralnerdwork.math.ScaledVector;
+import neuralnerdwork.math.SquareRoot;
+import neuralnerdwork.math.SquaredSingleVariableFunction;
+import neuralnerdwork.math.VectorExpression;
+import neuralnerdwork.math.VectorSum;
 
 public class NeuralNetworkTrainer {
     private final GradientDescentStrategy gradientDescentStrategy;
     private final ValidationStrategy validationStrategy;
     private final IterationObserver iterationObserver;
     private final NeuralNetwork network;
+    private final Function<ParameterVector, ScalarExpression> additionalError;
 
-    public NeuralNetworkTrainer(NeuralNetwork network, GradientDescentStrategy gradientDescentStrategy, ValidationStrategy validationStrategy) {
-        this(network, gradientDescentStrategy, validationStrategy, (a, b) -> {});
+    public static Function<ParameterVector, ScalarExpression> L2NormAdditionalError(double constant) {
+        return allWeights -> new ScalarConstantMultiple(constant, new SquareRoot(sumOfSquaredVector(allWeights)));
     }
 
-    public NeuralNetworkTrainer(NeuralNetwork network, GradientDescentStrategy gradientDescentStrategy, ValidationStrategy validationStrategy, IterationObserver iterationObserver) {
+    public NeuralNetworkTrainer(NeuralNetwork network,
+            GradientDescentStrategy gradientDescentStrategy,
+            ValidationStrategy validationStrategy) {
+        this(network, gradientDescentStrategy, validationStrategy, (a, b) -> {
+        }, L2NormAdditionalError(0.001));
+    }
+
+    public NeuralNetworkTrainer(NeuralNetwork network,
+            GradientDescentStrategy gradientDescentStrategy,
+            ValidationStrategy validationStrategy,
+            IterationObserver iterationObserver,
+            Function<ParameterVector, ScalarExpression> additionalError
+    ) {
         this.network = network;
         this.gradientDescentStrategy = gradientDescentStrategy;
         this.validationStrategy = validationStrategy;
         this.iterationObserver = iterationObserver;
+        this.additionalError = additionalError;
     }
 
     NeuralNetwork train(List<TrainingSample> samples) {
@@ -38,26 +67,34 @@ public class NeuralNetworkTrainer {
                         var sample = ts.get(i);
                         var inputLayer = sample.input();
                         if (inputLayer.length != feedforwardDefinition.inputLength()) {
-                            throw new IllegalArgumentException("Sample " + i + " has wrong size (got " + sample.input().length + "; expected " + feedforwardDefinition.inputLength() + ")");
+                            throw new IllegalArgumentException(
+                                    "Sample " + i + " has wrong size (got " + sample.input().length + "; expected "
+                                            + feedforwardDefinition.inputLength() + ")");
                         }
                         if (sample.output().length != feedforwardDefinition.outputLength()) {
-                            throw new IllegalArgumentException("Sample " + i + " has wrong size (got " + sample.output().length + "; expected " + feedforwardDefinition.outputLength() + ")");
+                            throw new IllegalArgumentException(
+                                    "Sample " + i + " has wrong size (got " + sample.output().length + "; expected "
+                                            + feedforwardDefinition.outputLength() + ")");
                         }
 
-                        VectorExpression network = feedforwardDefinition.expression(new DMatrixRMaj(inputLayer.length, 1, true, inputLayer));
+                        VectorExpression network = feedforwardDefinition.expression(new DMatrixRMaj(inputLayer.length,
+                                                                                                    1,
+                                                                                                    true,
+                                                                                                    inputLayer));
 
                         // find (squared) error amount
                         squaredErrors[i] = squaredError(sample, network);
                     }
 
                     ParameterVector allWeights = network.parameterBindings().allWeightsVector();
-                    var weightL2Norm = new ScalarConstantMultiple(0.001, new SquareRoot(sumOfSquaredVector(allWeights)));
+                    var additionalError = new ScalarConstantMultiple(0.001,
+                                                                     new SquareRoot(sumOfSquaredVector(allWeights)));
 
                     // this is a function that hasn't been evaluated yet
                     return new ScalarSum(
                             new ScalarConstantMultiple(1.0 / (double) ts.size(), ScalarSum.sum(squaredErrors)),
-                            weightL2Norm
-                        );
+                            additionalError
+                    );
                 },
                 (iterationCount, lastUpdateVector, currentParameters) -> {
                     NeuralNetwork network = new NeuralNetwork(feedforwardDefinition, currentParameters);
@@ -73,8 +110,11 @@ public class NeuralNetworkTrainer {
         final VectorExpression inputError = VectorSum.sum(
                 network,
                 new ScaledVector(-1.0,
-                                 new DMatrixColumnVectorExpression(new DMatrixRMaj(sample.output().length, 1, true, sample
-                                         .output())))
+                                 new DMatrixColumnVectorExpression(new DMatrixRMaj(sample.output().length,
+                                                                                   1,
+                                                                                   true,
+                                                                                   sample
+                                                                                           .output())))
         );
 
         return sumOfSquaredVector(inputError);
@@ -84,8 +124,8 @@ public class NeuralNetworkTrainer {
         DMatrixRMaj ones = new DMatrixRMaj(expression.length(), 1);
         CommonOps_DDRM.fill(ones, 1.0);
         return new DotProduct(new DMatrixColumnVectorExpression(ones),
-                new ColumnVectorizedSingleVariableFunction(new SquaredSingleVariableFunction(), expression));
+                              new ColumnVectorizedSingleVariableFunction(new SquaredSingleVariableFunction(),
+                                                                         expression));
     }
-
 
 }
