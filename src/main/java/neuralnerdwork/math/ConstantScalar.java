@@ -4,6 +4,8 @@ import org.ejml.data.DMatrix;
 import org.ejml.data.DMatrixSparseCSC;
 
 public record ConstantScalar(double value) implements ScalarExpression {
+    public static final ConstantScalar ZERO = new ConstantScalar(0.0);
+
     @Override
     public double evaluate(Model.ParameterBindings bindings) {
         return value;
