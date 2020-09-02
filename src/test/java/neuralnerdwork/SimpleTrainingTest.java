@@ -3,6 +3,7 @@ package neuralnerdwork;
 import neuralnerdwork.descent.RmsPropUpdate;
 import neuralnerdwork.descent.SimpleBatchGradientDescent;
 import neuralnerdwork.descent.StochasticGradientDescent;
+import neuralnerdwork.math.ConstantScalar;
 import neuralnerdwork.viz.JFrameTrainingVisualizer;
 import org.junit.jupiter.api.Test;
 
@@ -191,7 +192,7 @@ public class SimpleTrainingTest {
                             System.out.println("Percentage of verification set failing: " + fails.asPercent());
 
                             return fails.asPercent() > 0.05;
-                        }, visualizer, NeuralNetworkTrainer.L2NormAdditionalError(0.001));
+                        }, visualizer, NeuralNetworkTrainer.L2NormAdditionalError(0.05));
 
 
         NeuralNetwork network = trainer.train(trainingSet);

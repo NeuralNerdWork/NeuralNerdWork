@@ -38,7 +38,7 @@ public class NeuralNetworkTrainer {
             GradientDescentStrategy gradientDescentStrategy,
             ValidationStrategy validationStrategy) {
         this(network, gradientDescentStrategy, validationStrategy, (a, b) -> {
-        }, L2NormAdditionalError(0.001));
+        }, L2NormAdditionalError(0.05));
     }
 
     public NeuralNetworkTrainer(NeuralNetwork network,
