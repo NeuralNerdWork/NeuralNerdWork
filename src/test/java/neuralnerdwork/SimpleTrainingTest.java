@@ -389,7 +389,7 @@ public class SimpleTrainingTest {
 
         NeuralNetworkTrainer trainer =
                 new NeuralNetworkTrainer(
-                        fullyConnectedClassificationNetwork(smartRandomWeightInitializer(r), dimensions, 10000, dimensions),
+                        fullyConnectedClassificationNetwork(smartRandomWeightInitializer(r), dimensions, 10000, dimensions, 1),
                         new StochasticGradientDescent(200, r,
                                                       () -> new RmsPropUpdate(0.001, 0.9, 1e-8)),
                         (iterationCount, network) -> {

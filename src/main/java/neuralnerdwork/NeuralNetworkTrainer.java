@@ -55,7 +55,7 @@ public class NeuralNetworkTrainer {
     }
 
     NeuralNetwork train(List<TrainingSample> samples) {
-        ParameterBindings initialParameterBindings = network.parameterBindings().copy();
+        ParameterBindings initialParameterBindings = network.parameterBindings();
         var feedforwardDefinition = network.runtimeNetwork();
 
         Model.ParameterBindings parameterBindings = gradientDescentStrategy.runGradientDescent(
