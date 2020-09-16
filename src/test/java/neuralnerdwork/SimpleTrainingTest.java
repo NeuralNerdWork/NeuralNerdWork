@@ -4,14 +4,18 @@ import static neuralnerdwork.NeuralNetwork.fullyConnectedClassificationNetwork;
 import static neuralnerdwork.weight.VariableWeightInitializer.smartRandomWeightInitializer;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.awt.Color;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
+import java.math.BigInteger;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -24,12 +28,12 @@ import neuralnerdwork.descent.StochasticGradientDescent;
 import neuralnerdwork.viz.JFrameTrainingVisualizer;
 
 public class SimpleTrainingTest {
-    // TODO - investigate training visualizations that work in >2D
     // TODO - attempt word2vec sized problem?
     // TODO - Visualize weights during training (maybe compare regularized vs not)
     // TODO - Drop out
     // TODO - Do multiple classifications with softmax
     // TODO - Add check in NeuralNetwork.apply for input vector sizes
+    // TODO - investigate training visualizations that work in >2D
 
     static record FailurePercent(int failures, int total) {
         FailurePercent merge(FailurePercent other) {
@@ -303,6 +307,121 @@ public class SimpleTrainingTest {
                     if (predictedInside != actuallyInside) {
                         return Stream.of("Bad answer for (" + x + "," + y + "," + z + ") distance from origin is " +
                                                  Math.sqrt(x * x + y * y + z * z) + "\n");
+                    } else {
+                        return Stream.empty();
+                    }
+                })
+                .collect(Collectors.toList());
+
+        assertTrue(failures.size() <= 100, () -> failures.size() + " incorrect predictions");
+    }
+
+
+    @Test
+    void trainingForPointsInsideAnNSphereShouldConverge() throws Exception {
+
+        Random r = new Random(11);
+        int dimensions = 100000;
+        var volume = Math.pow(2, dimensions) / 2.0;
+        var radius = 1.6;
+//                Math.pow(Math.PI * dimensions, 1.0 / (2.0 * dimensions)) * Math.sqrt(dimensions / (2.0 * Math.PI * Math.E)) * Math.pow(volume, 1.0 / dimensions);
+        var positiveTrainingSet = Stream.generate(() -> 0)
+                .map(i -> {
+                    var inputs = new double[dimensions];
+                    var distanceSum = 0.0;
+                    for(int d = 0; d < dimensions; d++) {
+                        inputs[d] = r.nextDouble() * 2.0 - 1.0;
+                        distanceSum += inputs[d] * inputs[d];
+                    }
+
+                    double distance = Math.sqrt(distanceSum);
+                    boolean inside = distance <= radius;
+//                    System.out.println(i + " : "+ Math.sqrt(distanceSum) + " : " + Arrays.toString(inputs));
+
+                    return new TrainingSample(inputs, new double[] {inside ? 1.0 : 0.0});
+                })
+//                .filter(ts -> ts.output()[0] > 0.5)
+                .limit(500)
+                .collect(Collectors.toList());
+
+        var negativeTrainingSet = Stream.generate(() -> 0)
+                .map(i -> {
+                    var inputs = new double[dimensions];
+                    var distanceSum = 0.0;
+                    for(int d = 0; d < dimensions; d++) {
+                        inputs[d] = r.nextDouble() * 2.0 - 1.0;
+                        distanceSum += inputs[d] * inputs[d];
+                    }
+
+                    boolean inside = Math.sqrt(distanceSum) <= radius;
+                    //                    System.out.println(i + " : "+ Math.sqrt(distanceSum) + " : " + Arrays.toString(inputs));
+
+                    return new TrainingSample(inputs, new double[] {inside ? 1.0 : 0.0});
+                })
+//                .filter(ts -> ts.output()[0] < 0.5)
+                .limit(500)
+                .collect(Collectors.toList());
+
+        var trainingSet = new ArrayList<TrainingSample>();
+        trainingSet.addAll(positiveTrainingSet);
+        trainingSet.addAll(negativeTrainingSet);
+
+        long positiveExamples = trainingSet.stream()
+                .filter(sample -> sample.output()[0] == 1.0)
+                .count();
+
+
+        System.out.println("Positive examples: " + positiveExamples + " less than " + radius + " away");
+
+        var verificationSet = Stream.iterate(1, i -> i < 1000, i -> i + 1)
+                .map(i -> {
+                    var inputs = new double[dimensions];
+                    var distanceSum = 0.0;
+                    for(int d = 0; d < dimensions; d++) {
+                        inputs[d] = r.nextDouble() * 2.0 - 1.0;
+                        distanceSum += inputs[d] * inputs[d];
+                    }
+
+                    boolean inside = Math.sqrt(distanceSum) <= radius;
+                    return new TrainingSample(inputs, new double[] {inside ? 1.0 : 0.0});
+                })
+                .collect(Collectors.toList());
+
+        NeuralNetworkTrainer trainer =
+                new NeuralNetworkTrainer(
+                        fullyConnectedClassificationNetwork(smartRandomWeightInitializer(r), dimensions, 10000, dimensions),
+                        new StochasticGradientDescent(200, r,
+                                                      () -> new RmsPropUpdate(0.001, 0.9, 1e-8)),
+                        (iterationCount, network) -> {
+                            var fails = verificationSet.stream()
+                                    .map(i -> {
+                                        return Util.compareClassifications(network.apply(i.input())[0], i.output()[0]);
+                                    })
+                                    .map(b -> new FailurePercent(b ? 0 : 1, 1))
+                                    .reduce(new FailurePercent(0, 0), FailurePercent::merge);
+
+                            System.out.println("Percentage of verification set failing: " + fails.asPercent());
+
+                            return iterationCount <= 2 && fails.asPercent() > 0.05;
+                        }, (a, b) -> {}, NeuralNetworkTrainer.L2NormAdditionalError(0.001));
+
+        NeuralNetwork network = trainer.train(trainingSet);
+
+        var failures = Stream.iterate(1, i -> i < 1000, i -> i + 1)
+                .flatMap(i -> {
+                    var inputs = new double[dimensions];
+                    var distanceSum = 0.0;
+                    for(int d = 0; d < dimensions; d++) {
+                        inputs[d] = r.nextDouble() * 2.0 - 1.0;
+                        distanceSum += inputs[d] * inputs[d];
+                    }
+
+                    double distance = Math.sqrt(distanceSum);
+                    boolean actuallyInside = distance <= radius;
+                    boolean predictedInside = Math.round(network.apply(inputs)[0]) >= 1;
+                    if (predictedInside != actuallyInside) {
+                        return Stream.of("Bad answer for (" + Arrays.toString(inputs) + ") distance from origin is " +
+                                                 distance + "\n");
                     } else {
                         return Stream.empty();
                     }
