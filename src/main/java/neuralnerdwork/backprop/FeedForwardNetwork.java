@@ -147,7 +147,8 @@ public record FeedForwardNetwork(Layer<?>[]layers) {
              */
             final double[][] partialDerivatives = new double[layers[layers.length - 1].outputLength()][bindings.size()];
             int varIndex = 0;
-            for (int variable : bindings.variables()) {
+            int end = bindings.start() + bindings.length();
+            for (int variable = bindings.start(); variable < end; variable++) {
                 final int layerIndex = findLayerIndex(variable);
                 final StatefulLayerDelegate<?> delegate = layerDelegates[layerIndex];
 

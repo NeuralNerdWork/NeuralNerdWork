@@ -39,20 +39,25 @@ public record FullyConnectedLayer(ParameterMatrix weights, Optional<ParameterVec
     public Result<DMatrix, PerceptronCache> derivativeWithRespectLayerParameter(DMatrix layerInput, int variable, PerceptronCache cache, Model.ParameterBindings bindings) {
         SingleVariableFunction activationDerivative = activation.differentiateByInput();
 
-        final VectorExpression weightedSumDerivative;
+//        final VectorExpression weightedSumDerivative;
+        final int index;
+        final double value;
         if (weights.containsVariable(variable)) {
             int row = weights.rowIndexFor(variable);
             int col = weights.colIndexFor(variable);
+            index = row;
 
-            DMatrixSparseCSC matrix = new DMatrixSparseCSC(weights.rows(), 1, 1);
-            matrix.set(row, 0, layerInput.get(col, 0));
-            weightedSumDerivative = new DMatrixColumnVectorExpression(matrix);
+//            DMatrixSparseCSC matrix = new DMatrixSparseCSC(weights.rows(), 1, 1);
+            value = layerInput.get(col, 0);
+//            matrix.set(row, 0, value);
+//            weightedSumDerivative = new DMatrixColumnVectorExpression(matrix);
         } else {
-            int index = bias.orElseThrow().indexFor(variable);
+            index = bias.orElseThrow().indexFor(variable);
 
-            DMatrixSparseCSC matrix = new DMatrixSparseCSC(weights.rows(), 1, 1);
-            matrix.set(index, 0, 1.0);
-            weightedSumDerivative = new DMatrixColumnVectorExpression(matrix);
+//            DMatrixSparseCSC matrix = new DMatrixSparseCSC(weights.rows(), 1, 1);
+            value = 1.0;
+//            matrix.set(index, 0, value);
+//            weightedSumDerivative = new DMatrixColumnVectorExpression(matrix);
         }
 
         DMatrix activationInputs = getActivationInputs(layerInput, cache, bindings);
@@ -60,10 +65,12 @@ public record FullyConnectedLayer(ParameterMatrix weights, Optional<ParameterVec
         DMatrix activationDerivativeWithRespectWeightedSum =
                 getActivationDerivativeWithRespectToWeightedSum(cache, bindings, activationDerivative, activationInputs);
 
-        DMatrix output = new MatrixVectorProduct(
-                new DMatrixExpression(activationDerivativeWithRespectWeightedSum),
-                weightedSumDerivative
-        ).evaluate(bindings);
+//        DMatrix output = new MatrixVectorProduct(
+//                new DMatrixExpression(activationDerivativeWithRespectWeightedSum),
+//                weightedSumDerivative
+//        ).evaluate(bindings);
+        DMatrix output = new DMatrixSparseCSC(weights.rows(), 1, 1);
+        output.set(index, 0, activationDerivativeWithRespectWeightedSum.get(index, index) * value);
 
         return new Result<>(output, new PerceptronCache(cache.activation(), activationInputs, activationDerivativeWithRespectWeightedSum));
     }

@@ -62,6 +62,14 @@ public class Model {
                                .iterator();
         }
 
+        public int start() {
+            return start;
+        }
+
+        public int length() {
+            return values.length;
+        }
+
         public double get(int key) {
             return values[key - start];
         }

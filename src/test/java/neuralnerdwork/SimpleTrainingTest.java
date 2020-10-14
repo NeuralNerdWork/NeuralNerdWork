@@ -35,6 +35,13 @@ public class SimpleTrainingTest {
     // TODO - Add check in NeuralNetwork.apply for input vector sizes
     // TODO - investigate training visualizations that work in >2D
 
+    /*
+     Perf TODOs
+     - Check out self-time of computeDerivative
+     - Refactor compute derivative so forward, backwards, and last part are in own methods (for profiling)
+     - Maybe refactor backwards and last parts to single part? (Might not make a difference)
+     */
+
     static record FailurePercent(int failures, int total) {
         FailurePercent merge(FailurePercent other) {
             return new FailurePercent(failures() + other.failures(), total() + other.total());
@@ -321,7 +328,7 @@ public class SimpleTrainingTest {
     void trainingForPointsInsideAnNSphereShouldConverge() throws Exception {
 
         Random r = new Random(11);
-        int dimensions = 100000;
+        int dimensions = 10000;
         var volume = Math.pow(2, dimensions) / 2.0;
         var radius = 1.6;
 //                Math.pow(Math.PI * dimensions, 1.0 / (2.0 * dimensions)) * Math.sqrt(dimensions / (2.0 * Math.PI * Math.E)) * Math.pow(volume, 1.0 / dimensions);
@@ -389,7 +396,7 @@ public class SimpleTrainingTest {
 
         NeuralNetworkTrainer trainer =
                 new NeuralNetworkTrainer(
-                        fullyConnectedClassificationNetwork(smartRandomWeightInitializer(r), dimensions, 10000, dimensions, 1),
+                        fullyConnectedClassificationNetwork(smartRandomWeightInitializer(r), dimensions, 1000, dimensions, 1),
                         new StochasticGradientDescent(200, r,
                                                       () -> new RmsPropUpdate(0.001, 0.9, 1e-8)),
                         (iterationCount, network) -> {
